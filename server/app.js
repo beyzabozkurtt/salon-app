@@ -2,7 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const { sequelize } = require('./models'); // DİKKAT: config değil, models/index.js'den alınmalı!
-//testing github sync
+
 const app = express();
 app.use(cors());
 app.use(bodyParser.json());
