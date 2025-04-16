@@ -1,12 +1,72 @@
 <!DOCTYPE html>
 <html>
 <head>
+  
   <meta charset='utf-8'>
   <meta http-equiv='X-UA-Compatible' content='IE=edge'>
   <title>AdminLTE v4</title>
   <meta name='viewport' content='width=device-width, initial-scale=1'>
+
+  <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/dayjs/dayjs.min.js"></script>
 </head>
 <body>
+  <div class="container mt-4">
+    <div id="calendar"></div>
+  </div>
   <script>window.location.href = './dist/pages/index.html'</script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const calendarEl = document.getElementById('calendar');
+    
+      const calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: 'timeGridWeek',
+        editable: true,
+        selectable: true,
+        events: async function (info, successCallback, failureCallback) {
+          try {
+            const response = await axios.get('http://localhost:5000/api/appointments');
+            const events = response.data.map(appt => ({
+              id: appt.id,
+              title: appt.Customer?.name + ' - ' + appt.Service?.name,
+              start: appt.date,
+              allDay: false
+            }));
+            successCallback(events);
+          } catch (err) {
+            failureCallback(err);
+          }
+        },
+        dateClick: async function (info) {
+          const confirmed = confirm(`Bu tarihe randevu eklemek istiyor musun?`);
+          if (confirmed) {
+            await axios.post('http://localhost:5000/api/appointments', {
+              date: info.dateStr,
+              customer_id: 1, // test verisi
+              user_id: 1,
+              service_id: 1
+            });
+            calendar.refetchEvents();
+          }
+        },
+        eventDrop: async function (info) {
+          await axios.put(`http://localhost:5000/api/appointments/${info.event.id}`, {
+            date: info.event.start
+          });
+          calendar.refetchEvents();
+        },
+        eventClick: async function (info) {
+          if (confirm("Bu randevuyu silmek istiyor musun?")) {
+            await axios.delete(`http://localhost:5000/api/appointments/${info.event.id}`);
+            calendar.refetchEvents();
+          }
+        }
+      });
+    
+      calendar.render();
+    });
+  </script>
 </body>
 </html>

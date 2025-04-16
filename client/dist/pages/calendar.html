@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <title>Takvim</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.css" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <style>
+    body {
+      background-color: #f0f2f5;
+      font-family: Arial, sans-serif;
+    }
+    #calendar {
+      max-width: 900px;
+      margin: 50px auto;
+      background-color: #fff;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    }
+    
+  </style>
+</head>
+<body>
+
+<!-- Randevu Detayı Modal -->
+<div class="modal fade" id="randevuModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Randevu Detayı</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <p><strong>Müşteri:</strong> <span id="modalCustomer"></span></p>
+        <p><strong>Hizmet:</strong> <span id="modalService"></span></p>
+        <p><strong>Personel:</strong> <span id="modalUser"></span></p>
+        <p><strong>Tarih:</strong> <span id="modalDate"></span></p>
+      </div>
+      <div class="modal-footer">
+        <button id="deleteBtn" class="btn btn-danger">Sil</button>
+        <button class="btn btn-secondary" data-bs-dismiss="modal">Kapat</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Randevu Ekle Modal -->
+<div class="modal fade" id="randevuEkleModal" tabindex="-1">
+  <div class="modal-dialog">
+    <form id="ekleForm" class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Yeni Randevu Ekle</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" name="date" id="ekleDate" />
+
+        <div class="mb-2">
+  <label class="form-label">Müşteri</label>
+  <input type="text" id="customerInput" name="CustomerName" class="form-select" placeholder="Müşteri adı girin..." list="customerList" required />
+  <datalist id="customerList"></datalist>
+</div>
+<input type="hidden" name="CustomerId" id="customerIdHidden" required />
+
+        <div class="mb-2">
+          <label class="form-label">Hizmet Seç</label>
+          <select class="form-select" name="ServiceId" id="serviceSelect" required></select>
+        </div>
+
+        <div class="mb-2">
+          <label class="form-label">Personel Seç</label>
+          <select class="form-select" name="UserId" id="userSelect" required></select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="submit" class="btn btn-success">Kaydet</button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div id="calendar"></div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const calendarEl = document.getElementById('calendar');
+  const randevuModal = new bootstrap.Modal(document.getElementById('randevuModal'));
+  const ekleModal = new bootstrap.Modal(document.getElementById('randevuEkleModal'));
+  const ekleForm = document.getElementById('ekleForm');
+
+  const calendar = new FullCalendar.Calendar(calendarEl, {
+    timeZone: false,
+    initialView: 'timeGridDay',
+    editable: true,
+    selectable: true,
+    nowIndicator: true,
+    slotDuration: '00:30:00',
+    allDaySlot: false,
+
+    events: async function (info, successCallback, failureCallback) {
+      try {
+        const res = await axios.get('http://localhost:5001/api/appointments');
+        const events = res.data.map(r => ({
+          id: r.id,
+          title: `${r.Customer?.name || 'Müşteri'} • ${r.Service?.name || 'Hizmet'} • ${r.User?.name || 'Personel'}`,
+          start: r.date,
+          allDay: false
+        }));
+        successCallback(events);
+      } catch (err) {
+        failureCallback(err);
+      }
+    },
+
+    dateClick: function (info) {
+      const d = new Date(info.date);
+      const formattedDate = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}:00`;
+      document.getElementById('ekleDate').value = formattedDate;
+      doldurDropdownlar();
+      ekleModal.show();
+    },
+
+    eventDrop: async function (info) {
+      const d = new Date(info.event.start);
+      const formattedDate = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}:00`;
+      try {
+        await axios.put(`http://localhost:5001/api/appointments/${info.event.id}`, { date: formattedDate });
+        calendar.refetchEvents();
+      } catch (err) {
+        alert("Tarih güncellenemedi.");
+      }
+    },
+
+    eventClick: async function (info) {
+      try {
+        const res = await axios.get(`http://localhost:5001/api/appointments/${info.event.id}`);
+        const r = res.data;
+        document.getElementById("modalCustomer").innerText = r.Customer?.name || '—';
+        document.getElementById("modalService").innerText = r.Service?.name || '—';
+        document.getElementById("modalUser").innerText = r.User?.name || '—';
+        const dateStr = r.date.replace('T', ' ').slice(0, 16);
+        const [d, t] = dateStr.split(' ');
+        const [y, m, day] = d.split('-');
+        document.getElementById("modalDate").innerText = `${day}.${m}.${y} ${t}`;
+
+        document.getElementById("deleteBtn").onclick = async () => {
+          if (confirm("Bu randevuyu silmek istiyor musun?")) {
+            await axios.delete(`http://localhost:5001/api/appointments/${r.id}`);
+            calendar.refetchEvents();
+            randevuModal.hide();
+          }
+        };
+        randevuModal.show();
+      } catch (err) {
+        alert("Detaylar alınamadı.");
+      }
+    }
+  });
+
+  async function doldurDropdownlar() {
+    try {
+      const [servicesRes, usersRes, customersRes] = await Promise.all([
+        axios.get("http://localhost:5001/api/services"),
+        axios.get("http://localhost:5001/api/users"),
+        axios.get("http://localhost:5001/api/customers")
+      ]);
+
+      const serviceSelect = document.getElementById("serviceSelect");
+      const userSelect = document.getElementById("userSelect");
+      const customerInput = document.getElementById("customerInput");
+      const customerList = document.getElementById("customerList");
+
+      serviceSelect.innerHTML = "";
+      servicesRes.data.forEach(s => {
+        const opt = document.createElement("option");
+        opt.value = s.id;
+        opt.innerText = s.name;
+        serviceSelect.appendChild(opt);
+      });
+
+      userSelect.innerHTML = "";
+      usersRes.data.forEach(u => {
+        const opt = document.createElement("option");
+        opt.value = u.id;
+        opt.innerText = u.name;
+        userSelect.appendChild(opt);
+      });
+
+      customerList.innerHTML = "";
+customersRes.data.forEach(c => {
+  const opt = document.createElement("option");
+  opt.value = c.name;
+  opt.setAttribute("data-id", c.id);
+  customerList.appendChild(opt);
+});
+
+customerInput.addEventListener("input", () => {
+  const val = customerInput.value;
+  const selected = Array.from(customerList.options).find(opt => opt.value === val);
+  document.getElementById("customerIdHidden").value = selected ? selected.getAttribute("data-id") : "";
+});
+
+
+      customerInput.addEventListener("input", () => {
+        const val = customerInput.value;
+        const selected = Array.from(customerList.options).find(opt => opt.value === val);
+        document.getElementById("customerIdHidden").value = selected ? selected.getAttribute("data-id") : "";
+      });
+
+    } catch (err) {
+      alert("Dropdown verileri yüklenemedi.");
+    }
+  }
+
+  ekleForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const formData = new FormData(ekleForm);
+    const data = Object.fromEntries(formData.entries());
+    if (!data.CustomerId) return alert("Müşteri seçimi geçerli değil.");
+
+    try {
+      await axios.post('http://localhost:5001/api/appointments', data);
+      calendar.refetchEvents();
+      ekleModal.hide();
+    } catch (err) {
+      alert("Randevu eklenemedi.");
+    }
+  });
+
+  calendar.render();
+});
+</script>
+</body>
+</html>
