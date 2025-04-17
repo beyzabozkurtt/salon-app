@@ -14,7 +14,7 @@ app.use('/api/appointments', require('./routes/appointmentRoutes'));
 app.use('/api/services', require('./routes/serviceRoutes'));
 app.use('/api/users', require('./routes/userRoutes'));
 app.use('/api/customers', require('./routes/customerRoutes')); // 🔥 EKLENDİ
-
+app.use("/api/auth", require("./routes/authRoutes"));
 app.get('/', (req, res) => res.send('💡 Salon API 5001 çalışıyor!'));
 
 sequelize.sync({ alter: true }).then(() => {

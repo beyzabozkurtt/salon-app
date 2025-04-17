@@ -256,7 +256,7 @@
                 <!--begin::Menu Footer-->
                 <li class="user-footer">
                   <a href="#" class="btn btn-default btn-flat">Profile</a>
-                  <a href="#" class="btn btn-default btn-flat float-end">Sign out</a>
+                  <a href="#" id="logoutBtn" class="btn btn-default btn-flat float-end">Çıkış Yap</a>
                 </li>
                 <!--end::Menu Footer-->
               </ul>
@@ -312,7 +312,18 @@
                       <i class="nav-icon bi bi-circle"></i>
                       <p>FullCalendar</p>
                     </a>
-                    
+                    <a href="../../dist/pages/customers.html" class="nav-link"> 
+                      <i class="nav-icon bi bi-circle"></i>
+                      <p>customer</p> 
+                    </a>
+                    <a href="../../dist/pages/personel.html" class="nav-link"> 
+                      <i class="nav-icon bi bi-circle"></i>
+                      <p>personel</p> 
+                    </a>
+                    <a href="../../dist/pages/login.html" class="nav-link"> 
+                      <i class="nav-icon bi bi-circle"></i>
+                      <p>login</p> 
+                    </a>
                     </a>
                     <a href="./index.html" class="nav-link active">
                       <i class="nav-icon bi bi-circle"></i>
@@ -1186,6 +1197,13 @@
     <!--end::App Wrapper-->
     <!--begin::Script-->
     <!--begin::Third Party Plugin(OverlayScrollbars)-->
+    <script>
+      document.getElementById("logoutBtn")?.addEventListener("click", function () {
+        localStorage.removeItem("token");
+        window.location.href = "login.html";
+      });
+    </script>
+    
     <script
       src="https://cdn.jsdelivr.net/npm/overlayscrollbars@2.10.1/browser/overlayscrollbars.browser.es6.min.js"
       integrity="sha256-dghWARbRe2eLlIJ56wNB+b760ywulqK3DzZYEpsg2fQ="
@@ -1475,6 +1493,9 @@
         });
         calendar.render();
       });
+      if (!localStorage.getItem("token")) {
+        window.location.href = "login.html";
+      }
     </script>
     <!--end::Script-->
   </body>
