@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <title>Satışlar</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+</head>
+<body class="bg-light">
+
+<div class="container py-4">
+  <h3 class="mb-3">Satışlar</h3>
+  <button class="btn btn-success mb-3" onclick="openCreateModal()">+ Satış Oluştur</button>
+  <ul id="saleList" class="list-group"></ul>
+</div>
+
+<!-- Satış Modal -->
+<div class="modal fade" id="saleModal" tabindex="-1">
+  <div class="modal-dialog">
+    <form id="saleForm" class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Satış</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" name="id" id="saleId" />
+        <div class="mb-2"><label class="form-label">Müşteri</label><select class="form-select" name="CustomerId" required id="customerSelect"></select></div>
+        <div class="mb-2"><label class="form-label">Personel</label><select class="form-select" name="UserId" required id="userSelect"></select></div>
+        <div class="mb-2"><label class="form-label">Hizmet</label><select class="form-select" name="ServiceId" required id="serviceSelect"></select></div>
+        <div class="mb-2"><label class="form-label">Fiyat</label><input type="number" class="form-control" name="price" step="0.01" required /></div>
+        <div class="mb-2"><label class="form-label">Seans</label><input type="number" class="form-control" name="session" required /></div>
+        <div class="mb-2"><label class="form-label">Taksit Sayısı</label><input type="number" class="form-control" name="installment" /></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" type="button" id="openProductModalBtn" style="display: none;">Ürün Ekle</button>
+        <button class="btn btn-success" type="submit">Kaydet</button>
+        <button class="btn btn-secondary" type="button" data-bs-dismiss="modal">İptal</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Ürün Ekle Modal -->
+<div class="modal fade" id="productModal" tabindex="-1">
+  <div class="modal-dialog">
+    <form id="productForm" class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Ürün Ekle</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="productSaleId" />
+        <div class="mb-2"><label class="form-label">Ürün</label><select class="form-select" id="productSelect" name="ProductId" required></select></div>
+        <div class="mb-2"><label class="form-label">Adet</label><input type="number" class="form-control" name="quantity" required /></div>
+        <div class="mb-2"><label class="form-label">Satan Personel</label><select class="form-select" id="productUserSelect" name="UserId" required></select></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-success" type="submit">Ekle</button>
+        <button class="btn btn-secondary" type="button" data-bs-dismiss="modal">İptal</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+const saleList = document.getElementById("saleList");
+const saleForm = document.getElementById("saleForm");
+const productForm = document.getElementById("productForm");
+const customerSelect = document.getElementById("customerSelect");
+const userSelect = document.getElementById("userSelect");
+const serviceSelect = document.getElementById("serviceSelect");
+const productSelect = document.getElementById("productSelect");
+const productUserSelect = document.getElementById("productUserSelect");
+const saleModal = new bootstrap.Modal(document.getElementById('saleModal'));
+const productModal = new bootstrap.Modal(document.getElementById('productModal'));
+const openProductBtn = document.getElementById("openProductModalBtn");
+
+let currentEditingSaleId = null;
+
+// Satış listesi yükle
+async function loadSales() {
+  const res = await axios.get("http://localhost:5001/api/sales");
+  saleList.innerHTML = "";
+  res.data.forEach(sale => {
+    const item = document.createElement("li");
+    item.className = "list-group-item d-flex justify-content-between align-items-center";
+    item.innerHTML = `
+      ${sale.Customer?.name || "?"} → ${sale.Service?.name || "-"} • ${sale.price}₺ • ${sale.session} seans
+      <div>
+        <button class="btn btn-sm btn-primary me-2" onclick="editSale(${sale.id})">Düzenle</button>
+        <button class="btn btn-sm btn-danger" onclick="deleteSale(${sale.id})">Sil</button>
+      </div>`;
+    saleList.appendChild(item);
+  });
+}
+
+// Dropdownları doldur
+async function loadOptions() {
+  const [customers, users, services] = await Promise.all([
+    axios.get("http://localhost:5001/api/customers"),
+    axios.get("http://localhost:5001/api/users"),
+    axios.get("http://localhost:5001/api/services")
+  ]);
+
+  customerSelect.innerHTML = customers.data.map(c => `<option value="${c.id}">${c.name}</option>`).join("");
+  userSelect.innerHTML = users.data.map(u => `<option value="${u.id}">${u.name}</option>`).join("");
+  serviceSelect.innerHTML = services.data.map(s => `<option value="${s.id}">${s.name}</option>`).join("");
+}
+
+// Ürün popup verileri
+async function loadProductOptions() {
+  const [products, users] = await Promise.all([
+    axios.get("http://localhost:5001/api/products"),
+    axios.get("http://localhost:5001/api/users")
+  ]);
+
+  productSelect.innerHTML = products.data.map(p => `<option value="${p.id}">${p.name}</option>`).join("");
+  productUserSelect.innerHTML = users.data.map(u => `<option value="${u.id}">${u.name}</option>`).join("");
+}
+
+// Satış kaydet
+saleForm.addEventListener("submit", async e => {
+  e.preventDefault();
+  const formData = new FormData(saleForm);
+  const data = Object.fromEntries(formData.entries());
+
+  if (!data.id) {
+    delete data.id;
+    await axios.post("http://localhost:5001/api/sales", data);
+  } else {
+    await axios.put(`http://localhost:5001/api/sales/${data.id}`, data);
+  }
+
+  saleForm.reset();
+  openProductBtn.style.display = "none";
+  saleModal.hide();
+  loadSales();
+});
+
+// Satış düzenle
+async function editSale(id) {
+  const res = await axios.get(`http://localhost:5001/api/sales/${id}`);
+  const sale = res.data;
+
+  await loadOptions();
+
+  saleForm.CustomerId.value = sale.CustomerId;
+  saleForm.UserId.value = sale.UserId;
+  saleForm.ServiceId.value = sale.ServiceId;
+  saleForm.price.value = sale.price;
+  saleForm.session.value = sale.session;
+  saleForm.installment.value = sale.installment || "";
+  saleForm.id.value = sale.id;
+
+  openProductBtn.style.display = "inline-block";
+  currentEditingSaleId = sale.id;
+
+  saleModal.show();
+}
+
+// Satış sil
+async function deleteSale(id) {
+  if (confirm("Bu satışı silmek istiyor musun?")) {
+    await axios.delete(`http://localhost:5001/api/sales/${id}`);
+    loadSales();
+  }
+}
+
+// Ürün ekle butonuna tıklanınca
+openProductBtn.addEventListener("click", async () => {
+  await loadProductOptions();
+  document.getElementById("productSaleId").value = currentEditingSaleId;
+  productModal.show();
+});
+
+// Ürün ekleme submit
+productForm.addEventListener("submit", async e => {
+  e.preventDefault();
+  const formData = new FormData(productForm);
+  const data = Object.fromEntries(formData.entries());
+  const saleId = document.getElementById("productSaleId").value;
+
+  await axios.post(`http://localhost:5001/api/sale-products`, {
+    ...data,
+    SaleId: saleId
+  });
+
+  productForm.reset();
+  productModal.hide();
+});
+
+// Yeni satış başlat
+function openCreateModal() {
+  saleForm.reset();
+  openProductBtn.style.display = "none";
+  loadOptions();
+  saleModal.show();
+}
+
+loadSales();
+loadOptions();
+</script>
+</body>
+</html>

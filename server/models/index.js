@@ -7,9 +7,10 @@ const Service = require('./Service')(sequelize, DataTypes);
 const Appointment = require('./Appointment')(sequelize, DataTypes);
 const Product = require('./Product')(sequelize, DataTypes);
 const Sale = require('./Sale')(sequelize, DataTypes);
+const SaleProduct = require('./saleProduct')(sequelize, DataTypes); // 🆕
 const CashRegister = require('./CashRegister')(sequelize, DataTypes);
 
-// İlişkiler
+// 🔗 İlişkiler
 User.hasMany(Appointment);
 Appointment.belongsTo(User);
 
@@ -22,8 +23,24 @@ Appointment.belongsTo(Service);
 Appointment.hasMany(Sale);
 Sale.belongsTo(Appointment);
 
-Product.hasMany(Sale);
-Sale.belongsTo(Product);
+Customer.hasMany(Sale);
+Sale.belongsTo(Customer);
+
+User.hasMany(Sale);
+Sale.belongsTo(User);
+
+Service.hasMany(Sale);
+Sale.belongsTo(Service);
+//saleproductkısmı
+SaleProduct.belongsTo(Sale);
+SaleProduct.belongsTo(Product);
+SaleProduct.belongsTo(User);
+
+
+
+// 🆕 Sale <-> Product ilişkisi (çoktan çoğa)
+Sale.belongsToMany(Product, { through: SaleProduct });
+Product.belongsToMany(Sale, { through: SaleProduct });
 
 module.exports = {
   sequelize,
@@ -33,5 +50,6 @@ module.exports = {
   Appointment,
   Product,
   Sale,
+  SaleProduct,
   CashRegister,
 };

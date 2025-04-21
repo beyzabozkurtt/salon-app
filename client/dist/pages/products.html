@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <title>Ürünler</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+</head>
+<body class="bg-light">
+  <div class="container py-4">
+    <h3 class="mb-3">Ürünler</h3>
+    <button class="btn btn-primary mb-3" data-bs-toggle="modal" data-bs-target="#productModal" onclick="openCreateModal()">+ Ürün Oluştur</button>
+
+    <ul id="productList" class="list-group"></ul>
+  </div>
+
+  <!-- Ürün Modal -->
+  <div class="modal fade" id="productModal" tabindex="-1">
+    <div class="modal-dialog">
+      <form id="productForm" class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="productModalTitle">Yeni Ürün</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" name="id" />
+          <div class="mb-2">
+            <label class="form-label">Ürün Adı</label>
+            <input type="text" class="form-control" name="name" required />
+          </div>
+          <div class="mb-2">
+            <label class="form-label">Fiyat</label>
+            <input type="number" class="form-control" name="price" step="0.01" required />
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-success">Kaydet</button>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    const list = document.getElementById("productList");
+    const form = document.getElementById("productForm");
+    const modal = new bootstrap.Modal(document.getElementById("productModal"));
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const data = Object.fromEntries(new FormData(form));
+      const id = data.id;
+
+      try {
+        if (id) {
+          await axios.put(`http://localhost:5001/api/products/${id}`, data);
+        } else {
+          await axios.post("http://localhost:5001/api/products", data);
+        }
+        form.reset();
+        modal.hide();
+        loadProducts();
+      } catch (err) {
+        alert("Kayıt başarısız");
+      }
+    });
+
+    async function loadProducts() {
+      const res = await axios.get("http://localhost:5001/api/products");
+      list.innerHTML = "";
+      res.data.forEach(p => {
+        const item = document.createElement("li");
+        item.className = "list-group-item d-flex justify-content-between align-items-center";
+        item.innerHTML = `
+          <span>${p.name} — ${Number(p.price).toFixed(2)} ₺</span>
+          <button class="btn btn-sm btn-primary" onclick='editProduct(${JSON.stringify(p)})'>Düzenle</button>
+        `;
+        list.appendChild(item);
+      });
+    }
+
+    function editProduct(product) {
+      form.id.value = product.id;
+      form.name.value = product.name;
+      form.price.value = product.price;
+      document.getElementById("productModalTitle").textContent = "Ürünü Düzenle";
+      modal.show();
+    }
+
+    function openCreateModal() {
+      form.reset();
+      form.id.value = "";
+      document.getElementById("productModalTitle").textContent = "Yeni Ürün";
+    }
+
+    loadProducts();
+  </script>
+</body>
+</html>
