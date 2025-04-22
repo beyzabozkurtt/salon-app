@@ -2,30 +2,22 @@ const express = require('express');
 const router = express.Router();
 const saleProductController = require('../controllers/saleProductController');
 
-// ✅ Tek ürün satışı (önce gelmeli!)
+// Tek ürün satışı (id'ye göre)
 router.get('/single/:id', saleProductController.getOne);
 
-// ✅ Tüm ürün satışları (liste sayfası için)
-router.get('/', async (req, res) => {
-  const { SaleProduct, Product, User } = require('../models');
-  try {
-    const items = await SaleProduct.findAll({ include: [Product, User] });
-    res.json(items);
-  } catch (err) {
-    res.status(500).json({ error: 'Tüm ürün satışları alınamadı.' });
-  }
-});
+// Tüm ürün satışları
+router.get('/', saleProductController.getAll);
 
-// ✅ Belirli satışa ait ürünler
-router.get('/:saleId', saleProductController.getBySaleId);
+// Belirli satışa ait ürünler
+router.get('/sale/:saleId', saleProductController.getBySaleId);
 
-// ✅ Yeni ürün satışı
+// Yeni ürün satışı
 router.post('/', saleProductController.create);
 
-// ✅ Ürün satışı güncelle
+// Ürün satışı güncelle
 router.put('/:id', saleProductController.update);
 
-// ✅ Ürün satışı sil
+// Ürün satışı sil
 router.delete('/:id', saleProductController.delete);
 
 module.exports = router;

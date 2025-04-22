@@ -27,7 +27,7 @@ app.use('/api/sale-products', require('./routes/saleProductRoutes'));
 app.get('/', (req, res) => res.send('💡 Salon API 5001 çalışıyor!'));
 
 // 🔁 Veritabanı senkronizasyonu ve sunucuyu başlatma
-sequelize.sync({ alter: true }).then(() => {
+sequelize.sync({ force: false }).then(() => {
   console.log("✅ Veritabanı senkronize.");
   app.listen(PORT, () => {
     console.log(`🚀 Sunucu ${PORT} portunda çalışıyor...`);

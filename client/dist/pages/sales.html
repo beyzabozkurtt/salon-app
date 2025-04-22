@@ -64,143 +64,134 @@
   </div>
 </div>
 
+<!-- ... head kısmı aynı ... -->
 <script>
-const saleList = document.getElementById("saleList");
-const saleForm = document.getElementById("saleForm");
-const productForm = document.getElementById("productForm");
-const customerSelect = document.getElementById("customerSelect");
-const userSelect = document.getElementById("userSelect");
-const serviceSelect = document.getElementById("serviceSelect");
-const productSelect = document.getElementById("productSelect");
-const productUserSelect = document.getElementById("productUserSelect");
-const saleModal = new bootstrap.Modal(document.getElementById('saleModal'));
-const productModal = new bootstrap.Modal(document.getElementById('productModal'));
-const openProductBtn = document.getElementById("openProductModalBtn");
-
-let currentEditingSaleId = null;
-
-// Satış listesi yükle
-async function loadSales() {
-  const res = await axios.get("http://localhost:5001/api/sales");
-  saleList.innerHTML = "";
-  res.data.forEach(sale => {
-    const item = document.createElement("li");
-    item.className = "list-group-item d-flex justify-content-between align-items-center";
-    item.innerHTML = `
-      ${sale.Customer?.name || "?"} → ${sale.Service?.name || "-"} • ${sale.price}₺ • ${sale.session} seans
-      <div>
-        <button class="btn btn-sm btn-primary me-2" onclick="editSale(${sale.id})">Düzenle</button>
-        <button class="btn btn-sm btn-danger" onclick="deleteSale(${sale.id})">Sil</button>
-      </div>`;
-    saleList.appendChild(item);
-  });
-}
-
-// Dropdownları doldur
-async function loadOptions() {
-  const [customers, users, services] = await Promise.all([
-    axios.get("http://localhost:5001/api/customers"),
-    axios.get("http://localhost:5001/api/users"),
-    axios.get("http://localhost:5001/api/services")
-  ]);
-
-  customerSelect.innerHTML = customers.data.map(c => `<option value="${c.id}">${c.name}</option>`).join("");
-  userSelect.innerHTML = users.data.map(u => `<option value="${u.id}">${u.name}</option>`).join("");
-  serviceSelect.innerHTML = services.data.map(s => `<option value="${s.id}">${s.name}</option>`).join("");
-}
-
-// Ürün popup verileri
-async function loadProductOptions() {
-  const [products, users] = await Promise.all([
-    axios.get("http://localhost:5001/api/products"),
-    axios.get("http://localhost:5001/api/users")
-  ]);
-
-  productSelect.innerHTML = products.data.map(p => `<option value="${p.id}">${p.name}</option>`).join("");
-  productUserSelect.innerHTML = users.data.map(u => `<option value="${u.id}">${u.name}</option>`).join("");
-}
-
-// Satış kaydet
-saleForm.addEventListener("submit", async e => {
-  e.preventDefault();
-  const formData = new FormData(saleForm);
-  const data = Object.fromEntries(formData.entries());
-
-  if (!data.id) {
-    delete data.id;
-    await axios.post("http://localhost:5001/api/sales", data);
-  } else {
-    await axios.put(`http://localhost:5001/api/sales/${data.id}`, data);
+  const saleList = document.getElementById("saleList");
+  const saleForm = document.getElementById("saleForm");
+  const productForm = document.getElementById("productForm");
+  const customerSelect = document.getElementById("customerSelect");
+  const userSelect = document.getElementById("userSelect");
+  const serviceSelect = document.getElementById("serviceSelect");
+  const productSelect = document.getElementById("productSelect");
+  const productUserSelect = document.getElementById("productUserSelect");
+  const saleModal = new bootstrap.Modal(document.getElementById('saleModal'));
+  const productModal = new bootstrap.Modal(document.getElementById('productModal'));
+  const openProductBtn = document.getElementById("openProductModalBtn");
+  
+  let currentEditingSaleId = null;
+  
+  async function loadSales() {
+    const res = await axios.get("http://localhost:5001/api/sales");
+    saleList.innerHTML = "";
+    res.data.forEach(sale => {
+      const item = document.createElement("li");
+      item.className = "list-group-item d-flex justify-content-between align-items-center";
+      item.innerHTML = `
+        ${sale.Customer?.name || "?"} → ${sale.Service?.name || "-"} • ${sale.price}₺ • ${sale.session} seans
+        <div>
+          <button class="btn btn-sm btn-primary me-2" onclick="editSale(${sale.id})">Düzenle</button>
+          <button class="btn btn-sm btn-danger" onclick="deleteSale(${sale.id})">Sil</button>
+        </div>`;
+      saleList.appendChild(item);
+    });
   }
-
-  saleForm.reset();
-  openProductBtn.style.display = "none";
-  saleModal.hide();
-  loadSales();
-});
-
-// Satış düzenle
-async function editSale(id) {
-  const res = await axios.get(`http://localhost:5001/api/sales/${id}`);
-  const sale = res.data;
-
-  await loadOptions();
-
-  saleForm.CustomerId.value = sale.CustomerId;
-  saleForm.UserId.value = sale.UserId;
-  saleForm.ServiceId.value = sale.ServiceId;
-  saleForm.price.value = sale.price;
-  saleForm.session.value = sale.session;
-  saleForm.installment.value = sale.installment || "";
-  saleForm.id.value = sale.id;
-
-  openProductBtn.style.display = "inline-block";
-  currentEditingSaleId = sale.id;
-
-  saleModal.show();
-}
-
-// Satış sil
-async function deleteSale(id) {
-  if (confirm("Bu satışı silmek istiyor musun?")) {
-    await axios.delete(`http://localhost:5001/api/sales/${id}`);
+  
+  async function loadOptions() {
+    const [customers, users, services] = await Promise.all([
+      axios.get("http://localhost:5001/api/customers"),
+      axios.get("http://localhost:5001/api/users"),
+      axios.get("http://localhost:5001/api/services")
+    ]);
+    customerSelect.innerHTML = customers.data.map(c => `<option value="${c.id}">${c.name}</option>`).join("");
+    userSelect.innerHTML = users.data.map(u => `<option value="${u.id}">${u.name}</option>`).join("");
+    serviceSelect.innerHTML = services.data.map(s => `<option value="${s.id}">${s.name}</option>`).join("");
+  }
+  
+  async function loadProductOptions() {
+    const [products, users] = await Promise.all([
+      axios.get("http://localhost:5001/api/products"),
+      axios.get("http://localhost:5001/api/users")
+    ]);
+    productSelect.innerHTML = products.data.map(p => `<option value="${p.id}">${p.name}</option>`).join("");
+    productUserSelect.innerHTML = users.data.map(u => `<option value="${u.id}">${u.name}</option>`).join("");
+  }
+  
+  saleForm.addEventListener("submit", async e => {
+    e.preventDefault();
+    const formData = new FormData(saleForm);
+    const data = Object.fromEntries(formData.entries());
+  
+    if (!data.id) {
+      delete data.id;
+      await axios.post("http://localhost:5001/api/sales", data);
+    } else {
+      await axios.put(`http://localhost:5001/api/sales/${data.id}`, data);
+    }
+  
+    saleForm.reset();
+    openProductBtn.style.display = "none";
+    saleModal.hide();
     loadSales();
-  }
-}
-
-// Ürün ekle butonuna tıklanınca
-openProductBtn.addEventListener("click", async () => {
-  await loadProductOptions();
-  document.getElementById("productSaleId").value = currentEditingSaleId;
-  productModal.show();
-});
-
-// Ürün ekleme submit
-productForm.addEventListener("submit", async e => {
-  e.preventDefault();
-  const formData = new FormData(productForm);
-  const data = Object.fromEntries(formData.entries());
-  const saleId = document.getElementById("productSaleId").value;
-
-  await axios.post(`http://localhost:5001/api/sale-products`, {
-    ...data,
-    SaleId: saleId
   });
-
-  productForm.reset();
-  productModal.hide();
-});
-
-// Yeni satış başlat
-function openCreateModal() {
-  saleForm.reset();
-  openProductBtn.style.display = "none";
+  
+  async function editSale(id) {
+    const res = await axios.get(`http://localhost:5001/api/sales/${id}`);
+    const sale = res.data;
+  
+    await loadOptions();
+    saleForm.CustomerId.value = sale.CustomerId;
+    saleForm.UserId.value = sale.UserId;
+    saleForm.ServiceId.value = sale.ServiceId;
+    saleForm.price.value = sale.price;
+    saleForm.session.value = sale.session;
+    saleForm.installment.value = sale.installment || "";
+    saleForm.id.value = sale.id;
+  
+    openProductBtn.style.display = "inline-block";
+    currentEditingSaleId = sale.id;
+    saleModal.show();
+  }
+  
+  async function deleteSale(id) {
+    if (confirm("Bu satışı silmek istiyor musun?")) {
+      await axios.delete(`http://localhost:5001/api/sales/${id}`);
+      loadSales();
+    }
+  }
+  
+  openProductBtn.addEventListener("click", async () => {
+    await loadProductOptions();
+    document.getElementById("productSaleId").value = currentEditingSaleId;
+    productModal.show();
+  });
+  
+  productForm.addEventListener("submit", async e => {
+    e.preventDefault();
+    const formData = new FormData(productForm);
+    const data = Object.fromEntries(formData.entries());
+    const saleId = document.getElementById("productSaleId").value;
+  
+    await axios.post(`http://localhost:5001/api/sale-products`, {
+      ...data,
+      SaleId: saleId
+    });
+  
+    productForm.reset();
+    productModal.hide();
+  });
+  
+  function openCreateModal() {
+    saleForm.reset();
+    document.getElementById("saleId").value = ""; // 💥 burası eklendi
+    openProductBtn.style.display = "none";
+    currentEditingSaleId = null;
+    loadOptions();
+    saleModal.show();
+  }
+  
+  loadSales();
   loadOptions();
-  saleModal.show();
-}
-
-loadSales();
-loadOptions();
-</script>
+  </script>
+  
 </body>
 </html>

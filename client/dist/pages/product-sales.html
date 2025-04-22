@@ -48,43 +48,32 @@ const editProductForm = document.getElementById("editProductForm");
 const editModal = new bootstrap.Modal(document.getElementById("editProductModal"));
 const editUserSelect = document.getElementById("editUserSelect");
 
+// Satışları yükle
 async function loadProductSales() {
-  const res = await axios.get("http://localhost:5001/api/sale-products");
-  productSaleList.innerHTML = "";
-  res.data.forEach(item => {
-    const li = document.createElement("li");
-    li.className = "list-group-item d-flex justify-content-between align-items-center";
-    li.innerHTML = `
-      ${item.Product?.name} (${item.quantity} adet) - ${item.User?.name} • ${(item.price * item.quantity).toFixed(2)}₺
-      <div>
-        <button class="btn btn-sm btn-primary me-2 edit-btn" data-id="${item.id}">Düzenle</button>
-        <button class="btn btn-sm btn-danger delete-btn" data-id="${item.id}">Sil</button>
-      </div>
-    `;
-    productSaleList.appendChild(li);
-  });
-
-  // Butonlara event ekle
-  document.querySelectorAll(".edit-btn").forEach(btn => {
-    btn.addEventListener("click", () => openEditModal(btn.dataset.id));
-  });
-
-  document.querySelectorAll(".delete-btn").forEach(btn => {
-    btn.addEventListener("click", () => deleteProductSale(btn.dataset.id));
-  });
-}
-
-async function deleteProductSale(id) {
-  if (!confirm("Bu ürün satışını silmek istiyor musun?")) return;
   try {
-    await axios.delete(`http://localhost:5001/api/sale-products/${id}`);
-    await loadProductSales();
+    const res = await axios.get("http://localhost:5001/api/sale-products");
+    productSaleList.innerHTML = "";
+
+    res.data.forEach(item => {
+      const li = document.createElement("li");
+      li.className = "list-group-item d-flex justify-content-between align-items-center";
+      li.innerHTML = `
+        ${item.Product?.name} (${item.quantity} adet) - ${item.User?.name} • ${(item.price * item.quantity).toFixed(2)}₺
+        <div>
+          <button class="btn btn-sm btn-primary me-2" onclick="openEditModal(${item.SaleProductId})">Düzenle</button>
+          <button class="btn btn-sm btn-danger" onclick="deleteProductSale(${item.SaleProductId})">Sil</button>
+        </div>
+      `;
+      productSaleList.appendChild(li);
+    });
+
   } catch (err) {
-    alert("Silme işlemi başarısız oldu.");
+    alert("Ürün satışları yüklenemedi.");
     console.error(err);
   }
 }
 
+// Düzenleme modalını aç
 async function openEditModal(id) {
   try {
     const [res, usersRes] = await Promise.all([
@@ -95,7 +84,7 @@ async function openEditModal(id) {
     const productSale = res.data;
     const users = usersRes.data;
 
-    document.getElementById("editProductId").value = productSale.id;
+    document.getElementById("editProductId").value = productSale.SaleProductId;
     document.getElementById("editQuantity").value = productSale.quantity;
 
     editUserSelect.innerHTML = users.map(u => `<option value="${u.id}">${u.name}</option>`).join("");
@@ -108,6 +97,7 @@ async function openEditModal(id) {
   }
 }
 
+// Güncelleme işlemi
 editProductForm.addEventListener("submit", async e => {
   e.preventDefault();
   const formData = new FormData(editProductForm);
@@ -122,6 +112,18 @@ editProductForm.addEventListener("submit", async e => {
     console.error(err);
   }
 });
+
+// Silme işlemi
+async function deleteProductSale(id) {
+  if (!confirm("Bu ürün satışını silmek istiyor musun?")) return;
+  try {
+    await axios.delete(`http://localhost:5001/api/sale-products/${id}`);
+    loadProductSales();
+  } catch (err) {
+    alert("Silme işlemi başarısız oldu.");
+    console.error(err);
+  }
+}
 
 loadProductSales();
 </script>
