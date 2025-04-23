@@ -12,11 +12,10 @@
   <div class="container py-4">
     <h3 class="mb-3">Müşteri Yönetimi</h3>
     <button class="btn btn-success mb-3" data-bs-toggle="modal" data-bs-target="#createModal">+ Müşteri Ekle</button>
-
     <ul id="customerList" class="list-group"></ul>
   </div>
 
-  <!-- ✅ Create Modal -->
+  <!-- Create Modal -->
   <div class="modal fade" id="createModal" tabindex="-1">
     <div class="modal-dialog">
       <form id="customerForm" class="modal-content">
@@ -46,7 +45,7 @@
     </div>
   </div>
 
-  <!-- ✅ Update Modal -->
+  <!-- Update Modal -->
   <div class="modal fade" id="updateModal" tabindex="-1">
     <div class="modal-dialog">
       <form id="updateForm" class="modal-content">
@@ -106,7 +105,7 @@ async function loadCustomers() {
     const item = document.createElement("li");
     item.className = "list-group-item d-flex justify-content-between align-items-center";
     item.innerHTML = `
-      <span>${c.name} • ${c.email}</span>
+      <a href="customer-details.html?id=${c.id}" class="text-dark text-decoration-none">${c.name} • ${c.email}</a>
       <div>
         <button class="btn btn-sm btn-primary me-2" onclick='editCustomer(${JSON.stringify(c)})'>Düzenle</button>
         <button class="btn btn-sm btn-danger" onclick='deleteCustomer(${c.id})'>Sil</button>
@@ -123,11 +122,9 @@ function editCustomer(customer) {
   form.phone.value = customer.phone;
   form.id.value = customer.id;
 
-  
   const modal = new bootstrap.Modal(document.getElementById('updateModal'));
   modal.show();
 }
-
 
 async function deleteCustomer(id) {
   if (confirm("Müşteri silinsin mi?")) {

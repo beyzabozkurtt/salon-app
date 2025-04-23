@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <title>Müşteri Detayları</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+</head>
+<body class="bg-light">
+
+<div class="container py-4">
+  <button class="btn btn-secondary mb-3" onclick="history.back()">← Geri Dön</button>
+  <h3 id="customerName">Müşteri Bilgisi</h3>
+  
+  <div class="row mt-4">
+    <!-- Sol: Hizmet Satışları -->
+    <div class="col-md-6">
+      <h5>Hizmet Satışları</h5>
+      <ul id="serviceList" class="list-group"></ul>
+    </div>
+
+    <!-- Sağ: Ürün Satışları -->
+    <div class="col-md-6">
+      <h5>Ürün Satışları</h5>
+      <ul id="productList" class="list-group"></ul>
+    </div>
+  </div>
+</div>
+
+<script>
+const urlParams = new URLSearchParams(window.location.search);
+const customerId = urlParams.get("id");
+
+const customerNameEl = document.getElementById("customerName");
+const serviceList = document.getElementById("serviceList");
+const productList = document.getElementById("productList");
+
+if (!customerId) {
+  alert("Müşteri bulunamadı.");
+  window.location.href = "customers.html";
+}
+
+async function loadCustomerDetails() {
+  try {
+    // Müşteri bilgisi
+    const customer = await axios.get(`http://localhost:5001/api/customers/${customerId}`);
+    customerNameEl.textContent = `${customer.data.name} (${customer.data.email})`;
+
+    // Hizmet satışları
+    const serviceRes = await axios.get("http://localhost:5001/api/sales");
+    const services = serviceRes.data.filter(s => s.CustomerId == customerId);
+    serviceList.innerHTML = services.length
+      ? services.map(s =>
+          `<li class="list-group-item">
+            ${s.Service?.name || 'Hizmet'} • ${s.session} seans • ${s.price}₺
+          </li>`
+        ).join("")
+      : `<li class="list-group-item text-muted">Kayıtlı hizmet satışı yok.</li>`;
+
+    // Ürün satışları
+    const productRes = await axios.get("http://localhost:5001/api/sale-products");
+    const products = productRes.data.filter(p => p.CustomerId == customerId);
+    productList.innerHTML = products.length
+      ? products.map(p =>
+          `<li class="list-group-item">
+            ${p.Product?.name || 'Ürün'} (${p.quantity} adet) • ${(p.price * p.quantity).toFixed(2)}₺
+          </li>`
+        ).join("")
+      : `<li class="list-group-item text-muted">Kayıtlı ürün satışı yok.</li>`;
+
+  } catch (err) {
+    console.error("Detaylar alınamadı:", err);
+    alert("Müşteri detayları getirilemedi.");
+  }
+}
+
+loadCustomerDetails();
+</script>
+</body>
+</html>

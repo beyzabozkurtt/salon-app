@@ -1,7 +1,6 @@
 const { SaleProduct, Product, User } = require('../models');
 
 module.exports = {
-  // Tüm ürün satışları
   async getAll(req, res) {
     try {
       const items = await SaleProduct.findAll({ include: [Product, User] });
@@ -11,7 +10,6 @@ module.exports = {
     }
   },
 
-  // Belirli bir satışa ait ürünler
   async getBySaleId(req, res) {
     try {
       const items = await SaleProduct.findAll({
@@ -24,7 +22,6 @@ module.exports = {
     }
   },
 
-  // Tek ürün satışı
   async getOne(req, res) {
     try {
       const item = await SaleProduct.findByPk(req.params.id, {
@@ -37,10 +34,9 @@ module.exports = {
     }
   },
 
-  // Yeni ürün satışı
   async create(req, res) {
     try {
-      const { ProductId, quantity, UserId, SaleId } = req.body;
+      const { ProductId, quantity, UserId, SaleId = null } = req.body; // 🟢 SaleId opsiyonel
       const product = await Product.findByPk(ProductId);
       if (!product) return res.status(404).json({ error: "Ürün bulunamadı." });
 
@@ -48,7 +44,7 @@ module.exports = {
         ProductId,
         quantity,
         UserId,
-        SaleId,
+        SaleId: SaleId || null,
         price: product.price
       });
 
@@ -59,13 +55,12 @@ module.exports = {
     }
   },
 
-  // Ürün satışı güncelle
   async update(req, res) {
     try {
       const { quantity, UserId } = req.body;
       await SaleProduct.update(
         { quantity, UserId },
-        { where: { SaleProductId: req.params.id } } // düzeltme burada
+        { where: { id: req.params.id } }
       );
       res.json({ message: "Güncellendi." });
     } catch (err) {
@@ -74,11 +69,10 @@ module.exports = {
     }
   },
 
-  // Ürün satışı sil
   async delete(req, res) {
     try {
       await SaleProduct.destroy({
-        where: { SaleProductId: req.params.id } // düzeltme burada da
+        where: { id: req.params.id }
       });
       res.json({ message: 'Ürün satıştan kaldırıldı' });
     } catch (err) {

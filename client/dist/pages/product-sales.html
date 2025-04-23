@@ -11,8 +11,46 @@
 <body class="bg-light">
 
 <div class="container py-4">
-  <h3 class="mb-3">Ürün Satışları</h3>
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h3>Ürün Satışları</h3>
+    <button class="btn btn-success" onclick="openAddProductModal()">+ Ürün Ekle</button>
+  </div>
   <ul id="productSaleList" class="list-group"></ul>
+</div>
+
+<!-- Ürün Ekle Modal -->
+<div class="modal fade" id="addProductModal" tabindex="-1">
+  <div class="modal-dialog">
+    <form id="addProductForm" class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Yeni Ürün Satışı</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="mb-2">
+          <label class="form-label">Müşteri</label>
+          <input class="form-control" id="customerInput" name="CustomerId" list="customerOptions" required />
+          <datalist id="customerOptions"></datalist>
+        </div>
+        <div class="mb-2">
+          <label class="form-label">Ürün</label>
+          <select class="form-select" name="ProductId" id="addProductSelect" required></select>
+        </div>
+        <div class="mb-2">
+          <label class="form-label">Adet</label>
+          <input type="number" class="form-control" name="quantity" required />
+        </div>
+        <div class="mb-2">
+          <label class="form-label">Personel</label>
+          <select class="form-select" name="UserId" id="addUserSelect" required></select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-success" type="submit">Ekle</button>
+        <button class="btn btn-secondary" type="button" data-bs-dismiss="modal">İptal</button>
+      </div>
+    </form>
+  </div>
 </div>
 
 <!-- Düzenle Modal -->
@@ -45,85 +83,106 @@
 <script>
 const productSaleList = document.getElementById("productSaleList");
 const editProductForm = document.getElementById("editProductForm");
+const addProductForm = document.getElementById("addProductForm");
+
 const editModal = new bootstrap.Modal(document.getElementById("editProductModal"));
+const addModal = new bootstrap.Modal(document.getElementById("addProductModal"));
+
 const editUserSelect = document.getElementById("editUserSelect");
+const addUserSelect = document.getElementById("addUserSelect");
+const addProductSelect = document.getElementById("addProductSelect");
+const customerInput = document.getElementById("customerInput");
+const customerOptions = document.getElementById("customerOptions");
 
-// Satışları yükle
+let customerMap = {}; // name -> id eşleştirme
+
 async function loadProductSales() {
-  try {
-    const res = await axios.get("http://localhost:5001/api/sale-products");
-    productSaleList.innerHTML = "";
+  const res = await axios.get("http://localhost:5001/api/sale-products");
+  productSaleList.innerHTML = "";
 
-    res.data.forEach(item => {
-      const li = document.createElement("li");
-      li.className = "list-group-item d-flex justify-content-between align-items-center";
-      li.innerHTML = `
-        ${item.Product?.name} (${item.quantity} adet) - ${item.User?.name} • ${(item.price * item.quantity).toFixed(2)}₺
-        <div>
-          <button class="btn btn-sm btn-primary me-2" onclick="openEditModal(${item.SaleProductId})">Düzenle</button>
-          <button class="btn btn-sm btn-danger" onclick="deleteProductSale(${item.SaleProductId})">Sil</button>
-        </div>
-      `;
-      productSaleList.appendChild(li);
-    });
-
-  } catch (err) {
-    alert("Ürün satışları yüklenemedi.");
-    console.error(err);
-  }
+  res.data.forEach(item => {
+    const li = document.createElement("li");
+    li.className = "list-group-item d-flex justify-content-between align-items-center";
+    li.innerHTML = `
+      ${item.Product?.name} (${item.quantity} adet) - ${item.User?.name} • ${(item.price * item.quantity).toFixed(2)}₺
+      <div>
+        <button class="btn btn-sm btn-primary me-2" onclick="openEditModal(${item.id})">Düzenle</button>
+        <button class="btn btn-sm btn-danger" onclick="deleteProductSale(${item.id})">Sil</button>
+      </div>
+    `;
+    productSaleList.appendChild(li);
+  });
 }
 
-// Düzenleme modalını aç
 async function openEditModal(id) {
-  try {
-    const [res, usersRes] = await Promise.all([
-      axios.get(`http://localhost:5001/api/sale-products/single/${id}`),
-      axios.get("http://localhost:5001/api/users")
-    ]);
+  const [res, usersRes] = await Promise.all([
+    axios.get(`http://localhost:5001/api/sale-products/single/${id}`),
+    axios.get("http://localhost:5001/api/users")
+  ]);
 
-    const productSale = res.data;
-    const users = usersRes.data;
+  const productSale = res.data;
+  document.getElementById("editProductId").value = productSale.id;
+  document.getElementById("editQuantity").value = productSale.quantity;
 
-    document.getElementById("editProductId").value = productSale.SaleProductId;
-    document.getElementById("editQuantity").value = productSale.quantity;
+  editUserSelect.innerHTML = usersRes.data.map(u => `<option value="${u.id}">${u.name}</option>`).join("");
+  editUserSelect.value = productSale.UserId;
 
-    editUserSelect.innerHTML = users.map(u => `<option value="${u.id}">${u.name}</option>`).join("");
-    editUserSelect.value = productSale.UserId;
-
-    editModal.show();
-  } catch (err) {
-    alert("Düzenleme bilgileri alınamadı.");
-    console.error(err);
-  }
+  editModal.show();
 }
 
-// Güncelleme işlemi
 editProductForm.addEventListener("submit", async e => {
   e.preventDefault();
   const formData = new FormData(editProductForm);
   const data = Object.fromEntries(formData.entries());
 
-  try {
-    await axios.put(`http://localhost:5001/api/sale-products/${data.id}`, data);
-    editModal.hide();
-    loadProductSales();
-  } catch (err) {
-    alert("Güncelleme başarısız.");
-    console.error(err);
-  }
+  await axios.put(`http://localhost:5001/api/sale-products/${data.id}`, data);
+  editModal.hide();
+  loadProductSales();
 });
 
-// Silme işlemi
 async function deleteProductSale(id) {
   if (!confirm("Bu ürün satışını silmek istiyor musun?")) return;
-  try {
-    await axios.delete(`http://localhost:5001/api/sale-products/${id}`);
-    loadProductSales();
-  } catch (err) {
-    alert("Silme işlemi başarısız oldu.");
-    console.error(err);
-  }
+  await axios.delete(`http://localhost:5001/api/sale-products/${id}`);
+  loadProductSales();
 }
+
+function openAddProductModal() {
+  loadAddModalDropdowns();
+  addModal.show();
+}
+
+async function loadAddModalDropdowns() {
+  const [productsRes, usersRes, customersRes] = await Promise.all([
+    axios.get("http://localhost:5001/api/products"),
+    axios.get("http://localhost:5001/api/users"),
+    axios.get("http://localhost:5001/api/customers")
+  ]);
+
+  addProductSelect.innerHTML = productsRes.data.map(p => `<option value="${p.id}">${p.name}</option>`).join("");
+  addUserSelect.innerHTML = usersRes.data.map(u => `<option value="${u.id}">${u.name}</option>`).join("");
+  customerOptions.innerHTML = customersRes.data.map(c => {
+    customerMap[c.name] = c.id;
+    return `<option value="${c.name}"></option>`;
+  }).join("");
+}
+
+addProductForm.addEventListener("submit", async e => {
+  e.preventDefault();
+  const formData = new FormData(addProductForm);
+  const data = Object.fromEntries(formData.entries());
+
+  const selectedCustomerName = customerInput.value;
+  data.CustomerId = customerMap[selectedCustomerName] || null;
+
+  await axios.post("http://localhost:5001/api/sale-products", {
+    ...data,
+    SaleId: null
+  });
+
+  addProductForm.reset();
+  addModal.hide();
+  loadProductSales();
+});
 
 loadProductSales();
 </script>
