@@ -1,9 +1,9 @@
-const { SaleProduct, Product, User } = require('../models');
+const { SaleProduct, Product, User, Customer } = require('../models');
 
 module.exports = {
   async getAll(req, res) {
     try {
-      const items = await SaleProduct.findAll({ include: [Product, User] });
+      const items = await SaleProduct.findAll({ include: [Product, User, Customer] });
       res.json(items);
     } catch (err) {
       res.status(500).json({ error: 'Ürün satışları alınamadı.' });
@@ -14,7 +14,7 @@ module.exports = {
     try {
       const items = await SaleProduct.findAll({
         where: { SaleId: req.params.saleId },
-        include: [Product, User]
+        include: [Product, User, Customer]
       });
       res.json(items);
     } catch (err) {
@@ -25,7 +25,7 @@ module.exports = {
   async getOne(req, res) {
     try {
       const item = await SaleProduct.findByPk(req.params.id, {
-        include: [Product, User]
+        include: [Product, User, Customer]
       });
       if (!item) return res.status(404).json({ error: "Kayıt bulunamadı." });
       res.json(item);
@@ -36,7 +36,7 @@ module.exports = {
 
   async create(req, res) {
     try {
-      const { ProductId, quantity, UserId, SaleId = null } = req.body; // 🟢 SaleId opsiyonel
+      const { ProductId, quantity, UserId, CustomerId, SaleId = null } = req.body;
       const product = await Product.findByPk(ProductId);
       if (!product) return res.status(404).json({ error: "Ürün bulunamadı." });
 
@@ -45,6 +45,7 @@ module.exports = {
         quantity,
         UserId,
         SaleId: SaleId || null,
+        CustomerId,
         price: product.price
       });
 
@@ -71,9 +72,7 @@ module.exports = {
 
   async delete(req, res) {
     try {
-      await SaleProduct.destroy({
-        where: { id: req.params.id }
-      });
+      await SaleProduct.destroy({ where: { id: req.params.id } });
       res.json({ message: 'Ürün satıştan kaldırıldı' });
     } catch (err) {
       console.error(err);

@@ -27,7 +27,6 @@
       border-radius: 12px;
       box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
     }
-    
   </style>
 </head>
 <body>
@@ -45,8 +44,10 @@
         <p><strong>Hizmet:</strong> <span id="modalService"></span></p>
         <p><strong>Personel:</strong> <span id="modalUser"></span></p>
         <p><strong>Tarih:</strong> <span id="modalDate"></span></p>
+        <p><strong>Seans:</strong> <span id="modalseans"></span></p>
       </div>
       <div class="modal-footer">
+        <button id="cancelBtn" class="btn btn-warning">İptal Et</button>
         <button id="deleteBtn" class="btn btn-danger">Sil</button>
         <button class="btn btn-secondary" data-bs-dismiss="modal">Kapat</button>
       </div>
@@ -64,18 +65,20 @@
       </div>
       <div class="modal-body">
         <label class="form-label">Tarih ve Saat</label>
-<input type="datetime-local" class="form-control mb-2" name="date" id="ekleDate" required />
+        <input type="datetime-local" class="form-control mb-2" name="date" id="ekleDate" required />
 
-
-        <div class="mb-2">
-  <label class="form-label">Müşteri</label>
-  <input type="text" id="customerInput" name="CustomerName" class="form-select" placeholder="Müşteri adı girin..." list="customerList" required />
-  <datalist id="customerList"></datalist>
-</div>
-<input type="hidden" name="CustomerId" id="customerIdHidden" required />
+        <label class="form-label">Bitiş Tarih ve Saat</label>
+        <input type="datetime-local" class="form-control mb-2" name="endDate" id="ekleEndDate" required />
 
         <div class="mb-2">
-          <label class="form-label">Hizmet Seç</label>
+          <label class="form-label">Müşteri</label>
+          <input type="text" id="customerInput" name="CustomerName" class="form-select" placeholder="Müşteri adı girin..." list="customerList" required />
+          <datalist id="customerList"></datalist>
+        </div>
+        <input type="hidden" name="CustomerId" id="customerIdHidden" required />
+
+        <div class="mb-2">
+          <label class="form-label">Paket Seç</label>
           <select class="form-select" name="ServiceId" id="serviceSelect" required></select>
         </div>
 
@@ -91,10 +94,10 @@
     </form>
   </div>
 </div>
+
 <!-- Üst Menü -->
 <div class="container mt-4">
   <div class="row">
-    <!-- Sol Panel: Mini Takvim -->
     <div class="col-md-3">
       <div class="card p-3">
         <button class="btn btn-outline-primary w-100 mb-2" id="createBtn">+ Oluştur</button>
@@ -103,7 +106,6 @@
       </div>
     </div>
 
-    <!-- Sağ Panel: FullCalendar -->
     <div class="col-md-9">
       <div class="d-flex justify-content-between align-items-center mb-3">
         <div class="d-flex align-items-center gap-2">
@@ -116,13 +118,11 @@
           <button id="prevBtn" class="btn btn-light btn-sm">&lt;</button>
           <button id="nextBtn" class="btn btn-light btn-sm">&gt;</button>
         </div>
-        
       </div>
       <div id="calendar"></div>
     </div>
   </div>
 </div>
-
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
@@ -133,14 +133,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
   const calendar = new FullCalendar.Calendar(calendarEl, {
     locale: 'tr',
-    slotLabelFormat: {
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: false
-    },
-    buttonText: {
-    today: 'Bugün',
-    },
+    slotLabelFormat: { hour: '2-digit', minute: '2-digit', hour12: false },
+    buttonText: { today: 'Bugün' },
     timeZone: false,
     initialView: 'timeGridDay',
     editable: true,
@@ -153,82 +147,121 @@ document.addEventListener('DOMContentLoaded', function () {
       try {
         const res = await axios.get('http://localhost:5001/api/appointments');
         const events = res.data.map(r => ({
-          id: r.id,
-          title: `${r.Customer?.name || 'Müşteri'} • ${r.Service?.name || 'Hizmet'} • ${r.User?.name || 'Personel'}`,
-          start: r.date,
-          allDay: false
-        }));
+        id: r.id,
+        title: `${r.Customer?.name || 'Müşteri'} • ${r.Service?.name || 'Hizmet'} • ${r.User?.name || 'Personel'} • ${r.sessionNumber || '❓'}. Seans`,
+        start: r.date,
+        end: r.endDate,
+        allDay: false,
+        backgroundColor: r.status === "iptal" ? "#FF0000" : (r.Service?.color || '#007BFF'),
+        borderColor: r.status === "iptal" ? "#FF0000" : (r.Service?.color || '#007BFF'),
+        textColor: "#fff"
+}));
         successCallback(events);
       } catch (err) {
         failureCallback(err);
       }
-    },
+      },
 
     dateClick: function (info) {
-    const clickedDate = new Date(info.date);
-    document.getElementById('ekleDate').value = getLocalDateTimeString(clickedDate);
-    doldurDropdownlar();
-    ekleModal.show();
-  },
-
-
-    eventDrop: async function (info) {
-      const d = new Date(info.event.start);
-      const formattedDate = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}:00`;
-      try {
-        await axios.put(`http://localhost:5001/api/appointments/${info.event.id}`, { date: formattedDate });
-        calendar.refetchEvents();
-      } catch (err) {
-        alert("Tarih güncellenemedi.");
-      }
+      const clickedDate = new Date(info.date);
+      document.getElementById('ekleDate').value = getLocalDateTimeString(clickedDate);
+      const endDate = new Date(clickedDate);
+      endDate.setHours(endDate.getHours() + 1);
+      document.getElementById('ekleEndDate').value = getLocalDateTimeString(endDate);
+      doldurDropdownlar();
+      ekleModal.show();
     },
 
     eventClick: async function (info) {
-      try {
-        const res = await axios.get(`http://localhost:5001/api/appointments/${info.event.id}`);
-        const r = res.data;
-        document.getElementById("modalCustomer").innerText = r.Customer?.name || '—';
-        document.getElementById("modalService").innerText = r.Service?.name || '—';
-        document.getElementById("modalUser").innerText = r.User?.name || '—';
-        const dateStr = r.date.replace('T', ' ').slice(0, 16);
-        const [d, t] = dateStr.split(' ');
-        const [y, m, day] = d.split('-');
-        document.getElementById("modalDate").innerText = `${day}.${m}.${y} ${t}`;
+  try {
+    const res = await axios.get(`http://localhost:5001/api/appointments/${info.event.id}`);
+    const r = res.data;
 
-        document.getElementById("deleteBtn").onclick = async () => {
-          if (confirm("Bu randevuyu silmek istiyor musun?")) {
-            await axios.delete(`http://localhost:5001/api/appointments/${r.id}`);
-            calendar.refetchEvents();
-            randevuModal.hide();
-          }
-        };
-        randevuModal.show();
-      } catch (err) {
-        alert("Detaylar alınamadı.");
+    document.getElementById("modalCustomer").innerText = r.Customer?.name || '—';
+    document.getElementById("modalService").innerText = r.Service?.name || '—';
+    document.getElementById("modalUser").innerText = r.User?.name || '—';
+    document.getElementById("modalseans").innerText = r.sessionNumber || '—';
+
+
+    const dateStr = r.date.replace('T', ' ').slice(0, 16);
+    const [d, t] = dateStr.split(' ');
+    const [y, m, day] = d.split('-');
+    document.getElementById("modalDate").innerText = `${day}.${m}.${y} ${t}`;
+
+    // ✅ Sil butonu
+    document.getElementById("deleteBtn").onclick = async () => {
+      if (confirm("Bu randevuyu silmek istiyor musun?")) {
+        await axios.delete(`http://localhost:5001/api/appointments/${r.id}`);
+        calendar.refetchEvents();
+        randevuModal.hide();
       }
-    }
-  });
+    };
 
-  async function doldurDropdownlar() {
-    try {
-      const [servicesRes, usersRes, customersRes] = await Promise.all([
-        axios.get("http://localhost:5001/api/services"),
-        axios.get("http://localhost:5001/api/users"),
-        axios.get("http://localhost:5001/api/customers")
+    // ✅ İptal butonu
+    document.getElementById("cancelBtn").onclick = async () => {
+      if (r.status === "iptal") {
+        alert("Bu randevu zaten iptal edilmiş.");
+        return;
+      }
+
+      await axios.put(`http://localhost:5001/api/appointments/${r.id}`, {
+        status: "iptal"
+      });
+
+      calendar.refetchEvents();
+      randevuModal.hide();
+    };
+
+    // ✅ Modali her durumda göster
+    randevuModal.show();
+  } catch (err) {
+    alert("Detaylar alınamadı.");
+  }
+  }
+}
+);
+
+async function doldurDropdownlar() {
+  try {
+    const customerInput = document.getElementById("customerInput");
+    const customerIdHidden = document.getElementById("customerIdHidden");
+
+    const customersRes = await axios.get("http://localhost:5001/api/customers");
+    const allCustomers = customersRes.data;
+
+    customerInput.removeEventListener("change", handleCustomerChange);
+    customerInput.addEventListener("change", handleCustomerChange);
+
+    async function handleCustomerChange() {
+      const val = customerInput.value;
+      const selected = allCustomers.find(c => c.name === val);
+      const customerId = selected?.id;
+
+      if (!customerId) {
+        document.getElementById("serviceSelect").innerHTML = "<option disabled selected>Müşteriye ait paket yok</option>";
+        return;
+      }
+
+      customerIdHidden.value = customerId;
+
+      const [packagesRes, usersRes] = await Promise.all([
+        axios.get(`http://localhost:5001/api/customers/${customerId}/packages`),
+        axios.get("http://localhost:5001/api/users")
+        
       ]);
-
+      
       const serviceSelect = document.getElementById("serviceSelect");
       const userSelect = document.getElementById("userSelect");
-      const customerInput = document.getElementById("customerInput");
-      const customerList = document.getElementById("customerList");
-
       serviceSelect.innerHTML = "";
-      servicesRes.data.forEach(s => {
-        const opt = document.createElement("option");
-        opt.value = s.id;
-        opt.innerText = s.name;
-        serviceSelect.appendChild(opt);
-      });
+        packagesRes.data.forEach(pkg => {
+          const opt = document.createElement("option");
+          opt.value = pkg.id;
+          const sessionCount = pkg.session || "❓";
+          opt.innerText = `${pkg.name} (${sessionCount} seans)`;
+          opt.dataset.session = pkg.session; // ekstra güvenlik için
+          serviceSelect.appendChild(opt);
+        });
+
 
       userSelect.innerHTML = "";
       usersRes.data.forEach(u => {
@@ -237,38 +270,20 @@ document.addEventListener('DOMContentLoaded', function () {
         opt.innerText = u.name;
         userSelect.appendChild(opt);
       });
-
-      customerList.innerHTML = "";
-customersRes.data.forEach(c => {
-  const opt = document.createElement("option");
-  opt.value = c.name;
-  opt.setAttribute("data-id", c.id);
-  customerList.appendChild(opt);
-});
-
-customerInput.addEventListener("input", () => {
-  const val = customerInput.value;
-  const selected = Array.from(customerList.options).find(opt => opt.value === val);
-  document.getElementById("customerIdHidden").value = selected ? selected.getAttribute("data-id") : "";
-});
-
-
-      customerInput.addEventListener("input", () => {
-        const val = customerInput.value;
-        const selected = Array.from(customerList.options).find(opt => opt.value === val);
-        document.getElementById("customerIdHidden").value = selected ? selected.getAttribute("data-id") : "";
-      });
-
-    } catch (err) {
-      alert("Dropdown verileri yüklenemedi.");
     }
+
+  } catch (err) {
+    alert("Dropdown verileri yüklenemedi.");
   }
+}
+
 
   ekleForm.addEventListener("submit", async (e) => {
     e.preventDefault();
     const formData = new FormData(ekleForm);
     const data = Object.fromEntries(formData.entries());
     if (!data.CustomerId) return alert("Müşteri seçimi geçerli değil.");
+    if (!data.date || !data.endDate) return alert("Başlangıç ve bitiş tarihi girilmeli.");
 
     try {
       await axios.post('http://localhost:5001/api/appointments', data);
@@ -281,50 +296,24 @@ customerInput.addEventListener("input", () => {
 
   calendar.render();
   document.getElementById("createBtn").addEventListener("click", () => {
-  const now = new Date();
-  document.getElementById('ekleDate').value = getLocalDateTimeString(now);
-  doldurDropdownlar();
-  ekleModal.show();
-});
+    const now = new Date();
+    document.getElementById('ekleDate').value = getLocalDateTimeString(now);
+    const endDate = new Date(now);
+    endDate.setHours(endDate.getHours() + 1);
+    document.getElementById('ekleEndDate').value = getLocalDateTimeString(endDate);
+    doldurDropdownlar();
+    ekleModal.show();
+  });
 
   $("#datepicker").datepicker({
-  onSelect: function (dateText) {
-    const date = new Date(dateText);
-    calendar.gotoDate(date);
-    updateCurrentDate();
-  }
+    onSelect: function (dateText) {
+      const date = new Date(dateText);
+      calendar.gotoDate(date);
+    }
+  });
 });
 
-});
-document.getElementById("todayBtn").addEventListener("click", () => {
-    calendar.today();
-    updateCurrentDate();
-  });
-
-  document.getElementById("prevBtn").addEventListener("click", () => {
-    calendar.prev();
-    updateCurrentDate();
-  });
-
-  document.getElementById("nextBtn").addEventListener("click", () => {
-    calendar.next();
-    updateCurrentDate();
-  });
-
-  document.getElementById("viewSelect").addEventListener("change", (e) => {
-    calendar.changeView(e.target.value);
-    updateCurrentDate();
-  });
-
-  function updateCurrentDate() {
-    const view = calendar.view;
-    const start = new Date(view.currentStart);
-    const aylar = ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
-    document.getElementById("currentDate").innerText = `${aylar[start.getMonth()]} ${start.getFullYear()}`;
-  }
-
-  updateCurrentDate();
-  function getLocalDateTimeString(date) {
+function getLocalDateTimeString(date) {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, '0');
   const day = String(date.getDate()).padStart(2, '0');
@@ -332,7 +321,6 @@ document.getElementById("todayBtn").addEventListener("click", () => {
   const minutes = String(date.getMinutes()).padStart(2, '0');
   return `${year}-${month}-${day}T${hours}:${minutes}`;
 }
-
 </script>
 </body>
 </html>

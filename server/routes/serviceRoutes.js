@@ -1,46 +1,17 @@
 const express = require('express');
 const router = express.Router();
-const { Service } = require('../models');
+const serviceController = require('../controllers/serviceController');
 
-// Tüm hizmetleri getir
-router.get('/', async (req, res) => {
-  try {
-    const services = await Service.findAll();
-    res.json(services);
-  } catch (err) {
-    res.status(500).json({ error: 'Hizmetler getirilemedi' });
-  }
-});
+// ✅ Tüm hizmetleri getir
+router.get('/', serviceController.getAll);
 
-// Yeni hizmet ekle
-router.post('/', async (req, res) => {
-  try {
-    const { name } = req.body;
-    const service = await Service.create({ name });
-    res.json(service);
-  } catch (err) {
-    res.status(500).json({ error: 'Hizmet eklenemedi' });
-  }
-});
+// ✅ Yeni hizmet oluştur
+router.post('/', serviceController.create);
 
-// Hizmet güncelle
-router.put('/:id', async (req, res) => {
-  try {
-    await Service.update(req.body, { where: { id: req.params.id } });
-    res.json({ message: 'Güncellendi' });
-  } catch (err) {
-    res.status(500).json({ error: 'Güncelleme hatası' });
-  }
-});
+// ✅ Hizmet güncelle
+router.put('/:id', serviceController.update);
 
-// Hizmet sil
-router.delete('/:id', async (req, res) => {
-  try {
-    await Service.destroy({ where: { id: req.params.id } });
-    res.json({ message: 'Silindi' });
-  } catch (err) {
-    res.status(500).json({ error: 'Silme hatası' });
-  }
-});
+// ✅ Hizmet sil
+router.delete('/:id', serviceController.delete);
 
 module.exports = router;

@@ -1,7 +1,10 @@
+require('dotenv').config();
+
+
 const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
-const { sequelize } = require('./models');
+const sequelize = require('./config/config'); // 🔥 Config dosyasından veritabanı bağlantısı
 
 const app = express();
 const PORT = process.env.PORT || 5001;
@@ -20,16 +23,21 @@ app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/sales', require('./routes/saleRoutes'));
 app.use('/api/sale-products', require('./routes/saleProductRoutes'));
 
-
-
-
 // 🎯 Ana kontrol route'u
-app.get('/', (req, res) => res.send('💡 Salon API 5001 çalışıyor!'));
+app.get('/', (req, res) => res.send('💡 Salon API çalışıyor!'));
 
 // 🔁 Veritabanı senkronizasyonu ve sunucuyu başlatma
-sequelize.sync({ force: false }).then(() => {
-  console.log("✅ Veritabanı senkronize.");
-  app.listen(PORT, () => {
-    console.log(`🚀 Sunucu ${PORT} portunda çalışıyor...`);
+sequelize.authenticate()
+  .then(() => {
+    console.log('✅ Veritabanına başarıyla bağlanıldı.');
+    return sequelize.sync(); 
+  })
+  .then(() => {
+    console.log("✅ Veritabanı senkronize edildi.");
+    app.listen(PORT, () => {
+      console.log(`🚀 Sunucu ${PORT} portunda ${process.env.NODE_ENV || 'development'} modunda çalışıyor...`);
+    });
+  })
+  .catch(err => {
+    console.error("❌ Sequelize bağlantı hatası:", err);
   });
-}).catch(err => console.error("❌ Sequelize bağlantı hatası:", err));

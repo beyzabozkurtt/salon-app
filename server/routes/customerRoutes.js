@@ -1,30 +1,22 @@
 const express = require('express');
 const router = express.Router();
-const { Customer } = require('../models');
-const { body, validationResult } = require('express-validator');
+const { body } = require('express-validator');
+const customerController = require('../controllers/customerController');
 
-// Tüm müşterileri listele
-router.get('/', async (req, res) => {
-  try {
-    const customers = await Customer.findAll();
-    res.json(customers);
-  } catch (err) {
-    res.status(500).json({ error: 'Müşteri verileri çekilemedi' });
-  }
-});
+// Listele
+router.get('/', customerController.getAll);
 
-// Tek bir müşteri getir
-router.get('/:id', async (req, res) => {
-  try {
-    const customer = await Customer.findByPk(req.params.id);
-    if (!customer) return res.status(404).json({ error: 'Müşteri bulunamadı' });
-    res.json(customer);
-  } catch (err) {
-    res.status(500).json({ error: 'Müşteri bilgisi getirilemedi' });
-  }
-});
+// Tek müşteri
+router.get('/:id', customerController.getOne);
 
-// Yeni müşteri ekle
+//müşteriye ait paketler
+router.get('/:id/packages', customerController.getCustomerPackages);
+
+
+// Detaylı seanslı müşteri bilgisi
+router.get('/:id/details', customerController.getDetailsWithSessions);
+
+// Yeni müşteri
 router.post(
   '/',
   [
@@ -32,37 +24,13 @@ router.post(
     body('email').isEmail().withMessage('Geçerli e-posta girin'),
     body('phone').notEmpty().withMessage('Telefon zorunludur')
   ],
-  async (req, res) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
-
-    try {
-      const yeni = await Customer.create(req.body);
-      res.status(201).json(yeni);
-    } catch (err) {
-      res.status(500).json({ error: 'Müşteri eklenemedi' });
-    }
-  }
+  customerController.create
 );
 
-// Müşteri güncelle
-router.put('/:id', async (req, res) => {
-  try {
-    await Customer.update(req.body, { where: { id: req.params.id } });
-    res.json({ message: 'Müşteri güncellendi' });
-  } catch (err) {
-    res.status(500).json({ error: 'Güncelleme hatası' });
-  }
-});
+// Güncelle
+router.put('/:id', customerController.update);
 
-// Müşteri sil
-router.delete('/:id', async (req, res) => {
-  try {
-    await Customer.destroy({ where: { id: req.params.id } });
-    res.json({ message: 'Müşteri silindi' });
-  } catch (err) {
-    res.status(500).json({ error: 'Silme hatası' });
-  }
-});
+// Sil
+router.delete('/:id', customerController.delete);
 
 module.exports = router;

@@ -7,6 +7,23 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  <style>
+    .session-box {
+      display: inline-block;
+      width: 30px;
+      height: 30px;
+      margin: 4px;
+      border-radius: 6px;
+      line-height: 30px;
+      text-align: center;
+      font-size: 14px;
+      font-weight: bold;
+      color: #fff;
+    }
+    .session-boş { background-color: #ccc; }
+    .session-bekliyor, .session-tamamlandı { background-color: #198754; }
+    .session-iptal { background-color: #dc3545; }
+  </style>
 </head>
 <body class="bg-light">
 
@@ -14,18 +31,14 @@
   <button class="btn btn-secondary mb-3" onclick="history.back()">← Geri Dön</button>
   <h3 id="customerName">Müşteri Bilgisi</h3>
   
-  <div class="row mt-4">
-    <!-- Sol: Hizmet Satışları -->
-    <div class="col-md-6">
-      <h5>Hizmet Satışları</h5>
-      <ul id="serviceList" class="list-group"></ul>
-    </div>
+  <div class="mt-4">
+    <h5>Hizmet Satışları</h5>
+    <div id="serviceList"></div>
+  </div>
 
-    <!-- Sağ: Ürün Satışları -->
-    <div class="col-md-6">
-      <h5>Ürün Satışları</h5>
-      <ul id="productList" class="list-group"></ul>
-    </div>
+  <div class="mt-4">
+    <h5>Ürün Satışları</h5>
+    <ul id="productList" class="list-group"></ul>
   </div>
 </div>
 
@@ -44,22 +57,44 @@ if (!customerId) {
 
 async function loadCustomerDetails() {
   try {
-    // Müşteri bilgisi
-    const customer = await axios.get(`http://localhost:5001/api/customers/${customerId}`);
-    customerNameEl.textContent = `${customer.data.name} (${customer.data.email})`;
+    const res = await axios.get(`http://localhost:5001/api/customers/${customerId}/details`);
+    const data = res.data;
+    customerNameEl.textContent = `${data.customer.name} (${data.customer.email})`;
 
-    // Hizmet satışları
-    const serviceRes = await axios.get("http://localhost:5001/api/sales");
-    const services = serviceRes.data.filter(s => s.CustomerId == customerId);
-    serviceList.innerHTML = services.length
-      ? services.map(s =>
-          `<li class="list-group-item">
-            ${s.Service?.name || 'Hizmet'} • ${s.session} seans • ${s.price}₺
-          </li>`
-        ).join("")
-      : `<li class="list-group-item text-muted">Kayıtlı hizmet satışı yok.</li>`;
+    if (!data.services.length) {
+      serviceList.innerHTML = `<p class="text-muted">Hizmet satışı bulunamadı.</p>`;
+    } else {
+      data.services.forEach((s, index) => {
+        const div = document.createElement("div");
+        div.className = "mb-3";
+        
+        const header = document.createElement("div");
+        header.className = "bg-white p-3 border rounded shadow-sm";
+        header.style.cursor = "pointer";
+        header.innerHTML = `<strong>${s.serviceName}</strong> • ${s.sessionCount} seans`;
+        
+        const content = document.createElement("div");
+        content.className = "mt-2 ps-3";
+        content.style.display = "none";
 
-    // Ürün satışları
+        s.sessions.forEach(sess => {
+          const box = document.createElement("div");
+          box.className = `session-box session-${sess.status}`;
+          box.title = sess.date ? `Tarih: ${new Date(sess.date).toLocaleDateString()}` : "Henüz planlanmadı";
+          box.innerText = sess.index;
+          content.appendChild(box);
+        });
+
+        header.onclick = () => {
+          content.style.display = content.style.display === "none" ? "block" : "none";
+        };
+
+        div.appendChild(header);
+        div.appendChild(content);
+        serviceList.appendChild(div);
+      });
+    }
+
     const productRes = await axios.get("http://localhost:5001/api/sale-products");
     const products = productRes.data.filter(p => p.CustomerId == customerId);
     productList.innerHTML = products.length

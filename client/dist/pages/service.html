@@ -7,6 +7,19 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  <style>
+    .color-circle {
+      width: 32px;
+      height: 32px;
+      border: 2px solid #ccc;
+      border-radius: 50%;
+      outline: none;
+    }
+    .color-circle:hover {
+      cursor: pointer;
+      opacity: 0.8;
+    }
+  </style>
 </head>
 <body class="bg-light">
   <div class="container py-5">
@@ -25,7 +38,11 @@
         </div>
         <div class="modal-body">
           <label class="form-label">Hizmet Adı</label>
-          <input type="text" name="name" class="form-control" required />
+          <input type="text" name="name" class="form-control mb-2" required />
+
+          <label class="form-label">Renk Seç</label>
+          <div id="colorOptions" class="d-flex gap-2 flex-wrap mb-2"></div>
+          <input type="hidden" name="color" id="selectedColor" required />
         </div>
         <div class="modal-footer">
           <button type="submit" class="btn btn-success">Kaydet</button>
@@ -46,7 +63,11 @@
         <div class="modal-body">
           <input type="hidden" name="id" />
           <label class="form-label">Hizmet Adı</label>
-          <input type="text" name="name" class="form-control" required />
+          <input type="text" name="name" class="form-control mb-2" required />
+
+          <label class="form-label">Renk Seç</label>
+          <div id="editColorOptions" class="d-flex gap-2 flex-wrap mb-2"></div>
+          <input type="hidden" name="color" id="editSelectedColor" required />
         </div>
         <div class="modal-footer">
           <button type="submit" class="btn btn-primary">Güncelle</button>
@@ -60,6 +81,56 @@
     const list = document.getElementById("serviceList");
     const createForm = document.getElementById("createForm");
     const editForm = document.getElementById("editForm");
+    const colorList = [
+      "#33FF57", "#3357FF", "#FF33D4", "#FF8C00", "#800080",
+      "#00CED1", "#FFD700", "#A52A2A", "#708090", "#8B4513"
+    ];
+    function setupEditColorSelector(selected = "") {
+  const container = document.getElementById("editColorOptions");
+  const input = document.getElementById("editSelectedColor");
+  container.innerHTML = "";
+
+  colorList.forEach(color => {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "color-circle";
+    btn.style.backgroundColor = color;
+
+    if (color === selected) {
+      btn.style.border = "3px solid black";
+      input.value = color;
+    }
+
+    btn.addEventListener("click", () => {
+      document.querySelectorAll("#editColorOptions .color-circle").forEach(b => b.style.border = "2px solid #ccc");
+      btn.style.border = "3px solid black";
+      input.value = color;
+    });
+
+    container.appendChild(btn);
+  });
+}
+
+
+    document.addEventListener("DOMContentLoaded", () => {
+      const colorOptions = document.getElementById("colorOptions");
+      const selectedColor = document.getElementById("selectedColor");
+
+      colorList.forEach(color => {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "color-circle";
+        btn.style.backgroundColor = color;
+
+        btn.addEventListener("click", () => {
+          document.querySelectorAll(".color-circle").forEach(b => b.style.border = "2px solid #ccc");
+          btn.style.border = "3px solid black";
+          selectedColor.value = color;
+        });
+
+        colorOptions.appendChild(btn);
+      });
+    });
 
     async function loadServices() {
       const res = await axios.get("http://localhost:5001/api/services");
@@ -88,10 +159,12 @@
     });
 
     function editService(service) {
-      editForm.id.value = service.id;
-      editForm.name.value = service.name;
-      bootstrap.Modal.getOrCreateInstance(document.getElementById("editModal")).show();
-    }
+  editForm.id.value = service.id;
+  editForm.name.value = service.name;
+  setupEditColorSelector(service.color || "#33FF57");
+  bootstrap.Modal.getOrCreateInstance(document.getElementById("editModal")).show();
+}
+
 
     editForm.addEventListener("submit", async e => {
       e.preventDefault();

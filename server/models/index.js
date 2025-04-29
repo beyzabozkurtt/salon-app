@@ -7,7 +7,7 @@ const Service = require('./Service')(sequelize, DataTypes);
 const Appointment = require('./Appointment')(sequelize, DataTypes);
 const Product = require('./Product')(sequelize, DataTypes);
 const Sale = require('./Sale')(sequelize, DataTypes);
-const SaleProduct = require('./saleProduct')(sequelize, DataTypes); // 🆕
+const SaleProduct = require('./saleProduct')(sequelize, DataTypes);
 const CashRegister = require('./CashRegister')(sequelize, DataTypes);
 
 // 🔗 İlişkiler
@@ -31,14 +31,14 @@ Sale.belongsTo(User);
 
 Service.hasMany(Sale);
 Sale.belongsTo(Service);
-//saleproductkısmı
+
+// ✅ SaleProduct ilişkileri
 SaleProduct.belongsTo(Sale);
 SaleProduct.belongsTo(Product);
 SaleProduct.belongsTo(User);
+SaleProduct.belongsTo(Customer); // 🆕 CustomerId ilişkisi eklendi
 
-
-
-// 🆕 Sale <-> Product ilişkisi (çoktan çoğa)
+// ✅ Sale <-> Product çoktan çoğa ilişki
 Sale.belongsToMany(Product, { through: SaleProduct });
 Product.belongsToMany(Sale, { through: SaleProduct });
 

@@ -5,6 +5,10 @@ module.exports = (sequelize, DataTypes) => {
       autoIncrement: true,
       primaryKey: true
     },
+    CustomerId: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+    },
     quantity: {
       type: DataTypes.INTEGER,
       allowNull: false,
