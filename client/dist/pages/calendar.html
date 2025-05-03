@@ -142,6 +142,38 @@ document.addEventListener('DOMContentLoaded', function () {
     nowIndicator: true,
     slotDuration: '00:30:00',
     allDaySlot: false,
+    eventResize: async function(info) {
+  const r = info.event;
+
+  try {
+    await axios.put(`http://localhost:5001/api/appointments/${r.id}`, {
+      date: r.start.toISOString(),
+      endDate: r.end.toISOString()
+    });
+
+    calendar.refetchEvents();
+  } catch (err) {
+    alert("Randevu süresi güncellenemedi.");
+    info.revert(); // başarısızsa geri al
+  }
+},
+
+    eventDrop: async function(info) {
+    const r = info.event;
+
+    try {
+      await axios.put(`http://localhost:5001/api/appointments/${r.id}`, {
+        date: r.start.toISOString(),
+        endDate: r.end.toISOString()
+      });
+
+      calendar.refetchEvents();
+    } catch (err) {
+      alert("Randevu taşınamadı.");
+      info.revert(); // başarısızsa eski yerine al
+    }
+  },
+
 
     events: async function (info, successCallback, failureCallback) {
       try {
@@ -192,6 +224,7 @@ document.addEventListener('DOMContentLoaded', function () {
     document.getElementById("deleteBtn").onclick = async () => {
       if (confirm("Bu randevuyu silmek istiyor musun?")) {
         await axios.delete(`http://localhost:5001/api/appointments/${r.id}`);
+        
         calendar.refetchEvents();
         randevuModal.hide();
       }
@@ -207,7 +240,7 @@ document.addEventListener('DOMContentLoaded', function () {
       await axios.put(`http://localhost:5001/api/appointments/${r.id}`, {
         status: "iptal"
       });
-
+      doldurDropdownlar(); // ✅ Dropdown'u anında güncelle
       calendar.refetchEvents();
       randevuModal.hide();
     };
@@ -244,25 +277,46 @@ async function doldurDropdownlar() {
 
       customerIdHidden.value = customerId;
 
-      const [packagesRes, usersRes] = await Promise.all([
+      const [packagesRes, usersRes, appointmentsRes] = await Promise.all([
         axios.get(`http://localhost:5001/api/customers/${customerId}/packages`),
-        axios.get("http://localhost:5001/api/users")
-        
+        axios.get("http://localhost:5001/api/users"),
+        axios.get("http://localhost:5001/api/appointments")
       ]);
-      
+
       const serviceSelect = document.getElementById("serviceSelect");
       const userSelect = document.getElementById("userSelect");
       serviceSelect.innerHTML = "";
-        packagesRes.data.forEach(pkg => {
+
+      const allAppointments = appointmentsRes.data;
+      let aktifPaketSayisi = 0;
+
+      packagesRes.data.forEach(pkg => {
+        const toplamSeans = pkg.session || pkg.totalSession || 0;
+        const kullanilan = allAppointments.filter(r =>
+          r.CustomerId === customerId &&
+          r.ServiceId === pkg.id && // SaleId yerine ServiceId olmalı (kontrol et!)
+          r.status !== "iptal"
+        ).length;
+
+        const kalan = toplamSeans - kullanilan;
+        if (kalan > 0) {
           const opt = document.createElement("option");
           opt.value = pkg.id;
-          const sessionCount = pkg.session || "❓";
-          opt.innerText = `${pkg.name} (${sessionCount} seans)`;
-          opt.dataset.session = pkg.session; // ekstra güvenlik için
+          opt.innerText = `${pkg.name || pkg.Service?.name || "Paket"} (${kalan} seans kaldı)`;
           serviceSelect.appendChild(opt);
-        });
+          aktifPaketSayisi++;
+        }
+      });
 
+      if (aktifPaketSayisi === 0) {
+        const opt = document.createElement("option");
+        opt.disabled = true;
+        opt.selected = true;
+        opt.innerText = "Tüm paketlerin seansı bitmiş";
+        serviceSelect.appendChild(opt);
+      }
 
+      // Personel listesi
       userSelect.innerHTML = "";
       usersRes.data.forEach(u => {
         const opt = document.createElement("option");
@@ -273,9 +327,12 @@ async function doldurDropdownlar() {
     }
 
   } catch (err) {
+    console.error("Dropdown hatası:", err);
     alert("Dropdown verileri yüklenemedi.");
   }
 }
+
+
 
 
   ekleForm.addEventListener("submit", async (e) => {
@@ -288,6 +345,8 @@ async function doldurDropdownlar() {
     try {
       await axios.post('http://localhost:5001/api/appointments', data);
       calendar.refetchEvents();
+      doldurDropdownlar(); // ✅ Dropdown'u anında güncelle
+      customerInput.dispatchEvent(new Event("change")); // 🔥 Bu satır çok önemli!
       ekleModal.hide();
     } catch (err) {
       alert("Randevu eklenemedi.");

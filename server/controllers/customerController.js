@@ -55,34 +55,37 @@ exports.delete = async (req, res) => {
   }
 };
 exports.getCustomerPackages = async (req, res) => {
-    try {
-      const customerId = req.params.id;
-  
-      const sales = await Sale.findAll({
-        where: { CustomerId: customerId },
-        include: ['Service'],
-      });
-  
-      // Benzersiz hizmetleri çek
-      const uniqueServices = new Map();
-      for (const sale of sales) {
-        const s = sale.Service;
-        if (!uniqueServices.has(s.id)) {
-          uniqueServices.set(s.id, {
-            id: s.id,
-            name: s.name,
-            color: s.color
-          });
-        }
+  try {
+    const customerId = req.params.id;
+
+    const sales = await Sale.findAll({
+      where: { CustomerId: customerId },
+      include: ['Service'],
+    });
+
+    const uniqueServices = new Map();
+
+    for (const sale of sales) {
+      const s = sale.Service;
+      const existing = uniqueServices.get(s.id);
+
+      // Daha önce eklenmişse en yüksek seansı döndür (veya topla, tercihine göre)
+      if (!existing) {
+        uniqueServices.set(s.id, {
+          id: s.id,
+          name: s.name,
+          color: s.color,
+          session: sale.session  // 🔥 BURASI ÇOK KRİTİK!
+        });
       }
-  
-      res.json(Array.from(uniqueServices.values()));
-  
-    } catch (err) {
-      console.error(err);
-      res.status(500).json({ error: 'Paketler getirilemedi' });
     }
-  };
+
+    res.json(Array.from(uniqueServices.values()));
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Paketler getirilemedi' });
+  }
+};
   
 
 // ✅ Seans detaylı müşteri detayları (Özel)
@@ -100,28 +103,43 @@ exports.getDetailsWithSessions = async (req, res) => {
     const results = [];
 
     for (const sale of sales) {
+      // Tüm randevuları tarih sırasına göre al
       const appointments = await Appointment.findAll({
         where: {
           CustomerId: customerId,
           ServiceId: sale.ServiceId
-        }
+        },
+        order: [['date', 'ASC']]
       });
 
       const sessions = [];
-      for (let i = 0; i < sale.session; i++) {
-        const a = appointments[i];
+      let aktifSayisi = 0;
+
+      appointments.forEach((a, i) => {
         sessions.push({
           index: i + 1,
-          status: a?.status || 'boş',
-          date: a?.date || null
+          status: a.status,
+          date: a.date
+        });
+
+        if (a.status !== "iptal") aktifSayisi++;
+      });
+
+      const eksik = sale.session - aktifSayisi;
+
+      for (let i = 0; i < eksik; i++) {
+        sessions.push({
+          index: sessions.length + 1,
+          status: "boş",
+          date: null
         });
       }
 
       results.push({
         serviceName: sale.Service.name,
         serviceColor: sale.Service.color,
-        sessionCount: sale.session,
-        sessions
+        sessionCount: sale.session, // Değişmiyor
+        sessions // Tarihe göre sıralı, iptaller dahil, boşlar en sona eklendi
       });
     }
 
