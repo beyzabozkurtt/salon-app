@@ -1,4 +1,4 @@
-const { Sale, Customer, User, Service } = require('../models');
+const { Sale, Customer, User, Service, Payment } = require('../models');
 
 module.exports = {
   async getAll(req, res) {
@@ -30,6 +30,29 @@ module.exports = {
   async create(req, res) {
     try {
       const sale = await Sale.create(req.body);
+
+      const { installment, price } = req.body;
+
+      if (installment && price) {
+        const taksitSayisi = parseInt(installment);
+        const toplamTutar = parseFloat(price);
+        const taksitTutar = parseFloat((toplamTutar / taksitSayisi).toFixed(2));
+        const simdi = new Date();
+
+        for (let i = 0; i < taksitSayisi; i++) {
+          const vadeTarihi = new Date(simdi);
+          vadeTarihi.setMonth(vadeTarihi.getMonth() + i);
+
+          await Payment.create({
+            SaleId: sale.id,
+            installmentNo: i + 1,
+            amount: taksitTutar,
+            dueDate: vadeTarihi,
+            status: 'bekliyor'
+          });
+        }
+      }
+
       res.json(sale);
     } catch (err) {
       console.error(err);

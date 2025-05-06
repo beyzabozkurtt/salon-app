@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <title>Ödeme Detayları</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body {
+      background-color: #f8f9fa;
+    }
+    .payment-item {
+      background: #fff;
+      border-left: 6px solid #343a40;
+      margin-bottom: 10px;
+      padding: 10px 15px;
+      border-radius: 4px;
+    }
+    .status-badge {
+      font-size: 0.9rem;
+      font-weight: bold;
+      padding: 5px 10px;
+      border-radius: 12px;
+    }
+    .status-bekliyor {
+      background-color: #ffc107;
+      color: #212529;
+    }
+    .status-ödendi {
+      background-color: #198754;
+      color: white;
+    }
+  </style>
+</head>
+<body class="container py-4">
+
+  <h2 class="mb-4"><i class="bi bi-journal-check"></i> Ödeme Detayları</h2>
+  <div id="customer-info" class="mb-3"></div>
+  <div id="payment-list"></div>
+
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const customerId = params.get('id');
+  
+    async function fetchPayments() {
+      try {
+        const res = await fetch(`http://localhost:5001/api/payments/by-customer/${customerId}`);
+        const data = await res.json();
+  
+        if (!Array.isArray(data)) return;
+  
+        const customerInfo = document.getElementById("customer-info");
+        if (data.length > 0 && data[0].Sale && data[0].Sale.Customer) {
+          const { name, phone } = data[0].Sale.Customer;
+          customerInfo.innerHTML = `<strong>${name}</strong> • ${phone}`;
+        }
+  
+        const paymentList = document.getElementById("payment-list");
+        paymentList.innerHTML = "";
+  
+        data.forEach((payment) => {
+          let label = "Tanımsız";
+  
+          // 🟢 Öncelik: Ürün varsa ürün adı
+          if (payment.SaleProduct?.Product?.name) {
+            label = payment.SaleProduct.Product.name;
+          }
+          // 🟡 Ürün yoksa hizmet adı
+          else if (payment.Sale?.Service?.name) {
+            label = payment.Sale.Service.name;
+          }
+  
+          const div = document.createElement("div");
+          div.className = "payment-item d-flex justify-content-between align-items-center";
+          div.innerHTML = `
+            <div>
+              <strong>${label}</strong> • ${payment.installmentNo || "-"}. Taksit – 
+              ${new Date(payment.dueDate).toLocaleDateString('tr-TR')} 
+            </div>
+            <div>
+              <span class="me-2">${parseFloat(payment.amount).toFixed(2)}₺</span>
+              <span class="status-badge status-${payment.status}">${payment.status}</span>
+            </div>
+          `;
+          paymentList.appendChild(div);
+        });
+  
+      } catch (err) {
+        console.error("Hata:", err);
+      }
+    }
+  
+    fetchPayments();
+  </script>
+</body>
+</html>

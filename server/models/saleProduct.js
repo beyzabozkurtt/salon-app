@@ -7,7 +7,15 @@ module.exports = (sequelize, DataTypes) => {
     },
     CustomerId: {
       type: DataTypes.INTEGER,
-      allowNull: true,
+      allowNull: true
+    },
+    ProductId: { // ✅ ProductId zorunlu alan, NULL olamaz
+      type: DataTypes.INTEGER,
+      allowNull: false
+    },
+    SaleId: {
+      type: DataTypes.INTEGER,
+      allowNull: true
     },
     quantity: {
       type: DataTypes.INTEGER,

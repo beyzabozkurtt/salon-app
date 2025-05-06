@@ -5,6 +5,7 @@ const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const sequelize = require('./config/config'); // 🔥 Config dosyasından veritabanı bağlantısı
+const paymentRoutes = require('./routes/paymentRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 5001;
@@ -22,6 +23,8 @@ app.use('/api/products', require('./routes/productsRoutes'));
 app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/sales', require('./routes/saleRoutes'));
 app.use('/api/sale-products', require('./routes/saleProductRoutes'));
+app.use('/api/payments', require('./routes/paymentRoutes'));
+
 
 // 🎯 Ana kontrol route'u
 app.get('/', (req, res) => res.send('💡 Salon API çalışıyor!'));
@@ -30,7 +33,7 @@ app.get('/', (req, res) => res.send('💡 Salon API çalışıyor!'));
 sequelize.authenticate()
   .then(() => {
     console.log('✅ Veritabanına başarıyla bağlanıldı.');
-    return sequelize.sync(); 
+    return sequelize.sync({ alter: true }); 
   })
   .then(() => {
     console.log("✅ Veritabanı senkronize edildi.");
