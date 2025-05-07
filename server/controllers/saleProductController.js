@@ -56,7 +56,8 @@ module.exports = {
 
         await Payment.create({
           SaleId: SaleId,
-          ProductId: ProductId, // 🟢 BURASI EKLENDİ
+          ProductId: ProductId,
+          SaleProductId: newItem.id, // 💎 ÖNEMLİ: Bağlantı kurduk
           installmentNo: 1,
           amount: totalAmount,
           dueDate,
@@ -89,18 +90,16 @@ module.exports = {
     try {
       const item = await SaleProduct.findByPk(req.params.id);
       if (!item) return res.status(404).json({ error: "Kayıt bulunamadı." });
-  
-      // Ödeme kaydı da silinsin (yalnızca bağımsız ürün ödemesi için)
-      const { Payment } = require('../models');
+
+      // İlgili ödeme silinsin
       await Payment.destroy({
         where: {
-          ProductId: item.ProductId,
-          SaleId: null // sadece bağımsız ürün satışları için
+          SaleProductId: item.id
         }
       });
-  
+
       await SaleProduct.destroy({ where: { id: req.params.id } });
-  
+
       res.json({ message: 'Ürün satıştan ve ödemeden kaldırıldı' });
     } catch (err) {
       console.error(err);

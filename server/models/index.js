@@ -34,6 +34,9 @@ Sale.belongsTo(User);
 Service.hasMany(Sale);
 Sale.belongsTo(Service);
 
+User.hasMany(Payment, { foreignKey: 'UserId' });
+Payment.belongsTo(User, { foreignKey: 'UserId' });
+
 // 🟢 Ödeme - Hizmet Satışı ilişkisi
 Sale.hasMany(Payment, { foreignKey: 'SaleId', onDelete: 'CASCADE' });
 Payment.belongsTo(Sale, { foreignKey: 'SaleId' });
@@ -41,11 +44,20 @@ Payment.belongsTo(Sale, { foreignKey: 'SaleId' });
 // 🟢 Ödeme - Ürün ilişkisi
 Product.hasMany(Payment, {
   foreignKey: 'ProductId',
-  onDelete: 'SET NULL', // Payment’ta ProductId null olabilir
+  onDelete: 'SET NULL',
   hooks: true
 });
 Payment.belongsTo(Product, {
   foreignKey: 'ProductId'
+});
+
+// 🆕 Ödeme - SaleProduct ilişkisi (ÜRÜN ÖDEMELERİ İÇİN)
+SaleProduct.hasMany(Payment, {
+  foreignKey: 'SaleProductId',
+  onDelete: 'SET NULL'
+});
+Payment.belongsTo(SaleProduct, {
+  foreignKey: 'SaleProductId'
 });
 
 // ✅ SaleProduct ilişkileri
@@ -56,14 +68,14 @@ Sale.hasMany(SaleProduct, {
 });
 Product.hasMany(SaleProduct, {
   foreignKey: 'ProductId',
-  onDelete: 'CASCADE', // Ürün silinirse ürünle bağlantılı ürün satışı silinsin
+  onDelete: 'CASCADE',
   hooks: true
 });
 
 SaleProduct.belongsTo(Sale, { foreignKey: 'SaleId' });
 SaleProduct.belongsTo(Product, { foreignKey: 'ProductId' });
 SaleProduct.belongsTo(User);
-SaleProduct.belongsTo(Customer);
+SaleProduct.belongsTo(Customer, { foreignKey: 'CustomerId' });
 
 Sale.belongsToMany(Product, { through: SaleProduct });
 Product.belongsToMany(Sale, { through: SaleProduct });

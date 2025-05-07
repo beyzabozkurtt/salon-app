@@ -1,8 +1,7 @@
-const { Payment, Sale, Customer, Service, SaleProduct, Product } = require('../models');
+const { Payment, Sale, Customer, Service, SaleProduct, Product, User } = require('../models');
 const { Op } = require('sequelize');
 
 module.exports = {
-  // ✔️ Satış yapılmış müşteri listesini getir
   async getPaidCustomers(req, res) {
     try {
       const customerIds = await Sale.findAll({
@@ -12,10 +11,7 @@ module.exports = {
       });
 
       const ids = customerIds.map(c => c.CustomerId);
-
-      const customers = await Customer.findAll({
-        where: { id: { [Op.in]: ids } }
-      });
+      const customers = await Customer.findAll({ where: { id: { [Op.in]: ids } } });
 
       res.json(customers);
     } catch (error) {
@@ -24,7 +20,6 @@ module.exports = {
     }
   },
 
-  // ✔️ Belirli müşterinin tüm ödeme detaylarını getir (hizmet ve ürün dahil)
   async getPaymentsByCustomer(req, res) {
     const customerId = parseInt(req.params.id);
 
@@ -39,17 +34,23 @@ module.exports = {
             ]
           },
           {
-            model: Product // Doğrudan ürünle ilişkili ödemeler
+            model: Product
+          },
+          {
+            model: SaleProduct,
+            include: [{ model: Customer }]
+          },
+          {
+            model: User
           }
         ],
         order: [['dueDate', 'ASC']]
       });
 
-      // Sadece o müşteriye ait ödemeleri filtrele
       const filtered = payments.filter(p => {
-        const saleMatch = p.Sale?.CustomerId === customerId;
-        const productMatch = p.Product && p.Product.CustomerId === customerId;
-        return saleMatch || productMatch;
+        const fromSale = p.Sale?.CustomerId === customerId;
+        const fromSP = p.SaleProduct?.CustomerId === customerId;
+        return fromSale || fromSP;
       });
 
       res.json(filtered);
@@ -59,17 +60,26 @@ module.exports = {
     }
   },
 
-  // ✔️ Tüm ödemeleri getir (admin ekranı için vs.)
   async getAllPayments(req, res) {
     try {
       const payments = await Payment.findAll({
         include: [
           {
             model: Sale,
-            include: ['Customer', 'Service']
+            include: [
+              { model: Customer },
+              { model: Service }
+            ]
           },
           {
             model: Product
+          },
+          {
+            model: SaleProduct,
+            include: [{ model: Customer }]
+          },
+          {
+            model: User
           }
         ],
         order: [['dueDate', 'ASC']]
@@ -79,6 +89,115 @@ module.exports = {
     } catch (error) {
       console.error("❌ getAllPayments hatası:", error);
       res.status(500).json({ error: 'Tüm ödemeler alınamadı.' });
+    }
+  },
+
+  async updateDueDate(req, res) {
+    const paymentId = req.params.id;
+    const { newDate } = req.body;
+
+    try {
+      const payment = await Payment.findByPk(paymentId);
+      if (!payment) return res.status(404).json({ error: 'Ödeme bulunamadı' });
+
+      payment.dueDate = newDate;
+      await payment.save();
+
+      res.json({ message: 'Tarih başarıyla güncellendi', payment });
+    } catch (err) {
+      console.error("❌ updateDueDate hatası:", err);
+      res.status(500).json({ error: 'Tarih güncellenemedi' });
+    }
+  },
+
+  async updatePayment(req, res) {
+    const paymentId = req.params.id;
+    const { dueDate, amount, status, paymentType, paymentDate, UserId } = req.body;
+
+    try {
+      const payment = await Payment.findByPk(paymentId);
+      if (!payment) return res.status(404).json({ error: "Ödeme bulunamadı." });
+
+      if (dueDate) {
+        const parsedDate = new Date(dueDate);
+        if (!isNaN(parsedDate)) payment.dueDate = parsedDate;
+        else return res.status(400).json({ error: "Geçersiz tarih formatı." });
+      }
+
+      if (amount !== undefined) payment.amount = amount;
+      if (status) payment.status = status;
+      if (paymentType) payment.paymentType = paymentType;
+      if (paymentDate) payment.paymentDate = new Date(paymentDate);
+      if (UserId) payment.UserId = UserId;
+
+      await payment.save();
+      res.json({ message: "Ödeme başarıyla güncellendi.", updated: payment });
+    } catch (error) {
+      console.error("❌ updatePayment hatası:", error);
+      res.status(500).json({ error: "Ödeme güncellenemedi." });
+    }
+  },
+
+  async makePayment(req, res) {
+    const paymentId = req.params.id;
+    const { userId, paymentType } = req.body;
+
+    try {
+      const payment = await Payment.findByPk(paymentId);
+      if (!payment) return res.status(404).json({ error: "Taksit bulunamadı." });
+
+      payment.status = "ödendi";
+      payment.paymentType = paymentType;
+      payment.paymentDate = new Date();
+      payment.UserId = userId;
+
+      await payment.save();
+      res.json({ message: "Ödeme başarıyla alındı.", updated: payment });
+    } catch (err) {
+      console.error("❌ makePayment hatası:", err);
+      res.status(500).json({ error: "Ödeme alınamadı." });
+    }
+  },
+
+  async getCashTracking(req, res) {
+    try {
+      let payments = await Payment.findAll({
+        include: [
+          {
+            model: User,
+            attributes: ['id', 'name']
+          },
+          {
+            model: Sale,
+            include: [
+              { model: Customer, attributes: ['id', 'name', 'phone'] },
+              { model: Service, attributes: ['id', 'name'] }
+            ]
+          },
+          {
+            model: Product
+          },
+          {
+            model: SaleProduct,
+            include: [
+              { model: Customer, attributes: ['id', 'name'] }
+            ]
+          }
+        ],
+        order: [['paymentDate', 'DESC']]
+      });
+
+      payments = payments.map(p => {
+        if (!p.Sale && p.SaleProduct?.Customer) {
+          p.dataValues.FallbackCustomer = p.SaleProduct.Customer;
+        }
+        return p;
+      });
+
+      res.json(payments);
+    } catch (error) {
+      console.error("❌ getCashTracking hatası:", error);
+      res.status(500).json({ error: 'Kasa takibi verileri alınamadı.' });
     }
   }
 };

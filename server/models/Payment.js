@@ -19,7 +19,24 @@ module.exports = (sequelize, DataTypes) => {
     ProductId: {
       type: DataTypes.INTEGER,
       allowNull: true
+    },
+    paymentType: {
+      type: DataTypes.STRING, // 'nakit' | 'kart'
+      allowNull: true
+    },
+    paymentDate: {
+      type: DataTypes.DATE,
+      allowNull: true
+    },
+    UserId: {
+      type: DataTypes.INTEGER,
+      allowNull: true
+    },
+    SaleProductId: {
+      type: DataTypes.INTEGER,
+      allowNull: true
     }
+    
   });
 
   // İLİŞKİLER BURADA TANIMLANIYOR

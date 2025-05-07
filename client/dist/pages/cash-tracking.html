@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <title>Kasa Takibi</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body { background-color: #f8f9fa; }
+    h2 { font-weight: bold; }
+    table th, table td { vertical-align: middle; }
+  </style>
+</head>
+<body class="container py-4">
+  <h2 class="mb-4">💵 Kasa Takibi</h2>
+
+  <table class="table table-bordered table-striped">
+    <thead class="table-dark">
+      <tr>
+        <th>Tarih</th>
+        <th>Müşteri</th>
+        <th>Ürün/Hizmet</th>
+        <th>Taksit</th>
+        <th>Tutar</th>
+        <th>Ödeme Türü</th>
+        <th>Alan Personel</th>
+      </tr>
+    </thead>
+    <tbody id="cash-table"></tbody>
+  </table>
+
+  <script>
+    async function loadCashTracking() {
+      const res = await fetch("http://localhost:5001/api/payments/cash-tracking");
+      const data = await res.json();
+
+      const tbody = document.getElementById("cash-table");
+      tbody.innerHTML = "";
+
+      data.forEach(p => {
+        const row = document.createElement("tr");
+
+        const tarih = p.paymentDate ? new Date(p.paymentDate).toLocaleString('tr-TR') : "-";
+        const customer = p.Sale?.Customer?.name || p.FallbackCustomer?.name || "-";
+        const label = p.Product?.name || p.Sale?.Service?.name || "-";
+        const taksit = p.installmentNo || "-";
+        const tutar = parseFloat(p.amount).toFixed(2) + "₺";
+        const tür = p.paymentType || "-";
+        const user = p.User?.name || "-";
+
+        row.innerHTML = `
+          <td>${tarih}</td>
+          <td>${customer}</td>
+          <td>${label}</td>
+          <td>${taksit}</td>
+          <td>${tutar}</td>
+          <td>${tür}</td>
+          <td>${user}</td>
+        `;
+        tbody.appendChild(row);
+      });
+    }
+
+    loadCashTracking();
+  </script>
+</body>
+</html>

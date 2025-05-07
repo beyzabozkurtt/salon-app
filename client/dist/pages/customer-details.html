@@ -40,6 +40,11 @@
     <h5>Ürün Satışları</h5>
     <ul id="productList" class="list-group"></ul>
   </div>
+
+  <div class="mt-4">
+    <h5>Ödeme Taksitleri</h5>
+    <ul id="paymentList" class="list-group"></ul>
+  </div>
 </div>
 
 <script>
@@ -49,6 +54,7 @@ const customerId = urlParams.get("id");
 const customerNameEl = document.getElementById("customerName");
 const serviceList = document.getElementById("serviceList");
 const productList = document.getElementById("productList");
+const paymentList = document.getElementById("paymentList");
 
 if (!customerId) {
   alert("Müşteri bulunamadı.");
@@ -111,7 +117,61 @@ async function loadCustomerDetails() {
   }
 }
 
+async function loadPayments() {
+  try {
+    const res = await axios.get(`http://localhost:5001/api/payments/by-customer/${customerId}`);
+    const data = res.data;
+
+    if (!data.length) {
+      paymentList.innerHTML = `<li class="list-group-item text-muted">Taksitli ödeme bulunamadı.</li>`;
+      return;
+    }
+
+    paymentList.innerHTML = data.map(payment => {
+      const label = payment.Product?.name || payment.Sale?.Service?.name || "Tanımsız";
+      const currentDate = new Date(payment.dueDate).toISOString().split("T")[0];
+
+      return `
+        <li class="list-group-item d-flex justify-content-between align-items-center">
+          <div>
+            <strong>${label}</strong> • 
+            ${payment.installmentNo || "-"}. Taksit • 
+            <input 
+              type="date" 
+              value="${currentDate}" 
+              class="form-control form-control-sm d-inline-block payment-date" 
+              data-id="${payment.id}" 
+              style="width: 140px;"
+            >
+          </div>
+          <span class="badge text-bg-${payment.status === 'bekliyor' ? 'warning' : 'success'}">${payment.status}</span>
+        </li>
+      `;
+    }).join("");
+  } catch (err) {
+    console.error("Ödemeler getirilemedi:", err);
+    alert("Ödeme listesi alınamadı.");
+  }
+}
+
+document.addEventListener("change", async (e) => {
+  if (e.target.classList.contains("payment-date")) {
+    const id = e.target.dataset.id;
+    const newDate = e.target.value;
+
+    try {
+      await axios.put(`http://localhost:5001/api/payments/update/${id}`, {
+        dueDate: newDate
+      });
+      alert("📅 Tarih güncellendi!");
+    } catch (err) {
+      alert("❌ Güncelleme başarısız.");
+    }
+  }
+});
+
 loadCustomerDetails();
+loadPayments();
 </script>
 </body>
 </html>

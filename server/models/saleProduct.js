@@ -1,5 +1,5 @@
 module.exports = (sequelize, DataTypes) => {
-  return sequelize.define('SaleProduct', {
+  const SaleProduct = sequelize.define('SaleProduct', {
     id: {
       type: DataTypes.INTEGER,
       autoIncrement: true,
@@ -9,7 +9,7 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.INTEGER,
       allowNull: true
     },
-    ProductId: { // ✅ ProductId zorunlu alan, NULL olamaz
+    ProductId: {
       type: DataTypes.INTEGER,
       allowNull: false
     },
@@ -27,4 +27,16 @@ module.exports = (sequelize, DataTypes) => {
       allowNull: false
     }
   });
+
+  // 🧩 İlişkiler burada tanımlanmalı
+  SaleProduct.associate = models => {
+    SaleProduct.belongsTo(models.Customer, { foreignKey: 'CustomerId' });
+    SaleProduct.belongsTo(models.Product, { foreignKey: 'ProductId' });
+    SaleProduct.belongsTo(models.Sale, { foreignKey: 'SaleId' });
+
+    // 💸 Her ürün satışı birden fazla ödemeyle eşleşebilir
+    SaleProduct.hasMany(models.Payment, { foreignKey: 'SaleProductId' });
+  };
+
+  return SaleProduct;
 };
