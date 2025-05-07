@@ -102,7 +102,20 @@
       <div class="card p-3">
         <button class="btn btn-outline-primary w-100 mb-2" id="createBtn">+ Oluştur</button>
         <div id="datepicker"></div>
-        <input type="text" id="searchPerson" placeholder="Kişi arayın" class="form-control mt-2" />
+        <div class="card p-3 mb-3">
+          <h6 class="mb-2">🔍 Filtrele</h6>
+          <select id="filterCustomer" class="form-select mb-2">
+            <option value="">Tüm Müşteriler</option>
+          </select>
+          <select id="filterService" class="form-select mb-2">
+            <option value="">Tüm Hizmetler</option>
+          </select>
+          <select id="filterUser" class="form-select mb-2">
+            <option value="">Tüm Personeller</option>
+          </select>
+          <button id="filterBtn" class="btn btn-primary mt-2 w-100">Filtrele</button>
+        </div>
+        
       </div>
     </div>
 
@@ -110,8 +123,8 @@
       <div class="d-flex justify-content-between align-items-center mb-3">
         <div class="d-flex align-items-center gap-2">
           <select id="viewSelect" class="form-select form-select-sm">
-            <option value="timeGridDay">Gün</option>
-            <option value="timeGridWeek" selected>Hafta</option>
+            <option value="timeGridDay" selected>Gün</option>
+            <option value="timeGridWeek">Hafta</option>
             <option value="dayGridMonth">Ay</option>
           </select>
           <button id="todayBtn" class="btn btn-outline-dark btn-sm">Bugün</button>
@@ -130,11 +143,44 @@ document.addEventListener('DOMContentLoaded', function () {
   const randevuModal = new bootstrap.Modal(document.getElementById('randevuModal'));
   const ekleModal = new bootstrap.Modal(document.getElementById('randevuEkleModal'));
   const ekleForm = document.getElementById('ekleForm');
+  document.getElementById("todayBtn").addEventListener("click", () => {
+  sifirlaFiltreler();
+  calendar.gotoDate(new Date());           // Bugünün tarihine git
+  calendar.changeView('timeGridDay');      // Görünümü 'Gün' yap
+  document.getElementById("viewSelect").value = "timeGridDay"; // dropdown'u da güncelle
+  calendar.refetchEvents();
+});
 
+
+
+  document.getElementById("prevBtn").addEventListener("click", () => {
+    sifirlaFiltreler();
+    calendar.prev();
+    calendar.refetchEvents();
+  });
+
+  document.getElementById("nextBtn").addEventListener("click", () => {
+    sifirlaFiltreler();
+    calendar.next();
+    calendar.refetchEvents();
+  });
   const calendar = new FullCalendar.Calendar(calendarEl, {
     locale: 'tr',
+    eventDisplay: 'block', 
     slotLabelFormat: { hour: '2-digit', minute: '2-digit', hour12: false },
-    buttonText: { today: 'Bugün' },
+    headerToolbar: {
+    left: '',
+    center: 'title',
+    right: 'dayGridMonth,timeGridWeek,timeGridDay,prev,next'
+  },
+  buttonText: {
+  today:    'Bugün',
+  month:    'Ay',
+  week:     'Hafta',
+  day:      'Gün',
+  list:     'Liste'
+},
+
     timeZone: false,
     initialView: 'timeGridDay',
     editable: true,
@@ -142,6 +188,7 @@ document.addEventListener('DOMContentLoaded', function () {
     nowIndicator: true,
     slotDuration: '00:30:00',
     allDaySlot: false,
+    
     eventResize: async function(info) {
   const r = info.event;
 
@@ -175,34 +222,61 @@ document.addEventListener('DOMContentLoaded', function () {
   },
 
 
-    events: async function (info, successCallback, failureCallback) {
-      try {
-        const res = await axios.get('http://localhost:5001/api/appointments');
-        const events = res.data.map(r => ({
-        id: r.id,
-        title: `${r.Customer?.name || 'Müşteri'} • ${r.Service?.name || 'Hizmet'} • ${r.User?.name || 'Personel'} • ${r.sessionNumber || '❓'}. Seans`,
-        start: r.date,
-        end: r.endDate,
-        allDay: false,
-        backgroundColor: r.status === "iptal" ? "#FF0000" : (r.Service?.color || '#007BFF'),
-        borderColor: r.status === "iptal" ? "#FF0000" : (r.Service?.color || '#007BFF'),
-        textColor: "#fff"
-}));
-        successCallback(events);
-      } catch (err) {
-        failureCallback(err);
-      }
-      },
+  events: async function (info, successCallback, failureCallback) {
+  try {
+    const res = await axios.get("http://localhost:5001/api/appointments");
 
-    dateClick: function (info) {
-      const clickedDate = new Date(info.date);
-      document.getElementById('ekleDate').value = getLocalDateTimeString(clickedDate);
-      const endDate = new Date(clickedDate);
-      endDate.setHours(endDate.getHours() + 1);
-      document.getElementById('ekleEndDate').value = getLocalDateTimeString(endDate);
-      doldurDropdownlar();
-      ekleModal.show();
-    },
+    const selectedCustomer = document.getElementById("filterCustomer").value;
+    const selectedService = document.getElementById("filterService").value;
+    const selectedUser = document.getElementById("filterUser").value;
+
+    const filtered = res.data.filter(r =>
+      (!selectedCustomer || r.CustomerId == selectedCustomer) &&
+      (!selectedService || r.ServiceId == selectedService) &&
+      (!selectedUser || r.UserId == selectedUser)
+    );
+
+    const events = filtered.map(r => ({
+      id: r.id,
+      title: `${r.Customer?.name || 'Müşteri'} • ${r.Service?.name || 'Hizmet'} • ${r.User?.name || 'Personel'} • ${r.sessionNumber || '?'}. Seans`,
+      start: r.date,
+      end: r.endDate,
+      backgroundColor: r.status === "iptal" ? "#FF0000" : (r.Service?.color || '#007BFF'),
+      borderColor: r.status === "iptal" ? "#FF0000" : (r.Service?.color || '#007BFF'),
+      textColor: "#fff"
+    }));
+
+    successCallback(events);
+  } catch (err) {
+    failureCallback(err);
+  }
+},
+
+dateClick: function (info) {
+  // Sadece timeGridDay görünümünde çalışsın
+  if (calendar.view.type !== 'timeGridDay') {
+    // Eğer başka bir görünümdeyse, görünümü değiştir ve sadece gün görünümüne git
+    calendar.changeView('timeGridDay', info.date);
+    document.getElementById("viewSelect").value = "timeGridDay";
+    return; // Modal açma, sadece görünümü değiştir
+  }
+
+  // Eğer zaten gün görünümündeyse modalı aç
+  const clickedDate = new Date(info.date);
+
+  sifirlaFiltreler();
+  calendar.gotoDate(clickedDate);
+  calendar.refetchEvents();
+
+  document.getElementById('ekleDate').value = getLocalDateTimeString(clickedDate);
+  const endDate = new Date(clickedDate);
+  endDate.setHours(endDate.getHours() + 1);
+  document.getElementById('ekleEndDate').value = getLocalDateTimeString(endDate);
+  
+  doldurDropdownlar();
+  ekleModal.show();
+},
+
 
     eventClick: async function (info) {
   try {
@@ -250,9 +324,16 @@ document.addEventListener('DOMContentLoaded', function () {
   } catch (err) {
     alert("Detaylar alınamadı.");
   }
+  },
+  eventDidMount: function(info) {
+  if (calendar.view.type === "dayGridMonth") {
+    const timeEl = info.el.querySelector('.fc-event-time');
+    if (timeEl) timeEl.style.display = 'none';
   }
+},
 }
 );
+
 
 async function doldurDropdownlar() {
   try {
@@ -353,7 +434,19 @@ async function doldurDropdownlar() {
     }
   });
 
+  doldurFiltreler();
+
   calendar.render();
+
+  document.getElementById("viewSelect").addEventListener("change", function () {
+  calendar.changeView(this.value);
+});
+
+
+  document.getElementById("filterBtn").addEventListener("click", () => {
+  calendar.refetchEvents();
+});
+
   document.getElementById("createBtn").addEventListener("click", () => {
     const now = new Date();
     document.getElementById('ekleDate').value = getLocalDateTimeString(now);
@@ -365,11 +458,13 @@ async function doldurDropdownlar() {
   });
 
   $("#datepicker").datepicker({
-    onSelect: function (dateText) {
-      const date = new Date(dateText);
-      calendar.gotoDate(date);
-    }
-  });
+  onSelect: function (dateText) {
+    const date = new Date(dateText);
+    calendar.gotoDate(date);
+    sifirlaFiltreler();
+    calendar.refetchEvents();
+  }
+});
 });
 
 function getLocalDateTimeString(date) {
@@ -380,6 +475,48 @@ function getLocalDateTimeString(date) {
   const minutes = String(date.getMinutes()).padStart(2, '0');
   return `${year}-${month}-${day}T${hours}:${minutes}`;
 }
+async function doldurFiltreler() {
+  try {
+    const [customers, services, users] = await Promise.all([
+      axios.get("http://localhost:5001/api/customers"),
+      axios.get("http://localhost:5001/api/services"),
+      axios.get("http://localhost:5001/api/users"),
+    ]);
+
+    const cEl = document.getElementById("filterCustomer");
+    const sEl = document.getElementById("filterService");
+    const uEl = document.getElementById("filterUser");
+
+    customers.data.forEach(c => {
+      const opt = document.createElement("option");
+      opt.value = c.id;
+      opt.textContent = c.name;
+      cEl.appendChild(opt);
+    });
+
+    services.data.forEach(s => {
+      const opt = document.createElement("option");
+      opt.value = s.id;
+      opt.textContent = s.name;
+      sEl.appendChild(opt);
+    });
+
+    users.data.forEach(u => {
+      const opt = document.createElement("option");
+      opt.value = u.id;
+      opt.textContent = u.name;
+      uEl.appendChild(opt);
+    });
+  } catch (err) {
+    console.error("Filtre verileri yüklenemedi:", err);
+  }
+}
+function sifirlaFiltreler() {
+  document.getElementById("filterCustomer").value = "";
+  document.getElementById("filterService").value = "";
+  document.getElementById("filterUser").value = "";
+}
+
 </script>
 </body>
 </html>
