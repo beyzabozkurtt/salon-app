@@ -22,6 +22,11 @@
     .status-bekliyor { background-color: #ffc107; color: #212529; }
     .status-ödendi { background-color: #198754; color: white; }
     .status-gecikmiş { background-color: #dc3545; color: white; }
+
+    body {
+  background-color: #f8f9fa;
+  padding-bottom: 80px; /* 🟢 sabit kutuya yer bırakıyoruz */
+}
   </style>
 </head>
 <body class="container py-4">
@@ -43,6 +48,16 @@
 
   <div id="customer-info" class="mb-3"></div>
   <div id="payment-list"></div>
+  <div class="fixed-bottom bg-white border-top py-2">
+    <div class="container d-flex justify-content-around fw-bold">
+      <div>Toplam Tutar: <span id="toplamTutar">0₺</span></div>
+      <div>Ödenen Tutar: <span id="odenenTutar">0₺</span></div>
+      <div>Kalan Tutar: <span id="kalanTutar">0₺</span></div>
+    </div>
+
+    
+  </div>
+  
 
   <!-- Ödeme Modalı -->
   <div class="modal fade" id="paymentModal" tabindex="-1">
@@ -142,10 +157,40 @@
             ${status !== 'ödendi' ? `<button class="btn btn-success btn-sm pay-btn" data-id="${p.id}" data-amount="${p.amount}">Ödeme Yap</button>` : ''}
           </div>`;
         container.appendChild(div);
+
+              // Toplamları hesapla
+      let toplam = 0, odenen = 0, kalan = 0;
+
+allPayments.forEach(p => {
+  const label = p.Product?.name || p.Sale?.Service?.name || "Tanımsız";
+  let status = p.status;
+  const due = new Date(p.dueDate);
+  if (status === "bekliyor" && due < new Date()) status = "gecikmiş";
+
+  const selectedName = document.getElementById("filterName").value;
+  const selectedStatus = document.getElementById("filterStatus").value;
+
+  if ((selectedName !== "all" && label !== selectedName) ||
+      (selectedStatus !== "all" && status !== selectedStatus)) return;
+
+  const tutar = parseFloat(p.amount);
+  toplam += tutar;
+  if (status === "ödendi") odenen += tutar;
+  else kalan += tutar;
+});
+
+document.getElementById("toplamTutar").textContent = `${toplam.toFixed(2)}₺`;
+document.getElementById("odenenTutar").textContent = `${odenen.toFixed(2)}₺`;
+document.getElementById("kalanTutar").textContent = `${kalan.toFixed(2)}₺`;
+
       });
+
+      
 
       addListeners();
     }
+
+    
 
     function addListeners() {
       document.querySelectorAll(".due-date-input, .amount-input").forEach(input => {

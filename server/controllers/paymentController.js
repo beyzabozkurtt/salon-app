@@ -175,29 +175,45 @@ module.exports = {
             ]
           },
           {
-            model: Product
-          },
-          {
-            model: SaleProduct,
+            model: Product,
             include: [
-              { model: Customer, attributes: ['id', 'name'] }
+              {
+                model: SaleProduct,
+                include: [
+                  { model: Customer, attributes: ['id', 'name', 'phone'] }
+                ]
+              }
             ]
           }
         ],
         order: [['paymentDate', 'DESC']]
       });
-
+  
       payments = payments.map(p => {
-        if (!p.Sale && p.SaleProduct?.Customer) {
-          p.dataValues.FallbackCustomer = p.SaleProduct.Customer;
+        if (!p.Sale && p.Product?.SaleProducts?.length > 0) {
+          const sp = p.Product.SaleProducts[0];
+          p.dataValues.FallbackCustomer = sp.Customer || null;
         }
-        return p;
+        return {
+          id: p.id,
+          amount: p.amount,
+          installmentNo: p.installmentNo,
+          paymentType: p.paymentType,
+          paymentDate: p.paymentDate,
+          dueDate: p.dueDate, // 🟢 Yeni eklendi
+          status: p.status,   // 🟢 Yeni eklendi
+          User: p.User,
+          Product: p.Product,
+          Sale: p.Sale,
+          FallbackCustomer: p.dataValues.FallbackCustomer || null
+        };
       });
-
+  
       res.json(payments);
     } catch (error) {
       console.error("❌ getCashTracking hatası:", error);
       res.status(500).json({ error: 'Kasa takibi verileri alınamadı.' });
     }
   }
+  
 };

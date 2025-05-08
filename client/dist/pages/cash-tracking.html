@@ -8,6 +8,31 @@
     body { background-color: #f8f9fa; }
     h2 { font-weight: bold; }
     table th, table td { vertical-align: middle; }
+    .filter-row input, .filter-row select {
+      width: 100%;
+      font-size: 0.9rem;
+    }
+    .badge-status {
+      padding: 4px 10px;
+      border-radius: 8px;
+      font-weight: 600;
+    }
+    .summary-bar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: #fff;
+    border-top: 2px solid #dee2e6;
+    padding: 12px 30px;
+    display: flex;
+    justify-content: space-between;
+    font-weight: bold;
+    z-index: 99;
+  }
+    .badge-bekliyor { background-color: #ffc107; color: #212529; }
+    .badge-ödendi { background-color: #198754; color: #fff; }
+    .badge-gecikmiş { background-color: #dc3545; color: #fff; }
   </style>
 </head>
 <body class="container py-4">
@@ -16,7 +41,9 @@
   <table class="table table-bordered table-striped">
     <thead class="table-dark">
       <tr>
-        <th>Tarih</th>
+        <th>Ödeme Tarihi</th>
+        <th>Vade Tarihi</th>
+        <th>Durum</th>
         <th>Müşteri</th>
         <th>Ürün/Hizmet</th>
         <th>Taksit</th>
@@ -24,42 +51,152 @@
         <th>Ödeme Türü</th>
         <th>Alan Personel</th>
       </tr>
+      <tr class="filter-row">
+        <th>
+          <input type="date" id="paymentDateStart"> -
+          <input type="date" id="paymentDateEnd">
+        </th>
+        <th>
+          <input type="date" id="dueDateStart"> -
+          <input type="date" id="dueDateEnd">
+        </th>
+        <th>
+          <select id="filterStatus">
+            <option value="">Tümü</option>
+            <option value="bekliyor">Bekliyor</option>
+            <option value="ödendi">Ödendi</option>
+            <option value="gecikmiş">Gecikmiş</option>
+          </select>
+        </th>
+        <th>-</th>
+        <th>
+          <select id="filterLabel"></select>
+        </th>
+        <th>-</th>
+        <th>-</th>
+        <th>
+          <select id="filterPaymentType">
+            <option value="">Tümü</option>
+            <option value="nakit">Nakit</option>
+            <option value="kart">Kart</option>
+          </select>
+        </th>
+        <th>
+          <select id="filterUser"></select>
+        </th>
+      </tr>
     </thead>
     <tbody id="cash-table"></tbody>
   </table>
 
+  <div class="summary-bar">
+    <div>Toplam Tutar: <span id="total">0₺</span></div>
+    <div>Ödenen Tutar: <span id="paid">0₺</span></div>
+    <div>Kalan Tutar: <span id="unpaid">0₺</span></div>
+  </div>
+  
+
   <script>
+    let allPayments = [];
+  
     async function loadCashTracking() {
       const res = await fetch("http://localhost:5001/api/payments/cash-tracking");
-      const data = await res.json();
-
+      allPayments = await res.json();
+      populateFilters(allPayments);
+      renderTable();
+    }
+  
+    function populateFilters(data) {
+      const labelSet = new Set();
+      const userSet = new Set();
+      const labelSelect = document.getElementById("filterLabel");
+      const userSelect = document.getElementById("filterUser");
+  
+      labelSelect.innerHTML = `<option value="">Tümü</option>`;
+      userSelect.innerHTML = `<option value="">Tümü</option>`;
+  
+      data.forEach(p => {
+        const label = p.Product?.name || p.Sale?.Service?.name;
+        const user = p.User?.name;
+        if (label && !labelSet.has(label)) {
+          labelSelect.innerHTML += `<option value="${label}">${label}</option>`;
+          labelSet.add(label);
+        }
+        if (user && !userSet.has(user)) {
+          userSelect.innerHTML += `<option value="${user}">${user}</option>`;
+          userSet.add(user);
+        }
+      });
+    }
+  
+    function renderTable() {
       const tbody = document.getElementById("cash-table");
       tbody.innerHTML = "";
-
-      data.forEach(p => {
-        const row = document.createElement("tr");
-
-        const tarih = p.paymentDate ? new Date(p.paymentDate).toLocaleString('tr-TR') : "-";
-        const customer = p.Sale?.Customer?.name || p.FallbackCustomer?.name || "-";
+  
+      const paymentStart = document.getElementById("paymentDateStart").value;
+      const paymentEnd = document.getElementById("paymentDateEnd").value;
+      const dueStart = document.getElementById("dueDateStart").value;
+      const dueEnd = document.getElementById("dueDateEnd").value;
+      const statusFilter = document.getElementById("filterStatus").value;
+      const labelFilter = document.getElementById("filterLabel").value;
+      const paymentTypeFilter = document.getElementById("filterPaymentType").value;
+      const userFilter = document.getElementById("filterUser").value;
+  
+      const now = new Date();
+      let toplam = 0, odenen = 0, kalan = 0;
+  
+      allPayments.forEach(p => {
+        let status = p.status;
+        const due = new Date(p.dueDate);
+        if (status === 'bekliyor' && due < now) status = 'gecikmiş';
+  
         const label = p.Product?.name || p.Sale?.Service?.name || "-";
-        const taksit = p.installmentNo || "-";
-        const tutar = parseFloat(p.amount).toFixed(2) + "₺";
-        const tür = p.paymentType || "-";
+        const customer = p.Sale?.Customer?.name || p.FallbackCustomer?.name || "-";
         const user = p.User?.name || "-";
-
+  
+        const payDate = p.paymentDate ? new Date(p.paymentDate) : null;
+        const dueDate = p.dueDate ? new Date(p.dueDate) : null;
+  
+        const pass = (!paymentStart || !payDate || new Date(paymentStart) <= payDate) &&
+                     (!paymentEnd || !payDate || new Date(paymentEnd) >= payDate) &&
+                     (!dueStart || !dueDate || new Date(dueStart) <= dueDate) &&
+                     (!dueEnd || !dueDate || new Date(dueEnd) >= dueDate) &&
+                     (!statusFilter || status === statusFilter) &&
+                     (!labelFilter || label === labelFilter) &&
+                     (!paymentTypeFilter || p.paymentType === paymentTypeFilter) &&
+                     (!userFilter || user === userFilter);
+  
+        if (!pass) return;
+  
+        const amount = parseFloat(p.amount);
+        toplam += amount;
+        if (status === "ödendi") odenen += amount;
+        else kalan += amount;
+  
+        const row = document.createElement("tr");
         row.innerHTML = `
-          <td>${tarih}</td>
+          <td>${p.paymentDate ? new Date(p.paymentDate).toLocaleString('tr-TR') : "-"}</td>
+          <td>${dueDate ? dueDate.toLocaleDateString('tr-TR') : "-"}</td>
+          <td><span class="badge-status badge-${status}">${status}</span></td>
           <td>${customer}</td>
           <td>${label}</td>
-          <td>${taksit}</td>
-          <td>${tutar}</td>
-          <td>${tür}</td>
+          <td>${p.installmentNo || "-"}</td>
+          <td>${amount.toFixed(2)}₺</td>
+          <td>${p.paymentType || "-"}</td>
           <td>${user}</td>
         `;
         tbody.appendChild(row);
       });
+  
+      document.getElementById("total").textContent = `${toplam.toFixed(2)}₺`;
+      document.getElementById("paid").textContent = `${odenen.toFixed(2)}₺`;
+      document.getElementById("unpaid").textContent = `${kalan.toFixed(2)}₺`;
     }
-
+  
+    document.querySelectorAll("select, input[type='date']").forEach(el =>
+      el.addEventListener("change", renderTable)
+    );
+  
     loadCashTracking();
   </script>
 </body>
