@@ -42,6 +42,7 @@
       try {
         const res = await axios.post("http://localhost:5001/api/auth/login", data);
         localStorage.setItem("token", res.data.token);
+        localStorage.setItem("username", res.data.user.name);
         window.location.href = "index.html"; // Giriş sonrası yönlendirme
       } catch (err) {
         errorDiv.textContent = err.response?.data?.error || "Hatalı giriş.";
