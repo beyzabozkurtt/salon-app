@@ -58,6 +58,8 @@ tbody tr:hover {
 <body class="bg-light">
   <div class="container py-4">
   <h2 class="mb-4">💵 Kasa Takibi</h2>
+  <button class="btn btn-warning mb-3" onclick="exportToExcel()">Excel'e Aktar</button>
+
   <table class="table table-bordered table-striped"> 
     <thead >
       <tr>
@@ -108,6 +110,8 @@ tbody tr:hover {
     </thead>
     <tbody id="cash-table"></tbody>
   </table>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
 
   <div class="summary-bar">
     <div>Toplam Tutar: <span id="total">0₺</span></div>
@@ -209,6 +213,8 @@ tbody tr:hover {
         `;
         tbody.appendChild(row);
       });
+
+
   
       document.getElementById("total").textContent = `${toplam.toFixed(2)}₺`;
       document.getElementById("paid").textContent = `${odenen.toFixed(2)}₺`;
@@ -220,6 +226,12 @@ tbody tr:hover {
     );
   
     loadCashTracking();
+
+          function exportToExcel() {
+        const table = document.querySelector("table");
+        const wb = XLSX.utils.table_to_book(table, {sheet: "Kasa Takibi"});
+        XLSX.writeFile(wb, "kasa_takibi.xlsx");
+};
   </script>
 </body>
 <div style="height: 100px;"></div>

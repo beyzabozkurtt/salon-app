@@ -64,6 +64,35 @@
     </form>
   </div>
 </div>
+<!-- Ödeme Detay Modalı -->
+<div class="modal fade" id="paymentModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Ödeme Detayları</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <p><strong>Müşteri:</strong> <span id="modalCustomerName"></span></p>
+        <p><strong>Hizmet:</strong> <span id="modalServiceName"></span></p>
+        <p><strong>Toplam Tutar:</strong> <span id="modalTotalPrice"></span></p>
+        <hr />
+        <table class="table table-bordered">
+          <thead>
+            <tr>
+              <th>Taksit</th>
+              <th>Tutar</th>
+              <th>Vade Tarihi</th>
+              <th>Durum</th>
+            </tr>
+          </thead>
+          <tbody id="paymentTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
 
 <script>
 const saleList = document.getElementById("saleList");
@@ -77,6 +106,7 @@ const productUserSelect = document.getElementById("productUserSelect");
 const saleModal = new bootstrap.Modal(document.getElementById('saleModal'));
 const productModal = new bootstrap.Modal(document.getElementById('productModal'));
 const openProductBtn = document.getElementById("openProductModalBtn");
+const paymentModal = new bootstrap.Modal(document.getElementById("paymentModal"));
 
 let currentEditingSaleId = null;
 let currentCustomerId = null;
@@ -84,18 +114,34 @@ let currentCustomerId = null;
 async function loadSales() {
   const res = await axios.get("http://localhost:5001/api/sales");
   saleList.innerHTML = "";
-  res.data.forEach(sale => {
+
+  for (const sale of res.data) {
     const item = document.createElement("li");
     item.className = "list-group-item d-flex justify-content-between align-items-center";
-    item.innerHTML = `
-      ${sale.Customer?.name || "?"} → ${sale.Service?.name || "-"} • ${sale.price}₺ • ${sale.session} seans
-      <div>
+
+    // 🔍 Ödeme durumu kontrolü
+    const statusRes = await axios.get(`http://localhost:5001/api/sales/${sale.id}/payments-status`);
+    const odemeVar = statusRes.data.odemeVar;
+
+    let buttons = "";
+
+    if (odemeVar) {
+      buttons = `<button class="btn btn-sm btn-info" onclick="viewPayments(${sale.id})">İncele</button>`;
+    } else {
+      buttons = `
         <button class="btn btn-sm btn-primary me-2" onclick="editSale(${sale.id})">Düzenle</button>
         <button class="btn btn-sm btn-danger" onclick="deleteSale(${sale.id})">Sil</button>
-      </div>`;
+      `;
+    }
+
+    item.innerHTML = `
+      ${sale.Customer?.name || "?"} → ${sale.Service?.name || "-"} • ${sale.price}₺ • ${sale.session} seans
+      <div>${buttons}</div>
+    `;
     saleList.appendChild(item);
-  });
+  }
 }
+
 
 async function loadOptions() {
   const [customers, users, services] = await Promise.all([
@@ -107,6 +153,7 @@ async function loadOptions() {
   userSelect.innerHTML = users.data.map(u => `<option value="${u.id}">${u.name}</option>`).join("");
   serviceSelect.innerHTML = services.data.map(s => `<option value="${s.id}">${s.name}</option>`).join("");
 }
+
 
 async function loadProductOptions() {
   const [products, users] = await Promise.all([
@@ -196,6 +243,32 @@ function openCreateModal() {
   loadOptions();
   saleModal.show();
 }
+async function viewPayments(saleId) {
+  const res = await axios.get(`http://localhost:5001/api/sales/${saleId}/payments-status`);
+  const taksitler = res.data.taksitler;
+  const { customerName, serviceName, totalPrice } = res.data;
+
+  document.getElementById("modalCustomerName").textContent = customerName || "-";
+  document.getElementById("modalServiceName").textContent = serviceName || "-";
+  document.getElementById("modalTotalPrice").textContent = `${parseFloat(totalPrice).toFixed(2)}₺`;
+
+  const tbody = document.getElementById("paymentTableBody");
+  tbody.innerHTML = "";
+
+  taksitler.forEach(t => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${t.installmentNo}</td>
+      <td>${parseFloat(t.amount).toFixed(2)}₺</td>
+      <td>${new Date(t.dueDate).toLocaleDateString('tr-TR')}</td>
+      <td><span class="badge bg-${t.status === 'ödendi' ? 'success' : t.status === 'bekliyor' ? 'warning' : 'danger'}">${t.status}</span></td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  paymentModal.show();
+}
+
 
 loadSales();
 loadOptions();

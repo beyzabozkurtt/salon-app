@@ -69,6 +69,39 @@ module.exports = {
       res.status(500).json({ error: 'Güncelleme hatası' });
     }
   },
+async getPaymentStatus(req, res) {
+  try {
+    const sale = await Sale.findByPk(req.params.id, {
+      include: [Customer, Service],
+    });
+
+    if (!sale) {
+      return res.status(404).json({ error: 'Satış bulunamadı.' });
+    }
+
+    const payments = await Payment.findAll({
+      where: { SaleId: sale.id },
+      order: [['installmentNo', 'ASC']]
+    });
+
+    const hasPaid = payments.some(p => p.status === 'ödendi');
+
+    const totalPrice = payments.reduce((sum, p) => sum + parseFloat(p.amount || 0), 0);
+
+    res.json({
+      odemeVar: hasPaid,
+      taksitler: payments,
+      customerName: sale.Customer?.name || "-",
+      serviceName: sale.Service?.name || "-",
+      totalPrice
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Ödeme detayları alınamadı.' });
+  }
+},
+
+
 
   async delete(req, res) {
     try {
