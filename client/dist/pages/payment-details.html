@@ -96,152 +96,143 @@
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-  <script>
-    const customerId = new URLSearchParams(window.location.search).get("id");
-    let allPayments = [], users = [];
+<script>
+const customerId = new URLSearchParams(window.location.search).get("id");
+let allPayments = [], users = [];
 
-    async function fetchPayments() {
-      const res = await fetch(`http://localhost:5001/api/payments/by-customer/${customerId}`);
-      allPayments = await res.json();
-      const first = allPayments.find(p => p.Sale?.Customer);
-      document.getElementById("customer-info").innerText = `${first?.Sale?.Customer?.name} • ${first?.Sale?.Customer?.phone}`;
-      populateDropdowns();
-      renderPayments();
+// 🔐 Token ayarları
+const token = localStorage.getItem("companyToken");
+const fetchConfig = {
+  headers: {
+    "Content-Type": "application/json",
+    Authorization: "Bearer " + token
+  }
+};
+
+async function fetchPayments() {
+  const res = await fetch(`http://localhost:5001/api/payments/by-customer/${customerId}`, fetchConfig);
+  allPayments = await res.json();
+  const first = allPayments.find(p => p.Sale?.Customer || p.SaleProduct?.Customer);
+  const customer = first?.Sale?.Customer || first?.SaleProduct?.Customer;
+  document.getElementById("customer-info").innerText = `${customer?.name || "-"} • ${customer?.phone || "-"}`;
+  populateDropdowns();
+  renderPayments();
+}
+
+async function fetchUsers() {
+  const res = await fetch(`http://localhost:5001/api/users`, fetchConfig);
+  users = await res.json();
+  const userSelect = document.getElementById("userId");
+  userSelect.innerHTML = users.map(u => `<option value="${u.id}">${u.name}</option>`).join("");
+}
+
+function populateDropdowns() {
+  const nameSelect = document.getElementById("filterName");
+  const seen = new Set(["Tüm Ürün/Hizmetler"]);
+  nameSelect.innerHTML = `<option value="all">Tüm Ürün/Hizmetler</option>`;
+  allPayments.forEach(p => {
+    const label = p.Product?.name || p.Sale?.Service?.name || "Tanımsız";
+    if (!seen.has(label)) {
+      nameSelect.innerHTML += `<option value="${label}">${label}</option>`;
+      seen.add(label);
     }
+  });
+}
 
-    async function fetchUsers() {
-      const res = await fetch(`http://localhost:5001/api/users`);
-      users = await res.json();
-      const userSelect = document.getElementById("userId");
-      userSelect.innerHTML = users.map(u => `<option value="${u.id}">${u.name}</option>`).join("");
-    }
-
-    function populateDropdowns() {
-      const nameSelect = document.getElementById("filterName");
-      const seen = new Set(["Tüm Ürün/Hizmetler"]);
-      nameSelect.innerHTML = `<option value="all">Tüm Ürün/Hizmetler</option>`;
-      allPayments.forEach(p => {
-        const label = p.Product?.name || p.Sale?.Service?.name || "Tanımsız";
-        if (!seen.has(label)) {
-          nameSelect.innerHTML += `<option value="${label}">${label}</option>`;
-          seen.add(label);
-        }
-      });
-    }
-
-    function renderPayments() {
-      const container = document.getElementById("payment-list");
-      container.innerHTML = "";
-      const selectedName = document.getElementById("filterName").value;
-      const selectedStatus = document.getElementById("filterStatus").value;
-      const now = new Date();
-
-      allPayments.forEach(p => {
-        const label = p.Product?.name || p.Sale?.Service?.name || "Tanımsız";
-        let status = p.status;
-        const due = new Date(p.dueDate);
-        if (status === "bekliyor" && due < now) status = "gecikmiş";
-        if ((selectedName !== "all" && label !== selectedName) || (selectedStatus !== "all" && status !== selectedStatus)) return;
-
-        const div = document.createElement("div");
-        div.className = "payment-item d-flex justify-content-between align-items-center";
-
-        div.innerHTML = `
-          <div>
-            <strong>${label}</strong> • ${p.installmentNo || "-"} . Taksit –
-            <input type="date" value="${due.toISOString().split("T")[0]}" data-id="${p.id}" class="form-control form-control-sm d-inline-block due-date-input" style="width: auto;" />
-          </div>
-          <div class="d-flex align-items-center gap-2">
-            <input type="number" min="0" step="0.01" value="${parseFloat(p.amount).toFixed(2)}" data-id="${p.id}" class="form-control form-control-sm amount-input" style="width: 100px;" />
-            <span class="status-badge status-${status}">${status}</span>
-            ${status !== 'ödendi' ? `<button class="btn btn-success btn-sm pay-btn" data-id="${p.id}" data-amount="${p.amount}">Ödeme Yap</button>` : ''}
-          </div>`;
-        container.appendChild(div);
-
-              // Toplamları hesapla
-      let toplam = 0, odenen = 0, kalan = 0;
-
-allPayments.forEach(p => {
-  const label = p.Product?.name || p.Sale?.Service?.name || "Tanımsız";
-  let status = p.status;
-  const due = new Date(p.dueDate);
-  if (status === "bekliyor" && due < new Date()) status = "gecikmiş";
-
+function renderPayments() {
+  const container = document.getElementById("payment-list");
+  container.innerHTML = "";
   const selectedName = document.getElementById("filterName").value;
   const selectedStatus = document.getElementById("filterStatus").value;
+  const now = new Date();
 
-  if ((selectedName !== "all" && label !== selectedName) ||
-      (selectedStatus !== "all" && status !== selectedStatus)) return;
+  let toplam = 0, odenen = 0, kalan = 0;
 
-  const tutar = parseFloat(p.amount);
-  toplam += tutar;
-  if (status === "ödendi") odenen += tutar;
-  else kalan += tutar;
-});
+  allPayments.forEach(p => {
+    const label = p.Product?.name || p.Sale?.Service?.name || "Tanımsız";
+    let status = p.status;
+    const due = new Date(p.dueDate);
+    if (status === "bekliyor" && due < now) status = "gecikmiş";
+    if ((selectedName !== "all" && label !== selectedName) || (selectedStatus !== "all" && status !== selectedStatus)) return;
 
-document.getElementById("toplamTutar").textContent = `${toplam.toFixed(2)}₺`;
-document.getElementById("odenenTutar").textContent = `${odenen.toFixed(2)}₺`;
-document.getElementById("kalanTutar").textContent = `${kalan.toFixed(2)}₺`;
+    const div = document.createElement("div");
+    div.className = "payment-item d-flex justify-content-between align-items-center";
 
-      });
+    div.innerHTML = `
+      <div>
+        <strong>${label}</strong> • ${p.installmentNo || "-"} . Taksit –
+        <input type="date" value="${due.toISOString().split("T")[0]}" data-id="${p.id}" class="form-control form-control-sm d-inline-block due-date-input" style="width: auto;" />
+      </div>
+      <div class="d-flex align-items-center gap-2">
+        <input type="number" min="0" step="0.01" value="${parseFloat(p.amount).toFixed(2)}" data-id="${p.id}" class="form-control form-control-sm amount-input" style="width: 100px;" />
+        <span class="status-badge status-${status}">${status}</span>
+        ${status !== 'ödendi' ? `<button class="btn btn-success btn-sm pay-btn" data-id="${p.id}" data-amount="${p.amount}">Ödeme Yap</button>` : ''}
+      </div>`;
+    container.appendChild(div);
 
-      
+    toplam += parseFloat(p.amount);
+    if (status === "ödendi") odenen += parseFloat(p.amount);
+    else kalan += parseFloat(p.amount);
+  });
 
-      addListeners();
-    }
+  document.getElementById("toplamTutar").textContent = `${toplam.toFixed(2)}₺`;
+  document.getElementById("odenenTutar").textContent = `${odenen.toFixed(2)}₺`;
+  document.getElementById("kalanTutar").textContent = `${kalan.toFixed(2)}₺`;
 
-    
+  addListeners();
+}
 
-    function addListeners() {
-      document.querySelectorAll(".due-date-input, .amount-input").forEach(input => {
-        input.addEventListener("change", async e => {
-          const id = e.target.dataset.id;
-          const date = document.querySelector(`input.due-date-input[data-id="${id}"]`).value;
-          const amount = parseFloat(document.querySelector(`input.amount-input[data-id="${id}"]`).value);
-          await fetch(`http://localhost:5001/api/payments/${id}`, {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ dueDate: date, amount })
-          });
-          fetchPayments();
-        });
-      });
-
-      document.querySelectorAll(".pay-btn").forEach(btn => {
-        btn.addEventListener("click", () => {
-          document.getElementById("paymentId").value = btn.dataset.id;
-          document.getElementById("paymentAmount").value = parseFloat(btn.dataset.amount).toFixed(2);
-          new bootstrap.Modal(document.getElementById("paymentModal")).show();
-        });
-      });
-    }
-
-    document.getElementById("filterName").addEventListener("change", () => renderPayments());
-    document.getElementById("filterStatus").addEventListener("change", () => renderPayments());
-
-    document.getElementById("paymentForm").addEventListener("submit", async e => {
-      e.preventDefault();
-      const id = document.getElementById("paymentId").value;
-      const userId = document.getElementById("userId").value;
-      const paymentType = document.getElementById("paymentType").value;
-
+function addListeners() {
+  document.querySelectorAll(".due-date-input, .amount-input").forEach(input => {
+    input.addEventListener("change", async e => {
+      const id = e.target.dataset.id;
+      const date = document.querySelector(`input.due-date-input[data-id="${id}"]`).value;
+      const amount = parseFloat(document.querySelector(`input.amount-input[data-id="${id}"]`).value);
       await fetch(`http://localhost:5001/api/payments/${id}`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          status: "ödendi",
-          paymentType,
-          UserId: userId,
-          paymentDate: new Date().toISOString()  // 🟢 ISO format
-        })
+        headers: fetchConfig.headers,
+        body: JSON.stringify({ dueDate: date, amount })
       });
-
-      bootstrap.Modal.getInstance(document.getElementById("paymentModal")).hide();
       fetchPayments();
     });
+  });
 
-    fetchUsers();
-    fetchPayments();
-  </script>
+  document.querySelectorAll(".pay-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      document.getElementById("paymentId").value = btn.dataset.id;
+      document.getElementById("paymentAmount").value = parseFloat(btn.dataset.amount).toFixed(2);
+      new bootstrap.Modal(document.getElementById("paymentModal")).show();
+    });
+  });
+}
+
+document.getElementById("filterName").addEventListener("change", () => renderPayments());
+document.getElementById("filterStatus").addEventListener("change", () => renderPayments());
+
+document.getElementById("paymentForm").addEventListener("submit", async e => {
+  e.preventDefault();
+  const id = document.getElementById("paymentId").value;
+  const userId = document.getElementById("userId").value;
+  const paymentType = document.getElementById("paymentType").value;
+
+  await fetch(`http://localhost:5001/api/payments/${id}`, {
+    method: "PATCH",
+    headers: fetchConfig.headers,
+    body: JSON.stringify({
+      status: "ödendi",
+      paymentType,
+      UserId: userId,
+      paymentDate: new Date().toISOString()
+    })
+  });
+
+  bootstrap.Modal.getInstance(document.getElementById("paymentModal")).hide();
+  fetchPayments();
+});
+
+fetchUsers();
+fetchPayments();
+</script>
+
 </body>
 </html>

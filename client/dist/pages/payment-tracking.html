@@ -22,13 +22,21 @@ const list = document.getElementById("paymentCustomerList");
 const searchInput = document.getElementById("searchInput");
 let allCustomers = [];
 
+// 🔐 Token'ı al
+const token = localStorage.getItem("companyToken");
+const axiosConfig = {
+  headers: {
+    Authorization: "Bearer " + token
+  }
+};
+
 // Sayfa yüklenince veri çek
 window.addEventListener("DOMContentLoaded", loadPaymentCustomers);
 
 // Müşterileri getir
 async function loadPaymentCustomers() {
   try {
-    const res = await axios.get("http://localhost:5001/api/payments/customers");
+    const res = await axios.get("http://localhost:5001/api/payments/customers", axiosConfig);
     allCustomers = res.data;
     renderCustomerList(allCustomers);
   } catch (err) {
@@ -63,5 +71,6 @@ searchInput.addEventListener("input", () => {
   renderCustomerList(filtered);
 });
 </script>
+
 </body>
 </html>

@@ -8,7 +8,17 @@ module.exports = (req, res, next) => {
 
   try {
     const decoded = jwt.verify(token, JWT_SECRET);
-    req.user = decoded;
+
+    if (decoded.id) {
+      // Kullanıcı girişi
+      req.user = decoded;
+    } else if (decoded.companyId) {
+      // Şirket girişi
+      req.company = decoded;
+    } else {
+      return res.status(403).json({ error: "Geçersiz payload." });
+    }
+
     next();
   } catch (err) {
     res.status(403).json({ error: "Geçersiz token." });

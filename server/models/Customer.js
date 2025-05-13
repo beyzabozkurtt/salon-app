@@ -7,6 +7,10 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.DATE,
         defaultValue: DataTypes.NOW,
       },
-    });
+      CompanyId: {
+  type: DataTypes.INTEGER,
+  allowNull: false
+},  
+  });
   };
   

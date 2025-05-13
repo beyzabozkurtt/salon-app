@@ -11,6 +11,11 @@ module.exports = (sequelize, DataTypes) => {
     installment: {
       type: DataTypes.INTEGER,
       allowNull: true
-    }
+    },
+    CompanyId: {
+  type: DataTypes.INTEGER,
+  allowNull: false
+}
+
   });
 };

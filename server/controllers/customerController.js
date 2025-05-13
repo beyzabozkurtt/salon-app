@@ -1,20 +1,27 @@
 const { Customer, Sale, Service, Appointment } = require('../models');
 const { validationResult } = require('express-validator');
 
-// ✅ Tüm müşterileri listele
+// ✅ Tüm müşterileri listele (şirkete özel)
 exports.getAll = async (req, res) => {
   try {
-    const customers = await Customer.findAll();
+    const customers = await Customer.findAll({
+      where: { CompanyId: req.company.companyId }
+    });
     res.json(customers);
   } catch (err) {
     res.status(500).json({ error: 'Müşteri verileri çekilemedi' });
   }
 };
 
-// ✅ Tek müşteri getir
+// ✅ Tek müşteri getir (şirkete ait mi kontrolü yapılmalı)
 exports.getOne = async (req, res) => {
   try {
-    const customer = await Customer.findByPk(req.params.id);
+    const customer = await Customer.findOne({
+      where: {
+        id: req.params.id,
+        CompanyId: req.company.companyId
+      }
+    });
     if (!customer) return res.status(404).json({ error: 'Müşteri bulunamadı' });
     res.json(customer);
   } catch (err) {
@@ -22,38 +29,54 @@ exports.getOne = async (req, res) => {
   }
 };
 
-// ✅ Yeni müşteri ekle
+// ✅ Yeni müşteri ekle (şirket ID'si ekleniyor)
 exports.create = async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
 
   try {
-    const yeni = await Customer.create(req.body);
+    const yeni = await Customer.create({
+      ...req.body,
+      CompanyId: req.company.companyId
+    });
     res.status(201).json(yeni);
   } catch (err) {
+    console.error("Müşteri ekleme hatası:", err);
     res.status(500).json({ error: 'Müşteri eklenemedi' });
   }
 };
 
-// ✅ Müşteri güncelle
+// ✅ Müşteri güncelle (şirket doğrulaması dahil)
 exports.update = async (req, res) => {
   try {
-    await Customer.update(req.body, { where: { id: req.params.id } });
+    const result = await Customer.update(req.body, {
+      where: {
+        id: req.params.id,
+        CompanyId: req.company.companyId
+      }
+    });
     res.json({ message: 'Müşteri güncellendi' });
   } catch (err) {
     res.status(500).json({ error: 'Güncelleme hatası' });
   }
 };
 
-// ✅ Müşteri sil
+// ✅ Müşteri sil (şirket kontrolüyle)
 exports.delete = async (req, res) => {
   try {
-    await Customer.destroy({ where: { id: req.params.id } });
+    await Customer.destroy({
+      where: {
+        id: req.params.id,
+        CompanyId: req.company.companyId
+      }
+    });
     res.json({ message: 'Müşteri silindi' });
   } catch (err) {
     res.status(500).json({ error: 'Silme hatası' });
   }
 };
+
+// ✅ Müşteri paketleri
 exports.getCustomerPackages = async (req, res) => {
   try {
     const customerId = req.params.id;
@@ -69,13 +92,12 @@ exports.getCustomerPackages = async (req, res) => {
       const s = sale.Service;
       const existing = uniqueServices.get(s.id);
 
-      // Daha önce eklenmişse en yüksek seansı döndür (veya topla, tercihine göre)
       if (!existing) {
         uniqueServices.set(s.id, {
           id: s.id,
           name: s.name,
           color: s.color,
-          session: sale.session  // 🔥 BURASI ÇOK KRİTİK!
+          session: sale.session
         });
       }
     }
@@ -86,13 +108,18 @@ exports.getCustomerPackages = async (req, res) => {
     res.status(500).json({ error: 'Paketler getirilemedi' });
   }
 };
-  
 
-// ✅ Seans detaylı müşteri detayları (Özel)
+// ✅ Seans detaylı müşteri hizmetleri
 exports.getDetailsWithSessions = async (req, res) => {
   try {
     const customerId = req.params.id;
-    const customer = await Customer.findByPk(customerId);
+
+    const customer = await Customer.findOne({
+      where: {
+        id: customerId,
+        CompanyId: req.company.companyId
+      }
+    });
     if (!customer) return res.status(404).json({ error: 'Müşteri bulunamadı' });
 
     const sales = await Sale.findAll({
@@ -103,7 +130,6 @@ exports.getDetailsWithSessions = async (req, res) => {
     const results = [];
 
     for (const sale of sales) {
-      // Tüm randevuları tarih sırasına göre al
       const appointments = await Appointment.findAll({
         where: {
           CustomerId: customerId,
@@ -121,7 +147,6 @@ exports.getDetailsWithSessions = async (req, res) => {
           status: a.status,
           date: a.date
         });
-
         if (a.status !== "iptal") aktifSayisi++;
       });
 
@@ -138,8 +163,8 @@ exports.getDetailsWithSessions = async (req, res) => {
       results.push({
         serviceName: sale.Service.name,
         serviceColor: sale.Service.color,
-        sessionCount: sale.session, // Değişmiyor
-        sessions // Tarihe göre sıralı, iptaller dahil, boşlar en sona eklendi
+        sessionCount: sale.session,
+        sessions
       });
     }
 

@@ -94,10 +94,15 @@ const addProductSelect = document.getElementById("addProductSelect");
 const customerInput = document.getElementById("customerInput");
 const customerOptions = document.getElementById("customerOptions");
 
+const token = localStorage.getItem("companyToken");
+const axiosConfig = {
+  headers: { Authorization: "Bearer " + token }
+};
+
 let customerMap = {};
 
 async function loadProductSales() {
-  const res = await axios.get("http://localhost:5001/api/sale-products");
+  const res = await axios.get("http://localhost:5001/api/sale-products", axiosConfig);
   productSaleList.innerHTML = "";
 
   res.data.forEach(item => {
@@ -117,8 +122,8 @@ async function loadProductSales() {
 
 async function openEditModal(id) {
   const [res, usersRes] = await Promise.all([
-    axios.get(`http://localhost:5001/api/sale-products/single/${id}`),
-    axios.get("http://localhost:5001/api/users")
+    axios.get(`http://localhost:5001/api/sale-products/single/${id}`, axiosConfig),
+    axios.get("http://localhost:5001/api/users", axiosConfig)
   ]);
 
   const productSale = res.data;
@@ -136,14 +141,14 @@ editProductForm.addEventListener("submit", async e => {
   const formData = new FormData(editProductForm);
   const data = Object.fromEntries(formData.entries());
 
-  await axios.put(`http://localhost:5001/api/sale-products/${data.id}`, data);
+  await axios.put(`http://localhost:5001/api/sale-products/${data.id}`, data, axiosConfig);
   editModal.hide();
   loadProductSales();
 });
 
 async function deleteProductSale(id) {
   if (!confirm("Bu ürün satışını silmek istiyor musun?")) return;
-  await axios.delete(`http://localhost:5001/api/sale-products/${id}`);
+  await axios.delete(`http://localhost:5001/api/sale-products/${id}`, axiosConfig);
   loadProductSales();
 }
 
@@ -154,9 +159,9 @@ function openAddProductModal() {
 
 async function loadAddModalDropdowns() {
   const [productsRes, usersRes, customersRes] = await Promise.all([
-    axios.get("http://localhost:5001/api/products"),
-    axios.get("http://localhost:5001/api/users"),
-    axios.get("http://localhost:5001/api/customers")
+    axios.get("http://localhost:5001/api/products", axiosConfig),
+    axios.get("http://localhost:5001/api/users", axiosConfig),
+    axios.get("http://localhost:5001/api/customers", axiosConfig)
   ]);
 
   addProductSelect.innerHTML = productsRes.data.map(p => `<option value="${p.id}">${p.name}</option>`).join("");
@@ -178,7 +183,7 @@ addProductForm.addEventListener("submit", async e => {
   await axios.post("http://localhost:5001/api/sale-products", {
     ...data,
     SaleId: null
-  });
+  }, axiosConfig);
 
   addProductForm.reset();
   addModal.hide();
@@ -187,6 +192,7 @@ addProductForm.addEventListener("submit", async e => {
 
 loadProductSales();
 </script>
+
 
 </body>
 </html>

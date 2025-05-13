@@ -25,7 +25,12 @@ module.exports = (sequelize, DataTypes) => {
     price: {
       type: DataTypes.DECIMAL(10, 2),
       allowNull: false
-    }
+    },
+    CompanyId: {
+  type: DataTypes.INTEGER,
+  allowNull: false
+}
+
   });
 
   // 🧩 İlişkiler burada tanımlanmalı

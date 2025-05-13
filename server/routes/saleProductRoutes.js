@@ -1,12 +1,24 @@
 const express = require('express');
 const router = express.Router();
 const saleProductController = require('../controllers/saleProductController');
+const authMiddleware = require('../middleware/authMiddleware');
 
-router.get('/single/:id', saleProductController.getOne);
-router.get('/', saleProductController.getAll);
-router.get('/sale/:saleId', saleProductController.getBySaleId);
-router.post('/', saleProductController.create); // Yeni ürün satışı (CustomerId dahil)
-router.put('/:id', saleProductController.update);
-router.delete('/:id', saleProductController.delete);
+// 🔍 Tek satış ürünü (şirket kontrolüyle)
+router.get('/single/:id', authMiddleware, saleProductController.getOne);
+
+// 🔍 Tüm satış ürünleri (şirkete özel)
+router.get('/', authMiddleware, saleProductController.getAll);
+
+// 🔍 Belirli satışa ait ürünler
+router.get('/sale/:saleId', authMiddleware, saleProductController.getBySaleId);
+
+// ➕ Yeni ürün satışı
+router.post('/', authMiddleware, saleProductController.create);
+
+// 🔄 Güncelleme
+router.put('/:id', authMiddleware, saleProductController.update);
+
+// 🗑️ Silme
+router.delete('/:id', authMiddleware, saleProductController.delete);
 
 module.exports = router;

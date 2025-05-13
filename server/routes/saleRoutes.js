@@ -1,15 +1,24 @@
 const express = require('express');
 const router = express.Router();
 const saleController = require('../controllers/saleController');
+const authMiddleware = require('../middleware/authMiddleware'); // 🛡️ Token doğrulama
 
-router.get('/', saleController.getAll);
-router.post('/', saleController.create);
-router.put('/:id', saleController.update);
-router.delete('/:id', saleController.delete);
-router.get('/:id', saleController.getOne);
-// routes/saleRoutes.js
-router.get('/:id/payments-status', saleController.getPaymentStatus);
+// ✅ Satışları getir (şirkete özel)
+router.get('/', authMiddleware, saleController.getAll);
 
+// ✅ Yeni satış oluştur
+router.post('/', authMiddleware, saleController.create);
 
+// ✅ Satış güncelle
+router.put('/:id', authMiddleware, saleController.update);
+
+// ✅ Satış sil
+router.delete('/:id', authMiddleware, saleController.delete);
+
+// ✅ Satış detayları
+router.get('/:id', authMiddleware, saleController.getOne);
+
+// ✅ Satışa ait ödeme durumu
+router.get('/:id/payments-status', authMiddleware, saleController.getPaymentStatus);
 
 module.exports = router;

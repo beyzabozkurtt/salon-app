@@ -1,22 +1,15 @@
 const express = require('express');
 const router = express.Router();
-const { Product } = require('../models');
+const productController = require('../controllers/productController');
+const authMiddleware = require('../middleware/authMiddleware');
 
-router.get('/', async (req, res) => {
-  const products = await Product.findAll();
-  res.json(products);
-});
+// Ürünleri getir
+router.get('/', authMiddleware, productController.getAll);
 
-router.post('/', async (req, res) => {
-  const { name, price } = req.body;
-  const product = await Product.create({ name, price });
-  res.json(product);
-});
+// Ürün oluştur
+router.post('/', authMiddleware, productController.create);
 
-router.put('/:id', async (req, res) => {
-  const { name, price } = req.body;
-  await Product.update({ name, price }, { where: { id: req.params.id } });
-  res.sendStatus(200);
-});
+// Ürün güncelle
+router.put('/:id', authMiddleware, productController.update);
 
 module.exports = router;

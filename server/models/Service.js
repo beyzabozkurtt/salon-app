@@ -9,6 +9,11 @@ module.exports = (sequelize, DataTypes) => {
       allowNull: true
     },
     price: DataTypes.DECIMAL(10, 2),
-    duration: DataTypes.INTEGER // dakika cinsinden
+    duration: DataTypes.INTEGER, // dakika cinsinden
+    CompanyId: {
+  type: DataTypes.INTEGER,
+  allowNull: false
+},  
+
   });
 };

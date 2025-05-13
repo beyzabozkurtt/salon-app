@@ -486,9 +486,10 @@
 
 
     <script>
-      if (!localStorage.getItem("token")) {
-        window.location.href = "login.html";
-      }
+if (!localStorage.getItem("token") && !localStorage.getItem("companyId")) {
+  window.location.href = "login.html";
+}
+
     </script>
    <script>
     function updatePageTitleByHref(href) {
@@ -529,37 +530,56 @@
       }
     }
   </script>
-  <script>
-    document.addEventListener("DOMContentLoaded", () => {
-      const name = localStorage.getItem("username") || "Kullanıcı";
-      
-      // Navbar'daki ismi güncelle
-      document.querySelectorAll(".user-menu .nav-link span.d-none.d-md-inline").forEach(el => {
-        el.textContent = name;
-      });
-  
-      // Dropdown içindeki p tag'ını güncelle (alt tarafta yazan isim)
-      const dropdownInfo = document.querySelector(".user-header p");
-      if (dropdownInfo) {
-        dropdownInfo.innerHTML = `${name}`;
+<script src="https://cdn.jsdelivr.net/npm/jwt-decode/build/jwt-decode.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jwt-decode/build/jwt-decode.min.js"></script>
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    let name = "Kullanıcı";
+
+    const userToken = localStorage.getItem("token");         // USER login token
+    const companyToken = localStorage.getItem("companyToken"); // COMPANY login token
+
+    if (userToken) {
+      try {
+        const decoded = jwt_decode(userToken);
+        name = decoded.username || "Kullanıcı"; // JWT'de username varsa
+      } catch (e) {
+        console.error("User token çözümlenemedi:", e);
       }
-  
-      // Sohbet kısmındaki ismi güncelle
-      document.querySelectorAll(".direct-chat-name").forEach(el => {
-        if (el.textContent.includes("Alexander Pierce")) el.textContent = name;
-      });
-  
-      // Kullanıcı listesi gibi yerlerde (dilersen bu da güncellenebilir)
-      document.querySelectorAll("a.btn.fw-bold").forEach(el => {
-        if (el.textContent.trim() === "Alexander Pierce") {
-          el.textContent = name;
-        }
-      });
+    } else if (companyToken) {
+      try {
+        const decoded = jwt_decode(companyToken);
+        name = decoded.ownerName || decoded.companyName || "Şirket";
+      } catch (e) {
+        console.error("Company token çözümlenemedi:", e);
+      }
+    }
+
+    // Navbar'daki ismi güncelle
+    document.querySelectorAll(".user-menu .nav-link span.d-none.d-md-inline").forEach(el => {
+      el.textContent = name;
     });
-  </script>
-  
-    
-    
+
+    // Dropdown içindeki p tag'ını güncelle
+    const dropdownInfo = document.querySelector(".user-header p");
+    if (dropdownInfo) {
+      dropdownInfo.innerHTML = name;
+    }
+
+    // Sohbet kısmındaki ismi güncelle
+    document.querySelectorAll(".direct-chat-name").forEach(el => {
+      if (el.textContent.includes("Alexander Pierce")) el.textContent = name;
+    });
+
+    // Kullanıcı listesi gibi yerlerde
+    document.querySelectorAll("a.btn.fw-bold").forEach(el => {
+      if (el.textContent.trim() === "Alexander Pierce") {
+        el.textContent = name;
+      }
+    });
+  });
+</script>
+
     <!--end::Script-->
   </body>
   <!--end::Body-->

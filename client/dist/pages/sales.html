@@ -95,6 +95,13 @@
 
 
 <script>
+const token = localStorage.getItem("companyToken");
+const axiosConfig = {
+  headers: {
+    Authorization: "Bearer " + token
+  }
+};
+
 const saleList = document.getElementById("saleList");
 const saleForm = document.getElementById("saleForm");
 const productForm = document.getElementById("productForm");
@@ -112,16 +119,15 @@ let currentEditingSaleId = null;
 let currentCustomerId = null;
 
 async function loadSales() {
-  const res = await axios.get("http://localhost:5001/api/sales");
+  const res = await axios.get("http://localhost:5001/api/sales", axiosConfig);
   saleList.innerHTML = "";
 
   for (const sale of res.data) {
+    const statusRes = await axios.get(`http://localhost:5001/api/sales/${sale.id}/payments-status`, axiosConfig);
+    const odemeVar = statusRes.data.odemeVar;
+
     const item = document.createElement("li");
     item.className = "list-group-item d-flex justify-content-between align-items-center";
-
-    // 🔍 Ödeme durumu kontrolü
-    const statusRes = await axios.get(`http://localhost:5001/api/sales/${sale.id}/payments-status`);
-    const odemeVar = statusRes.data.odemeVar;
 
     let buttons = "";
 
@@ -142,23 +148,21 @@ async function loadSales() {
   }
 }
 
-
 async function loadOptions() {
   const [customers, users, services] = await Promise.all([
-    axios.get("http://localhost:5001/api/customers"),
-    axios.get("http://localhost:5001/api/users"),
-    axios.get("http://localhost:5001/api/services")
+    axios.get("http://localhost:5001/api/customers", axiosConfig),
+    axios.get("http://localhost:5001/api/users", axiosConfig),
+    axios.get("http://localhost:5001/api/services", axiosConfig)
   ]);
   customerSelect.innerHTML = customers.data.map(c => `<option value="${c.id}">${c.name}</option>`).join("");
   userSelect.innerHTML = users.data.map(u => `<option value="${u.id}">${u.name}</option>`).join("");
   serviceSelect.innerHTML = services.data.map(s => `<option value="${s.id}">${s.name}</option>`).join("");
 }
 
-
 async function loadProductOptions() {
   const [products, users] = await Promise.all([
-    axios.get("http://localhost:5001/api/products"),
-    axios.get("http://localhost:5001/api/users")
+    axios.get("http://localhost:5001/api/products", axiosConfig),
+    axios.get("http://localhost:5001/api/users", axiosConfig)
   ]);
   productSelect.innerHTML = products.data.map(p => `<option value="${p.id}">${p.name}</option>`).join("");
   productUserSelect.innerHTML = users.data.map(u => `<option value="${u.id}">${u.name}</option>`).join("");
@@ -171,10 +175,10 @@ saleForm.addEventListener("submit", async e => {
 
   if (!data.id) {
     delete data.id;
-    const res = await axios.post("http://localhost:5001/api/sales", data);
+    const res = await axios.post("http://localhost:5001/api/sales", data, axiosConfig);
     currentCustomerId = res.data.CustomerId;
   } else {
-    await axios.put(`http://localhost:5001/api/sales/${data.id}`, data);
+    await axios.put(`http://localhost:5001/api/sales/${data.id}`, data, axiosConfig);
     currentCustomerId = data.CustomerId;
   }
 
@@ -185,7 +189,7 @@ saleForm.addEventListener("submit", async e => {
 });
 
 async function editSale(id) {
-  const res = await axios.get(`http://localhost:5001/api/sales/${id}`);
+  const res = await axios.get(`http://localhost:5001/api/sales/${id}`, axiosConfig);
   const sale = res.data;
 
   await loadOptions();
@@ -205,7 +209,7 @@ async function editSale(id) {
 
 async function deleteSale(id) {
   if (confirm("Bu satışı silmek istiyor musun?")) {
-    await axios.delete(`http://localhost:5001/api/sales/${id}`);
+    await axios.delete(`http://localhost:5001/api/sales/${id}`, axiosConfig);
     loadSales();
   }
 }
@@ -224,11 +228,11 @@ productForm.addEventListener("submit", async e => {
   const saleId = document.getElementById("productSaleId").value;
   const customerId = document.getElementById("productCustomerId").value;
 
-  await axios.post(`http://localhost:5001/api/sale-products`, {
+  await axios.post("http://localhost:5001/api/sale-products", {
     ...data,
     SaleId: saleId,
     CustomerId: customerId
-  });
+  }, axiosConfig);
 
   productForm.reset();
   productModal.hide();
@@ -243,8 +247,9 @@ function openCreateModal() {
   loadOptions();
   saleModal.show();
 }
+
 async function viewPayments(saleId) {
-  const res = await axios.get(`http://localhost:5001/api/sales/${saleId}/payments-status`);
+  const res = await axios.get(`http://localhost:5001/api/sales/${saleId}/payments-status`, axiosConfig);
   const taksitler = res.data.taksitler;
   const { customerName, serviceName, totalPrice } = res.data;
 
@@ -269,9 +274,9 @@ async function viewPayments(saleId) {
   paymentModal.show();
 }
 
-
 loadSales();
 loadOptions();
 </script>
+
 </body>
 </html>

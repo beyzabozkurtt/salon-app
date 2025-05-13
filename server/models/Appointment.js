@@ -22,7 +22,13 @@ module.exports = (sequelize, DataTypes) => {
     notes: {
       type: DataTypes.TEXT,
       allowNull: true
-    }
+    },
+    CompanyId: {
+  type: DataTypes.INTEGER,
+  allowNull: false
+},
+
+    
   });
 
   return Appointment;

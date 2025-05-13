@@ -4,6 +4,7 @@ module.exports = {
   async getAll(req, res) {
     try {
       const sales = await Sale.findAll({
+        where: { CompanyId: req.company.companyId },
         include: [Customer, User, Service],
         order: [['createdAt', 'DESC']]
       });
@@ -16,7 +17,11 @@ module.exports = {
 
   async getOne(req, res) {
     try {
-      const sale = await Sale.findByPk(req.params.id, {
+      const sale = await Sale.findOne({
+        where: {
+          id: req.params.id,
+          CompanyId: req.company.companyId
+        },
         include: [Customer, User, Service]
       });
       if (!sale) return res.status(404).json({ error: "Satış bulunamadı." });
@@ -29,7 +34,10 @@ module.exports = {
 
   async create(req, res) {
     try {
-      const sale = await Sale.create(req.body);
+      const sale = await Sale.create({
+        ...req.body,
+        CompanyId: req.company.companyId
+      });
 
       const { installment, price } = req.body;
 
@@ -48,7 +56,8 @@ module.exports = {
             installmentNo: i + 1,
             amount: taksitTutar,
             dueDate: vadeTarihi,
-            status: 'bekliyor'
+            status: 'bekliyor',
+            CompanyId: req.company.companyId
           });
         }
       }
@@ -62,50 +71,65 @@ module.exports = {
 
   async update(req, res) {
     try {
-      await Sale.update(req.body, { where: { id: req.params.id } });
+      await Sale.update(req.body, {
+        where: {
+          id: req.params.id,
+          CompanyId: req.company.companyId
+        }
+      });
       res.json({ message: 'Satış güncellendi' });
     } catch (err) {
       console.error(err);
       res.status(500).json({ error: 'Güncelleme hatası' });
     }
   },
-async getPaymentStatus(req, res) {
-  try {
-    const sale = await Sale.findByPk(req.params.id, {
-      include: [Customer, Service],
-    });
 
-    if (!sale) {
-      return res.status(404).json({ error: 'Satış bulunamadı.' });
+  async getPaymentStatus(req, res) {
+    try {
+      const sale = await Sale.findOne({
+        where: {
+          id: req.params.id,
+          CompanyId: req.company.companyId
+        },
+        include: [Customer, Service]
+      });
+
+      if (!sale) {
+        return res.status(404).json({ error: 'Satış bulunamadı.' });
+      }
+
+      const payments = await Payment.findAll({
+        where: {
+          SaleId: sale.id,
+          CompanyId: req.company.companyId
+        },
+        order: [['installmentNo', 'ASC']]
+      });
+
+      const hasPaid = payments.some(p => p.status === 'ödendi');
+      const totalPrice = payments.reduce((sum, p) => sum + parseFloat(p.amount || 0), 0);
+
+      res.json({
+        odemeVar: hasPaid,
+        taksitler: payments,
+        customerName: sale.Customer?.name || "-",
+        serviceName: sale.Service?.name || "-",
+        totalPrice
+      });
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ error: 'Ödeme detayları alınamadı.' });
     }
-
-    const payments = await Payment.findAll({
-      where: { SaleId: sale.id },
-      order: [['installmentNo', 'ASC']]
-    });
-
-    const hasPaid = payments.some(p => p.status === 'ödendi');
-
-    const totalPrice = payments.reduce((sum, p) => sum + parseFloat(p.amount || 0), 0);
-
-    res.json({
-      odemeVar: hasPaid,
-      taksitler: payments,
-      customerName: sale.Customer?.name || "-",
-      serviceName: sale.Service?.name || "-",
-      totalPrice
-    });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Ödeme detayları alınamadı.' });
-  }
-},
-
-
+  },
 
   async delete(req, res) {
     try {
-      await Sale.destroy({ where: { id: req.params.id } });
+      await Sale.destroy({
+        where: {
+          id: req.params.id,
+          CompanyId: req.company.companyId
+        }
+      });
       res.json({ message: 'Satış silindi' });
     } catch (err) {
       console.error(err);

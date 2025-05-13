@@ -1,17 +1,18 @@
 const express = require('express');
 const router = express.Router();
 const serviceController = require('../controllers/serviceController');
+const authMiddleware = require('../middleware/authMiddleware'); // 🔐 token kontrolü
 
 // ✅ Tüm hizmetleri getir
-router.get('/', serviceController.getAll);
+router.get('/', authMiddleware, serviceController.getAll);
 
 // ✅ Yeni hizmet oluştur
-router.post('/', serviceController.create);
+router.post('/', authMiddleware, serviceController.create);
 
 // ✅ Hizmet güncelle
-router.put('/:id', serviceController.update);
+router.put('/:id', authMiddleware, serviceController.update);
 
 // ✅ Hizmet sil
-router.delete('/:id', serviceController.delete);
+router.delete('/:id', authMiddleware, serviceController.delete);
 
 module.exports = router;

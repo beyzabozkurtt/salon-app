@@ -14,7 +14,6 @@ const Payment = require('./Payment')(sequelize, DataTypes);
 const WorkingHours = require('./WorkingHours')(sequelize, DataTypes);
 const Company = require('./Company')(sequelize, DataTypes);
 
-
 // 🔗 İlişkiler
 User.hasMany(Appointment);
 Appointment.belongsTo(User);
@@ -40,11 +39,9 @@ Sale.belongsTo(Service);
 User.hasMany(Payment, { foreignKey: 'UserId' });
 Payment.belongsTo(User, { foreignKey: 'UserId' });
 
-// 🟢 Ödeme - Hizmet Satışı ilişkisi
 Sale.hasMany(Payment, { foreignKey: 'SaleId', onDelete: 'CASCADE' });
 Payment.belongsTo(Sale, { foreignKey: 'SaleId' });
 
-// 🟢 Ödeme - Ürün ilişkisi
 Product.hasMany(Payment, {
   foreignKey: 'ProductId',
   onDelete: 'SET NULL',
@@ -54,7 +51,6 @@ Payment.belongsTo(Product, {
   foreignKey: 'ProductId'
 });
 
-// 🆕 Ödeme - SaleProduct ilişkisi (ÜRÜN ÖDEMELERİ İÇİN)
 SaleProduct.hasMany(Payment, {
   foreignKey: 'SaleProductId',
   onDelete: 'SET NULL'
@@ -63,7 +59,6 @@ Payment.belongsTo(SaleProduct, {
   foreignKey: 'SaleProductId'
 });
 
-// ✅ SaleProduct ilişkileri
 Sale.hasMany(SaleProduct, {
   foreignKey: 'SaleId',
   onDelete: 'CASCADE',
@@ -80,8 +75,41 @@ SaleProduct.belongsTo(Product, { foreignKey: 'ProductId' });
 SaleProduct.belongsTo(User);
 SaleProduct.belongsTo(Customer, { foreignKey: 'CustomerId' });
 
+// ✅ Çoklu ürün satışı bağlantısı
 Sale.belongsToMany(Product, { through: SaleProduct });
 Product.belongsToMany(Sale, { through: SaleProduct });
+
+
+// ✅ 🔗 Company ilişkileri (Multi-Tenant yapı)
+Company.hasMany(User);
+User.belongsTo(Company);
+
+Company.hasMany(Customer);
+Customer.belongsTo(Company);
+
+Company.hasMany(Service);
+Service.belongsTo(Company);
+
+Company.hasMany(Product);
+Product.belongsTo(Company);
+
+Company.hasMany(Appointment);
+Appointment.belongsTo(Company);
+
+Company.hasMany(Sale);
+Sale.belongsTo(Company);
+
+Company.hasMany(Payment);
+Payment.belongsTo(Company);
+
+Company.hasMany(WorkingHours);
+WorkingHours.belongsTo(Company);
+
+Company.hasMany(CashRegister);
+CashRegister.belongsTo(Company);
+
+Company.hasMany(SaleProduct);
+SaleProduct.belongsTo(Company); // eğer CompanyId eklediysen buraya da bağladım
 
 // 🔚 Export
 module.exports = {

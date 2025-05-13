@@ -8,7 +8,12 @@ module.exports = (sequelize, DataTypes) => {
     startTime: DataTypes.TIME,
     endTime: DataTypes.TIME,
     breakStart: DataTypes.TIME,
-    breakEnd: DataTypes.TIME
+    breakEnd: DataTypes.TIME,
+    CompanyId: {
+  type: DataTypes.INTEGER,
+  allowNull: false
+}
+
   });
 
   return WorkingHours;

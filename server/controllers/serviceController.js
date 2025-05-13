@@ -1,10 +1,12 @@
 const { Service } = require('../models');
 
 module.exports = {
-  // ✅ Tüm hizmetleri getir
+  // ✅ Tüm hizmetleri getir (şirket bazlı)
   async getAll(req, res) {
     try {
-      const services = await Service.findAll();
+      const services = await Service.findAll({
+        where: { CompanyId: req.company.companyId }
+      });
       res.json(services);
     } catch (err) {
       console.error(err);
@@ -21,7 +23,12 @@ module.exports = {
         return res.status(400).json({ error: 'Geçersiz renk formatı' });
       }
 
-      const service = await Service.create({ name, color });
+      const service = await Service.create({
+        name,
+        color,
+        CompanyId: req.company.companyId
+      });
+
       res.json(service);
     } catch (err) {
       console.error(err);
@@ -29,7 +36,7 @@ module.exports = {
     }
   },
 
-  // ✅ Hizmeti güncelle
+  // ✅ Hizmeti güncelle (şirket doğrulamasıyla)
   async update(req, res) {
     try {
       const { name, color } = req.body;
@@ -40,7 +47,12 @@ module.exports = {
 
       const [updated] = await Service.update(
         { name, color },
-        { where: { id: req.params.id } }
+        {
+          where: {
+            id: req.params.id,
+            CompanyId: req.company.companyId
+          }
+        }
       );
 
       if (updated === 0) {
@@ -54,10 +66,15 @@ module.exports = {
     }
   },
 
-  // ✅ Hizmeti sil
+  // ✅ Hizmeti sil (şirkete aitse)
   async delete(req, res) {
     try {
-      const deleted = await Service.destroy({ where: { id: req.params.id } });
+      const deleted = await Service.destroy({
+        where: {
+          id: req.params.id,
+          CompanyId: req.company.companyId
+        }
+      });
 
       if (deleted === 0) {
         return res.status(404).json({ error: 'Silinecek hizmet bulunamadı' });

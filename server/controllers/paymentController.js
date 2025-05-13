@@ -4,14 +4,20 @@ const { Op } = require('sequelize');
 module.exports = {
   async getPaidCustomers(req, res) {
     try {
-      const customerIds = await Sale.findAll({
+      const saleCustomers = await Sale.findAll({
         attributes: ['CustomerId'],
+        where: { CompanyId: req.company.companyId },
         group: ['CustomerId'],
         raw: true
       });
 
-      const ids = customerIds.map(c => c.CustomerId);
-      const customers = await Customer.findAll({ where: { id: { [Op.in]: ids } } });
+      const ids = saleCustomers.map(c => c.CustomerId);
+      const customers = await Customer.findAll({
+        where: {
+          id: { [Op.in]: ids },
+          CompanyId: req.company.companyId
+        }
+      });
 
       res.json(customers);
     } catch (error) {
@@ -25,33 +31,19 @@ module.exports = {
 
     try {
       const payments = await Payment.findAll({
+        where: { CompanyId: req.company.companyId },
         include: [
-          {
-            model: Sale,
-            include: [
-              { model: Customer },
-              { model: Service }
-            ]
-          },
-          {
-            model: Product
-          },
-          {
-            model: SaleProduct,
-            include: [{ model: Customer }]
-          },
-          {
-            model: User
-          }
+          { model: Sale, include: [Customer, Service] },
+          { model: Product },
+          { model: SaleProduct, include: [Customer] },
+          { model: User }
         ],
         order: [['dueDate', 'ASC']]
       });
 
-      const filtered = payments.filter(p => {
-        const fromSale = p.Sale?.CustomerId === customerId;
-        const fromSP = p.SaleProduct?.CustomerId === customerId;
-        return fromSale || fromSP;
-      });
+      const filtered = payments.filter(p =>
+        p.Sale?.CustomerId === customerId || p.SaleProduct?.CustomerId === customerId
+      );
 
       res.json(filtered);
     } catch (error) {
@@ -63,24 +55,12 @@ module.exports = {
   async getAllPayments(req, res) {
     try {
       const payments = await Payment.findAll({
+        where: { CompanyId: req.company.companyId },
         include: [
-          {
-            model: Sale,
-            include: [
-              { model: Customer },
-              { model: Service }
-            ]
-          },
-          {
-            model: Product
-          },
-          {
-            model: SaleProduct,
-            include: [{ model: Customer }]
-          },
-          {
-            model: User
-          }
+          { model: Sale, include: [Customer, Service] },
+          { model: Product },
+          { model: SaleProduct, include: [Customer] },
+          { model: User }
         ],
         order: [['dueDate', 'ASC']]
       });
@@ -93,14 +73,17 @@ module.exports = {
   },
 
   async updateDueDate(req, res) {
-    const paymentId = req.params.id;
-    const { newDate } = req.body;
-
     try {
-      const payment = await Payment.findByPk(paymentId);
+      const payment = await Payment.findOne({
+        where: {
+          id: req.params.id,
+          CompanyId: req.company.companyId
+        }
+      });
+
       if (!payment) return res.status(404).json({ error: 'Ödeme bulunamadı' });
 
-      payment.dueDate = newDate;
+      payment.dueDate = req.body.newDate;
       await payment.save();
 
       res.json({ message: 'Tarih başarıyla güncellendi', payment });
@@ -111,12 +94,17 @@ module.exports = {
   },
 
   async updatePayment(req, res) {
-    const paymentId = req.params.id;
-    const { dueDate, amount, status, paymentType, paymentDate, UserId } = req.body;
-
     try {
-      const payment = await Payment.findByPk(paymentId);
+      const payment = await Payment.findOne({
+        where: {
+          id: req.params.id,
+          CompanyId: req.company.companyId
+        }
+      });
+
       if (!payment) return res.status(404).json({ error: "Ödeme bulunamadı." });
+
+      const { dueDate, amount, status, paymentType, paymentDate, UserId } = req.body;
 
       if (dueDate) {
         const parsedDate = new Date(dueDate);
@@ -139,12 +127,17 @@ module.exports = {
   },
 
   async makePayment(req, res) {
-    const paymentId = req.params.id;
-    const { userId, paymentType } = req.body;
-
     try {
-      const payment = await Payment.findByPk(paymentId);
+      const payment = await Payment.findOne({
+        where: {
+          id: req.params.id,
+          CompanyId: req.company.companyId
+        }
+      });
+
       if (!payment) return res.status(404).json({ error: "Taksit bulunamadı." });
+
+      const { userId, paymentType } = req.body;
 
       payment.status = "ödendi";
       payment.paymentType = paymentType;
@@ -162,11 +155,9 @@ module.exports = {
   async getCashTracking(req, res) {
     try {
       let payments = await Payment.findAll({
+        where: { CompanyId: req.company.companyId },
         include: [
-          {
-            model: User,
-            attributes: ['id', 'name']
-          },
+          { model: User, attributes: ['id', 'name'] },
           {
             model: Sale,
             include: [
@@ -179,41 +170,39 @@ module.exports = {
             include: [
               {
                 model: SaleProduct,
-                include: [
-                  { model: Customer, attributes: ['id', 'name', 'phone'] }
-                ]
+                include: [{ model: Customer, attributes: ['id', 'name', 'phone'] }]
               }
             ]
           }
         ],
         order: [['paymentDate', 'DESC']]
       });
-  
+
       payments = payments.map(p => {
         if (!p.Sale && p.Product?.SaleProducts?.length > 0) {
           const sp = p.Product.SaleProducts[0];
           p.dataValues.FallbackCustomer = sp.Customer || null;
         }
+
         return {
           id: p.id,
           amount: p.amount,
           installmentNo: p.installmentNo,
           paymentType: p.paymentType,
           paymentDate: p.paymentDate,
-          dueDate: p.dueDate, // 🟢 Yeni eklendi
-          status: p.status,   // 🟢 Yeni eklendi
+          dueDate: p.dueDate,
+          status: p.status,
           User: p.User,
           Product: p.Product,
           Sale: p.Sale,
           FallbackCustomer: p.dataValues.FallbackCustomer || null
         };
       });
-  
+
       res.json(payments);
     } catch (error) {
       console.error("❌ getCashTracking hatası:", error);
       res.status(500).json({ error: 'Kasa takibi verileri alınamadı.' });
     }
   }
-  
 };

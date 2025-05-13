@@ -7,6 +7,11 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.ENUM('admin', 'personel'),
         defaultValue: 'personel',
       },
+      CompanyId: {
+  type: DataTypes.INTEGER,
+  allowNull: true
+},
+
     });
   };
   

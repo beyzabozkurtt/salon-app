@@ -9,6 +9,11 @@ module.exports = (sequelize, DataTypes) => {
         model: 'Sales',
         key: 'id'
       }
-    }
+    },
+    CompanyId: {
+  type: DataTypes.INTEGER,
+  allowNull: false
+}
+
   });
 };

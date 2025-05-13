@@ -77,111 +77,117 @@
     </div>
   </div>
 
-  <script>
-    const list = document.getElementById("serviceList");
-    const createForm = document.getElementById("createForm");
-    const editForm = document.getElementById("editForm");
-    const colorList = [
-      "#33FF57", "#3357FF", "#FF33D4", "#FF8C00", "#800080",
-      "#00CED1", "#FFD700", "#A52A2A", "#708090", "#8B4513"
-    ];
-    function setupEditColorSelector(selected = "") {
-  const container = document.getElementById("editColorOptions");
-  const input = document.getElementById("editSelectedColor");
-  container.innerHTML = "";
+ <script>
+  const list = document.getElementById("serviceList");
+  const createForm = document.getElementById("createForm");
+  const editForm = document.getElementById("editForm");
 
-  colorList.forEach(color => {
-    const btn = document.createElement("button");
-    btn.type = "button";
-    btn.className = "color-circle";
-    btn.style.backgroundColor = color;
+  const token = localStorage.getItem("companyToken");
+  const axiosConfig = {
+    headers: { Authorization: "Bearer " + token }
+  };
 
-    if (color === selected) {
-      btn.style.border = "3px solid black";
-      input.value = color;
-    }
+  const colorList = [
+    "#33FF57", "#3357FF", "#FF33D4", "#FF8C00", "#800080",
+    "#00CED1", "#FFD700", "#A52A2A", "#708090", "#8B4513"
+  ];
 
-    btn.addEventListener("click", () => {
-      document.querySelectorAll("#editColorOptions .color-circle").forEach(b => b.style.border = "2px solid #ccc");
-      btn.style.border = "3px solid black";
-      input.value = color;
-    });
+  function setupEditColorSelector(selected = "") {
+    const container = document.getElementById("editColorOptions");
+    const input = document.getElementById("editSelectedColor");
+    container.innerHTML = "";
 
-    container.appendChild(btn);
-  });
-}
+    colorList.forEach(color => {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "color-circle";
+      btn.style.backgroundColor = color;
 
-
-    document.addEventListener("DOMContentLoaded", () => {
-      const colorOptions = document.getElementById("colorOptions");
-      const selectedColor = document.getElementById("selectedColor");
-
-      colorList.forEach(color => {
-        const btn = document.createElement("button");
-        btn.type = "button";
-        btn.className = "color-circle";
-        btn.style.backgroundColor = color;
-
-        btn.addEventListener("click", () => {
-          document.querySelectorAll(".color-circle").forEach(b => b.style.border = "2px solid #ccc");
-          btn.style.border = "3px solid black";
-          selectedColor.value = color;
-        });
-
-        colorOptions.appendChild(btn);
-      });
-    });
-
-    async function loadServices() {
-      const res = await axios.get("http://localhost:5001/api/services");
-      list.innerHTML = "";
-      res.data.forEach(s => {
-        const item = document.createElement("li");
-        item.className = "list-group-item d-flex justify-content-between align-items-center";
-        item.innerHTML = `
-          <span>${s.name}</span>
-          <div>
-            <button class="btn btn-sm btn-primary me-2" onclick='editService(${JSON.stringify(s)})'>Düzenle</button>
-            <button class="btn btn-sm btn-danger" onclick='deleteService(${s.id})'>Sil</button>
-          </div>
-        `;
-        list.appendChild(item);
-      });
-    }
-
-    createForm.addEventListener("submit", async e => {
-      e.preventDefault();
-      const data = Object.fromEntries(new FormData(createForm));
-      await axios.post("http://localhost:5001/api/services", data);
-      createForm.reset();
-      bootstrap.Modal.getInstance(document.getElementById("createModal")).hide();
-      loadServices();
-    });
-
-    function editService(service) {
-  editForm.id.value = service.id;
-  editForm.name.value = service.name;
-  setupEditColorSelector(service.color || "#33FF57");
-  bootstrap.Modal.getOrCreateInstance(document.getElementById("editModal")).show();
-}
-
-
-    editForm.addEventListener("submit", async e => {
-      e.preventDefault();
-      const data = Object.fromEntries(new FormData(editForm));
-      await axios.put(`http://localhost:5001/api/services/${data.id}`, data);
-      bootstrap.Modal.getInstance(document.getElementById("editModal")).hide();
-      loadServices();
-    });
-
-    async function deleteService(id) {
-      if (confirm("Bu hizmet silinsin mi?")) {
-        await axios.delete(`http://localhost:5001/api/services/${id}`);
-        loadServices();
+      if (color === selected) {
+        btn.style.border = "3px solid black";
+        input.value = color;
       }
-    }
 
+      btn.addEventListener("click", () => {
+        document.querySelectorAll("#editColorOptions .color-circle").forEach(b => b.style.border = "2px solid #ccc");
+        btn.style.border = "3px solid black";
+        input.value = color;
+      });
+
+      container.appendChild(btn);
+    });
+  }
+
+  document.addEventListener("DOMContentLoaded", () => {
+    const colorOptions = document.getElementById("colorOptions");
+    const selectedColor = document.getElementById("selectedColor");
+
+    colorList.forEach(color => {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "color-circle";
+      btn.style.backgroundColor = color;
+
+      btn.addEventListener("click", () => {
+        document.querySelectorAll(".color-circle").forEach(b => b.style.border = "2px solid #ccc");
+        btn.style.border = "3px solid black";
+        selectedColor.value = color;
+      });
+
+      colorOptions.appendChild(btn);
+    });
+  });
+
+  async function loadServices() {
+    const res = await axios.get("http://localhost:5001/api/services", axiosConfig);
+    list.innerHTML = "";
+    res.data.forEach(s => {
+      const item = document.createElement("li");
+      item.className = "list-group-item d-flex justify-content-between align-items-center";
+      item.innerHTML = `
+        <span>${s.name}</span>
+        <div>
+          <button class="btn btn-sm btn-primary me-2" onclick='editService(${JSON.stringify(s)})'>Düzenle</button>
+          <button class="btn btn-sm btn-danger" onclick='deleteService(${s.id})'>Sil</button>
+        </div>
+      `;
+      list.appendChild(item);
+    });
+  }
+
+  createForm.addEventListener("submit", async e => {
+    e.preventDefault();
+    const data = Object.fromEntries(new FormData(createForm));
+    await axios.post("http://localhost:5001/api/services", data, axiosConfig);
+    createForm.reset();
+    bootstrap.Modal.getInstance(document.getElementById("createModal")).hide();
     loadServices();
-  </script>
+  });
+
+  function editService(service) {
+    editForm.id.value = service.id;
+    editForm.name.value = service.name;
+    setupEditColorSelector(service.color || "#33FF57");
+    bootstrap.Modal.getOrCreateInstance(document.getElementById("editModal")).show();
+  }
+
+  editForm.addEventListener("submit", async e => {
+    e.preventDefault();
+    const data = Object.fromEntries(new FormData(editForm));
+    await axios.put(`http://localhost:5001/api/services/${data.id}`, data, axiosConfig);
+    bootstrap.Modal.getInstance(document.getElementById("editModal")).hide();
+    loadServices();
+  });
+
+  async function deleteService(id) {
+    if (confirm("Bu hizmet silinsin mi?")) {
+      await axios.delete(`http://localhost:5001/api/services/${id}`, axiosConfig);
+      loadServices();
+    }
+  }
+
+  loadServices();
+</script>
+
 </body>
 </html>

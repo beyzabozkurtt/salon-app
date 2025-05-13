@@ -44,31 +44,40 @@
   </div>
 
   <script>
-    const list = document.getElementById("productList");
-    const form = document.getElementById("productForm");
-    const modal = new bootstrap.Modal(document.getElementById("productModal"));
+  const list = document.getElementById("productList");
+  const form = document.getElementById("productForm");
+  const modal = new bootstrap.Modal(document.getElementById("productModal"));
 
-    form.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const data = Object.fromEntries(new FormData(form));
-      const id = data.id;
+  const token = localStorage.getItem("companyToken");
+  const axiosConfig = {
+    headers: {
+      Authorization: "Bearer " + token
+    }
+  };
 
-      try {
-        if (id) {
-          await axios.put(`http://localhost:5001/api/products/${id}`, data);
-        } else {
-          await axios.post("http://localhost:5001/api/products", data);
-        }
-        form.reset();
-        modal.hide();
-        loadProducts();
-      } catch (err) {
-        alert("Kayıt başarısız");
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const data = Object.fromEntries(new FormData(form));
+    const id = data.id;
+
+    try {
+      if (id) {
+        await axios.put(`http://localhost:5001/api/products/${id}`, data, axiosConfig);
+      } else {
+        await axios.post("http://localhost:5001/api/products", data, axiosConfig);
       }
-    });
+      form.reset();
+      modal.hide();
+      loadProducts();
+    } catch (err) {
+      alert("Kayıt başarısız");
+      console.error(err);
+    }
+  });
 
-    async function loadProducts() {
-      const res = await axios.get("http://localhost:5001/api/products");
+  async function loadProducts() {
+    try {
+      const res = await axios.get("http://localhost:5001/api/products", axiosConfig);
       list.innerHTML = "";
       res.data.forEach(p => {
         const item = document.createElement("li");
@@ -79,23 +88,28 @@
         `;
         list.appendChild(item);
       });
+    } catch (err) {
+      alert("Ürünler yüklenemedi");
+      console.error(err);
     }
+  }
 
-    function editProduct(product) {
-      form.id.value = product.id;
-      form.name.value = product.name;
-      form.price.value = product.price;
-      document.getElementById("productModalTitle").textContent = "Ürünü Düzenle";
-      modal.show();
-    }
+  function editProduct(product) {
+    form.id.value = product.id;
+    form.name.value = product.name;
+    form.price.value = product.price;
+    document.getElementById("productModalTitle").textContent = "Ürünü Düzenle";
+    modal.show();
+  }
 
-    function openCreateModal() {
-      form.reset();
-      form.id.value = "";
-      document.getElementById("productModalTitle").textContent = "Yeni Ürün";
-    }
+  function openCreateModal() {
+    form.reset();
+    form.id.value = "";
+    document.getElementById("productModalTitle").textContent = "Yeni Ürün";
+  }
 
-    loadProducts();
-  </script>
+  loadProducts();
+</script>
+
 </body>
 </html>
