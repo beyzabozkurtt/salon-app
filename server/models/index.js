@@ -12,6 +12,7 @@ const SaleProduct = require('./saleProduct')(sequelize, DataTypes);
 const CashRegister = require('./CashRegister')(sequelize, DataTypes);
 const Payment = require('./Payment')(sequelize, DataTypes);
 const WorkingHours = require('./WorkingHours')(sequelize, DataTypes);
+const Company = require('./Company')(sequelize, DataTypes);
 
 
 // 🔗 İlişkiler
@@ -94,5 +95,6 @@ module.exports = {
   SaleProduct,
   CashRegister,
   Payment,
-  WorkingHours 
+  WorkingHours,
+  Company
 };
