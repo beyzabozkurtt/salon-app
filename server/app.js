@@ -28,6 +28,7 @@ app.use('/api/sales', require('./routes/saleRoutes'));
 app.use('/api/sale-products', require('./routes/saleProductRoutes'));
 app.use('/api/payments', require('./routes/paymentRoutes'));
 app.use('/api/working-hours', require('./routes/workingHoursRoutes'));
+app.use('/api/companies', require('./routes/companyRoutes'));
 
 
 
