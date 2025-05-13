@@ -361,25 +361,38 @@ document.addEventListener('DOMContentLoaded', function () {
     nowIndicator: true,
     slotDuration: '00:30:00',
     allDaySlot: false,
-    
-    eventResize: async function(info) {
-  const r = info.event;
-
-  try {
-    await axios.put(`http://localhost:5001/api/appointments/${r.id}`, {
-      date: r.start.toISOString(),
-      endDate: r.end.toISOString()
-    });
-
-    calendar.refetchEvents();
-  } catch (err) {
-    alert("Randevu süresi güncellenemedi.");
-    info.revert(); // başarısızsa geri al
-  }
-},
-
-    eventDrop: async function(info) {
+      
+      eventResize: async function(info) {
     const r = info.event;
+
+    const onay = confirm("Bu randevunun süresini değiştirmek istiyor musunuz?");
+    if (!onay) {
+      info.revert(); // Kullanıcı iptal ettiyse eski haline getir
+      return;
+    }
+
+    try {
+      await axios.put(`http://localhost:5001/api/appointments/${r.id}`, {
+        date: r.start.toISOString(),
+        endDate: r.end.toISOString()
+      });
+
+      calendar.refetchEvents();
+    } catch (err) {
+      alert("Randevu süresi güncellenemedi.");
+      info.revert();
+    }
+  },
+
+
+  eventDrop: async function(info) {
+    const r = info.event;
+
+    const onay = confirm("Bu randevunun saatini değiştirmek istiyor musunuz?");
+    if (!onay) {
+      info.revert(); // İptal edildiyse eski yerine al
+      return;
+    }
 
     try {
       await axios.put(`http://localhost:5001/api/appointments/${r.id}`, {
@@ -390,7 +403,7 @@ document.addEventListener('DOMContentLoaded', function () {
       calendar.refetchEvents();
     } catch (err) {
       alert("Randevu taşınamadı.");
-      info.revert(); // başarısızsa eski yerine al
+      info.revert();
     }
   },
 
