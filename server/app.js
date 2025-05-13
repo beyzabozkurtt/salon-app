@@ -11,7 +11,10 @@ const app = express();
 const PORT = process.env.PORT || 5001;
 
 // 🛡️ Middleware'ler
-app.use(cors());
+app.use(cors({
+  origin: '*',
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+}));
 app.use(bodyParser.json());
 
 // 📦 Route Tanımları
@@ -24,6 +27,8 @@ app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/sales', require('./routes/saleRoutes'));
 app.use('/api/sale-products', require('./routes/saleProductRoutes'));
 app.use('/api/payments', require('./routes/paymentRoutes'));
+app.use('/api/working-hours', require('./routes/workingHoursRoutes'));
+
 
 
 // 🎯 Ana kontrol route'u

@@ -11,6 +11,8 @@ const Sale = require('./Sale')(sequelize, DataTypes);
 const SaleProduct = require('./saleProduct')(sequelize, DataTypes);
 const CashRegister = require('./CashRegister')(sequelize, DataTypes);
 const Payment = require('./Payment')(sequelize, DataTypes);
+const WorkingHours = require('./WorkingHours')(sequelize, DataTypes);
+
 
 // 🔗 İlişkiler
 User.hasMany(Appointment);
@@ -92,4 +94,5 @@ module.exports = {
   SaleProduct,
   CashRegister,
   Payment,
+  WorkingHours 
 };
