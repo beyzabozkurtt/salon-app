@@ -56,6 +56,13 @@ const serviceList = document.getElementById("serviceList");
 const productList = document.getElementById("productList");
 const paymentList = document.getElementById("paymentList");
 
+const token = localStorage.getItem("companyToken");
+const config = {
+  headers: {
+    Authorization: "Bearer " + token
+  }
+};
+
 if (!customerId) {
   alert("Müşteri bulunamadı.");
   window.location.href = "customers.html";
@@ -63,7 +70,7 @@ if (!customerId) {
 
 async function loadCustomerDetails() {
   try {
-    const res = await axios.get(`http://localhost:5001/api/customers/${customerId}/details`);
+    const res = await axios.get(`http://localhost:5001/api/customers/${customerId}/details`, config);
     const data = res.data;
     customerNameEl.textContent = `${data.customer.name} (${data.customer.email})`;
 
@@ -73,12 +80,12 @@ async function loadCustomerDetails() {
       data.services.forEach((s, index) => {
         const div = document.createElement("div");
         div.className = "mb-3";
-        
+
         const header = document.createElement("div");
         header.className = "bg-white p-3 border rounded shadow-sm";
         header.style.cursor = "pointer";
         header.innerHTML = `<strong>${s.serviceName}</strong> • ${s.sessionCount} seans`;
-        
+
         const content = document.createElement("div");
         content.className = "mt-2 ps-3";
         content.style.display = "none";
@@ -101,7 +108,7 @@ async function loadCustomerDetails() {
       });
     }
 
-    const productRes = await axios.get("http://localhost:5001/api/sale-products");
+    const productRes = await axios.get("http://localhost:5001/api/sale-products", config);
     const products = productRes.data.filter(p => p.CustomerId == customerId);
     productList.innerHTML = products.length
       ? products.map(p =>
@@ -119,7 +126,7 @@ async function loadCustomerDetails() {
 
 async function loadPayments() {
   try {
-    const res = await axios.get(`http://localhost:5001/api/payments/by-customer/${customerId}`);
+    const res = await axios.get(`http://localhost:5001/api/payments/by-customer/${customerId}`, config);
     const data = res.data;
 
     if (!data.length) {
@@ -162,7 +169,7 @@ document.addEventListener("change", async (e) => {
     try {
       await axios.put(`http://localhost:5001/api/payments/update/${id}`, {
         dueDate: newDate
-      });
+      }, config);
       alert("📅 Tarih güncellendi!");
     } catch (err) {
       alert("❌ Güncelleme başarısız.");
@@ -173,5 +180,6 @@ document.addEventListener("change", async (e) => {
 loadCustomerDetails();
 loadPayments();
 </script>
+
 </body>
 </html>
