@@ -49,6 +49,50 @@
     <!--begin::Required Plugin(AdminLTE)-->
     <link rel="stylesheet" href="../../dist/css/adminlte.css" />
     <!--end::Required Plugin(AdminLTE)-->
+    <!--StyleSheet-->
+    <style>
+      .navbar-nav > .nav-item {
+        margin-left: 0.35rem !important;
+        margin-right: 0.35rem !important;
+      }
+
+      .navbar-nav > .nav-item > .nav-link {
+        padding-left: 0.35rem !important;
+        padding-right: 0.35rem !important;
+      }
+      .search-input {
+        width: 0;
+        opacity: 0;
+        transition: width 0.4s ease, opacity 0.4s ease;
+        padding: 0;
+        border: none;
+        visibility: hidden;
+      }
+
+      .search-input.show {
+        width: 250px;
+        opacity: 1;
+        visibility: visible;
+        padding: 0.375rem 0.5rem;
+        border: 1px solid #ced4da;
+      }
+      .dropdown-menu a:hover {
+    background-color: #f1f1f1;
+  }
+  .dropdown-item i {
+    width: 10px;
+    text-align: center;
+  }
+  .navbar-nav .nav-link i {
+  transition: transform 0.3s ease;
+}
+
+.navbar-nav .nav-link:hover i {
+  transform: scale(1.4);
+}
+</style>
+
+
   </head>
   <!--end::Head-->
   <!--begin::Body-->
@@ -73,107 +117,111 @@
           </ul>
           <!--end::Start Navbar Links-->
           <!--begin::End Navbar Links-->
-          <ul class="navbar-nav ms-auto">
+          <ul class="navbar-nav ms-auto ">
             <!--begin::Navbar Search-->
-            <li class="nav-item">
-              <a class="nav-link" data-widget="navbar-search" href="#" role="button">
-                <i class="bi bi-search"></i>
-              </a>
-            </li>
+            <li class="nav-item d-flex align-items-center" style="gap: 8px;">
+  <i class="bi bi-search" id="searchToggle" style="cursor: pointer;"></i>
+  <input
+    type="text"
+    class="form-control form-control-sm search-input"
+    placeholder="Bir şeyler ara..."
+    id="searchInput"
+  />
+</li>
+
+           
             <!--end::Navbar Search-->
-            <!--begin::Messages Dropdown Menu-->
+            <!--begin::Plus Dropdown Menu-->
             <li class="nav-item dropdown">
               <a class="nav-link" data-bs-toggle="dropdown" href="#">
-                <i class="bi bi-chat-text"></i>
-                <span class="navbar-badge badge text-bg-danger">3</span>
+                <i class="bi bi-plus-square"></i>
               </a>
               <div class="dropdown-menu dropdown-menu-lg dropdown-menu-end">
                 <a href="#" class="dropdown-item">
-                  <!--begin::Message-->
-                  <div class="d-flex">
-                    <div class="flex-shrink-0">
-                      <img
-                        src="../../dist/assets/img/user1-128x128.jpg"
-                        alt="User Avatar"
-                        class="img-size-50 rounded-circle me-3"
-                      />
-                    </div>
-                    <div class="flex-grow-1">
-                      <h3 class="dropdown-item-title">
-                        Brad Diesel
-                        <span class="float-end fs-7 text-danger"
-                          ><i class="bi bi-star-fill"></i
-                        ></span>
-                      </h3>
-                      <p class="fs-7">Call me whenever you can...</p>
-                      <p class="fs-7 text-secondary">
-                        <i class="bi bi-clock-fill me-1"></i> 4 Hours Ago
-                      </p>
-                    </div>
-                  </div>
-                  <!--end::Message-->
+                  <i class="bi bi-calendar me-2"></i> Yeni Randevu
                 </a>
                 <div class="dropdown-divider"></div>
                 <a href="#" class="dropdown-item">
-                  <!--begin::Message-->
-                  <div class="d-flex">
-                    <div class="flex-shrink-0">
-                      <img
-                        src="../../dist/assets/img/user8-128x128.jpg"
-                        alt="User Avatar"
-                        class="img-size-50 rounded-circle me-3"
-                      />
-                    </div>
-                    <div class="flex-grow-1">
-                      <h3 class="dropdown-item-title">
-                        John Pierce
-                        <span class="float-end fs-7 text-secondary">
-                          <i class="bi bi-star-fill"></i>
-                        </span>
-                      </h3>
-                      <p class="fs-7">I got your message bro</p>
-                      <p class="fs-7 text-secondary">
-                        <i class="bi bi-clock-fill me-1"></i> 4 Hours Ago
-                      </p>
-                    </div>
-                  </div>
-                  <!--end::Message-->
+                  <i class="bi bi-pencil me-2"></i> Yeni Adisyon
                 </a>
                 <div class="dropdown-divider"></div>
                 <a href="#" class="dropdown-item">
-                  <!--begin::Message-->
-                  <div class="d-flex">
-                    <div class="flex-shrink-0">
-                      <img
-                        src="../../dist/assets/img/user3-128x128.jpg"
-                        alt="User Avatar"
-                        class="img-size-50 rounded-circle me-3"
-                      />
-                    </div>
-                    <div class="flex-grow-1">
-                      <h3 class="dropdown-item-title">
-                        Nora Silvester
-                        <span class="float-end fs-7 text-warning">
-                          <i class="bi bi-star-fill"></i>
-                        </span>
-                      </h3>
-                      <p class="fs-7">The subject goes here</p>
-                      <p class="fs-7 text-secondary">
-                        <i class="bi bi-clock-fill me-1"></i> 4 Hours Ago
-                      </p>
-                    </div>
-                  </div>
-                  <!--end::Message-->
+                  <i class="bi bi-person-plus me-2"></i> Yeni Müşteri
                 </a>
                 <div class="dropdown-divider"></div>
-                <a href="#" class="dropdown-item dropdown-footer">See All Messages</a>
+                <a href="#" class="dropdown-item">
+                  <i class="bi bi-box me-2"></i> Yeni Ürün Satışı
+                </a>
+                <div class="dropdown-divider"></div>
+                <a href="#" class="dropdown-item">
+                  <i class="bi bi-gift me-2"></i> Yeni Paket Satışı
+                </a>
+                <div class="dropdown-divider"></div>
+                <a href="#" class="dropdown-item">
+                  <i class="bi bi-cash-coin me-2"></i> Yeni Masraf
+                </a>
+                
               </div>
             </li>
-            <!--end::Messages Dropdown Menu-->
+            <!--end::Plus Dropdown Menu-->
+             <!--begin::Settings Dropdown Menu-->
+            <li class="nav-item dropdown">
+              <a class="nav-link" data-bs-toggle="dropdown" href="#">
+                <i class="bi bi-gear"></i>
+              </a>
+              <div class="dropdown-menu dropdown-menu-lg dropdown-menu-end">
+  <a href="#" class="dropdown-item">
+    <i class="bi bi-info-circle"></i> Temel Bilgiler
+  </a>
+  <div class="dropdown-divider"></div>
+  
+ <a href="#" class="dropdown-item">
+    <i class="bi bi-clock"></i> Çalışma Saatleri
+  </a>
+  <div class="dropdown-divider"></div>
+  
+  <a href="#" class="dropdown-item">
+    <i class="bi bi-people"></i> Personeller
+  </a>
+  <div class="dropdown-divider"></div>
+  
+  <a href="#" class="dropdown-item">
+    <i class="bi bi-menu-button-wide"></i> Hizmetler
+  </a>
+  <div class="dropdown-divider"></div>
+  
+  <a href="#" class="dropdown-item">
+    <i class="bi bi-scissors"></i> Promosyonlar
+  </a>
+  <div class="dropdown-divider"></div>
+  
+<a href="#" class="dropdown-item">
+    <i class="bi bi-eye"></i> Ürünler
+  </a>
+  <div class="dropdown-divider"></div>
+  
+ <a href="#" class="dropdown-item">
+    <i class="bi bi-box2-heart"></i> Paketler
+  </a>
+  <div class="dropdown-divider"></div>
+  
+ <a href="#" class="dropdown-item">
+    <i class="bi bi-journal-check"></i> Randevu Ayarları
+  </a>
+  <div class="dropdown-divider"></div>
+  
+ <a href="#" class="dropdown-item">
+    <i class="bi bi-tags"></i> Etiket Ayarları
+  </a>
+</div>
+
+
+            </li>
+            <!--end::Settings Dropdown Menu-->
             <!--begin::Notifications Dropdown Menu-->
             <li class="nav-item dropdown">
               <a class="nav-link" data-bs-toggle="dropdown" href="#">
-                <i class="bi bi-bell-fill"></i>
+                <i class="bi bi-bell-fill me-2"></i>
                 <span class="navbar-badge badge text-bg-warning">15</span>
               </a>
               <div class="dropdown-menu dropdown-menu-lg dropdown-menu-end">
@@ -208,36 +256,19 @@
             <!--end::Fullscreen Toggle-->
             <!--begin::User Menu Dropdown-->
             <li class="nav-item dropdown user-menu">
-              <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown">
-                <img
-                  src="../../dist/assets/img/profile_image.jpg"
-                  class="user-image rounded-circle shadow"
-                  alt="User Image"
-                />
-                <span class="d-none d-md-inline">Alexander Pierce</span>
-              </a>
-              <ul class="dropdown-menu dropdown-menu-lg dropdown-menu-end">
-                <!--begin::User Image-->
-                <li class="user-header text-bg-primary">
-                  <img
-                    src="../../dist/assets/img/profile_image.jpg"
-                    class="rounded-circle shadow"
-                    alt="User Image"
-                  />
-                  <p>
-                    Alexander Pierce 
-                    <small>Member since Nov. 2023</small>
-                  </p>
-                </li>
-                <!--end::User Image-->
-                <!--begin::Menu Footer-->
-                <li class="user-footer">
-                  <a href="#" class="btn btn-default btn-flat">Profili Görüntüle</a>
-                  <a href="#" id="logoutBtn" class="btn btn-default btn-flat float-end">Çıkış Yap</a>
-                </li>
-                <!--end::Menu Footer-->
-              </ul>
+            <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown">
+              <img src="../../dist/assets/img/profile_image.jpg" class="user-image rounded-circle shadow" alt="User Image" />
+              <span class="d-none d-md-inline">Alexander Pierce</span>
+            </a>
+            <ul class="dropdown-menu dropdown-menu-end shadow-sm p-2" style="min-width: 100px;">
+              <li><a class="dropdown-item d-flex align-items-center gap-2" href="#"><i class="bi bi-cart text-danger"></i>Üyelik</a></li>
+              <li><a class="dropdown-item d-flex align-items-center gap-2" href="#"><i class="bi bi-palette text-warning"></i>Tema ayarları</a></li>
+              <li><a class="dropdown-item d-flex align-items-center gap-2" href="#"><i class="bi bi-key text-success"></i>Şifre değiştir</a></li>
+              <li><hr class="dropdown-divider"></li>
+              <li><a class="dropdown-item d-flex align-items-center gap-2 text-danger" href="#" id="logoutBtn"><i class="bi bi-box-arrow-right"></i>Çıkış</a></li>
+            </ul>
             </li>
+
             <!--end::User Menu Dropdown-->
           </ul>
           <!--end::End Navbar Links-->
@@ -581,6 +612,17 @@ if (!localStorage.getItem("token") && !localStorage.getItem("companyId")) {
 </script>
 
     <!--end::Script-->
+    <!--search::Script-->
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const searchToggle = document.getElementById("searchToggle");
+  const searchInput = document.getElementById("searchInput");
+
+  searchToggle.addEventListener("click", () => {
+    searchInput.classList.toggle("show");
+  });
+});
+</script>
   </body>
   <!--end::Body-->
 </html>
