@@ -1,20 +1,12 @@
 const express = require('express');
 const router = express.Router();
 const appointmentController = require('../controllers/appointmentController');
+const authMiddleware = require('../middleware/authMiddleware'); // 🔐
 
-// ✅ Tüm randevuları getir
-router.get('/', appointmentController.getAll);
-
-// ✅ Yeni randevu oluştur
-router.post('/', appointmentController.create);
-
-// ✅ Belirli bir randevuyu getir
-router.get('/:id', appointmentController.getOne);
-
-// ✅ Randevu güncelle
-router.put('/:id', appointmentController.update);
-
-// ✅ Randevu sil
-router.delete('/:id', appointmentController.delete);
+router.get('/', authMiddleware, appointmentController.getAll);
+router.post('/', authMiddleware, appointmentController.create);
+router.get('/:id', authMiddleware, appointmentController.getOne);
+router.put('/:id', authMiddleware, appointmentController.update);
+router.delete('/:id', authMiddleware, appointmentController.delete);
 
 module.exports = router;

@@ -1,15 +1,16 @@
 const { Appointment, Customer, User, Service } = require('../models');
+const { Op } = require('sequelize');
 
 module.exports = {
-  // ✅ Tüm randevuları getir (seans numarası dahil)
+  // ✅ Tüm randevuları getir (şirkete göre filtreli + seans numaralı)
   async getAll(req, res) {
     try {
       const data = await Appointment.findAll({
+        where: { CompanyId: req.company.companyId },
         include: [Customer, User, Service],
         order: [['date', 'ASC']]
       });
 
-      // Seans numaralarını hesapla
       const enriched = data.map((app, _, all) => {
         const matchingAppointments = all.filter(a =>
           a.CustomerId === app.CustomerId &&
@@ -36,16 +37,10 @@ module.exports = {
   // ✅ Yeni randevu oluştur
   async create(req, res) {
     try {
-      const { date, endDate, CustomerId, UserId, ServiceId, notes, status } = req.body;
-
       const appointment = await Appointment.create({
-        date,
-        endDate,
-        CustomerId,
-        UserId,
-        ServiceId,
-        notes,
-        status: status || 'bekliyor'
+        ...req.body,
+        status: req.body.status || 'bekliyor',
+        CompanyId: req.company.companyId
       });
 
       res.json(appointment);
@@ -58,11 +53,14 @@ module.exports = {
   // ✅ Randevu güncelle
   async update(req, res) {
     try {
-      const { date, endDate, CustomerId, UserId, ServiceId, notes, status } = req.body;
-
       const updated = await Appointment.update(
-        { date, endDate, CustomerId, UserId, ServiceId, notes, status },
-        { where: { id: req.params.id } }
+        { ...req.body },
+        {
+          where: {
+            id: req.params.id,
+            CompanyId: req.company.companyId
+          }
+        }
       );
 
       if (updated[0] === 0) {
@@ -79,7 +77,12 @@ module.exports = {
   // ✅ Randevu sil
   async delete(req, res) {
     try {
-      const deleted = await Appointment.destroy({ where: { id: req.params.id } });
+      const deleted = await Appointment.destroy({
+        where: {
+          id: req.params.id,
+          CompanyId: req.company.companyId
+        }
+      });
 
       if (deleted === 0) {
         return res.status(404).json({ error: 'Silinecek randevu bulunamadı' });
@@ -95,7 +98,11 @@ module.exports = {
   // ✅ Belirli randevuyu getir
   async getOne(req, res) {
     try {
-      const appointment = await Appointment.findByPk(req.params.id, {
+      const appointment = await Appointment.findOne({
+        where: {
+          id: req.params.id,
+          CompanyId: req.company.companyId
+        },
         include: [Customer, User, Service],
       });
 
@@ -103,12 +110,12 @@ module.exports = {
         return res.status(404).json({ error: 'Randevu bulunamadı' });
       }
 
-      // Seans numarası hesapla
       const allAppointments = await Appointment.findAll({
         where: {
           CustomerId: appointment.CustomerId,
           ServiceId: appointment.ServiceId,
-          status: { [require('sequelize').Op.ne]: 'iptal' }
+          CompanyId: req.company.companyId,
+          status: { [Op.ne]: 'iptal' }
         },
         order: [['date', 'ASC']]
       });
@@ -116,14 +123,7 @@ module.exports = {
       const sessionNumber = allAppointments.findIndex(a => a.id === appointment.id) + 1;
 
       res.json({
-        id: appointment.id,
-        date: appointment.date,
-        endDate: appointment.endDate,
-        Customer: appointment.Customer,
-        User: appointment.User,
-        Service: appointment.Service,
-        notes: appointment.notes,
-        status: appointment.status,
+        ...appointment.toJSON(),
         sessionNumber
       });
     } catch (err) {
