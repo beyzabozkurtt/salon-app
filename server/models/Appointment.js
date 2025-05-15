@@ -23,6 +23,15 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.TEXT,
       allowNull: true
     },
+    SaleId: {
+  type: DataTypes.INTEGER,
+  allowNull: true
+},
+    sessionNumber: {
+  type: DataTypes.INTEGER,
+  allowNull: false,
+  defaultValue: 1
+},
     CompanyId: {
   type: DataTypes.INTEGER,
   allowNull: false

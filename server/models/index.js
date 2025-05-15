@@ -19,7 +19,8 @@ const SingleService = require('./SingleService')(sequelize, DataTypes);
 User.hasMany(Appointment);
 Appointment.belongsTo(User);
 
-
+Sale.hasMany(Appointment);
+Appointment.belongsTo(Sale);
 
 
 Customer.hasMany(Appointment);

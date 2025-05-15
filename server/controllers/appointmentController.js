@@ -1,8 +1,8 @@
-const { Appointment, Customer, User, Service } = require('../models');
+const { Appointment, Customer, User, Service, Sale } = require('../models');
 const { Op } = require('sequelize');
 
 module.exports = {
-  // ✅ Tüm randevuları getir (şirkete göre filtreli + seans numaralı)
+  // ✅ Tüm randevuları getir (şirkete göre filtreli)
   async getAll(req, res) {
     try {
       const data = await Appointment.findAll({
@@ -11,36 +11,35 @@ module.exports = {
         order: [['date', 'ASC']]
       });
 
-      const enriched = data.map((app, _, all) => {
-        const matchingAppointments = all.filter(a =>
-          a.CustomerId === app.CustomerId &&
-          a.ServiceId === app.ServiceId &&
-          a.status !== 'iptal' &&
-          new Date(a.date) <= new Date(app.date)
-        ).sort((a, b) => new Date(a.date) - new Date(b.date));
-
-        const sessionNumber = matchingAppointments.findIndex(a => a.id === app.id) + 1;
-
-        return {
-          ...app.toJSON(),
-          sessionNumber
-        };
-      });
-
-      res.json(enriched);
+      res.json(data);
     } catch (err) {
       console.error(err);
       res.status(500).json({ error: 'Listeleme hatası' });
     }
   },
 
-  // ✅ Yeni randevu oluştur
+  // ✅ Yeni randevu oluştur (sessionNumber hesaplanarak)
   async create(req, res) {
     try {
+      const CompanyId = req.company.companyId;
+      const { CustomerId, ServiceId, SaleId } = req.body;
+
+      const where = {
+        CustomerId,
+        ServiceId,
+        CompanyId,
+        status: { [Op.ne]: 'iptal' }
+      };
+
+      if (SaleId) where.SaleId = SaleId;
+
+      const count = await Appointment.count({ where });
+
       const appointment = await Appointment.create({
         ...req.body,
+        CompanyId,
         status: req.body.status || 'bekliyor',
-        CompanyId: req.company.companyId
+        sessionNumber: count + 1
       });
 
       res.json(appointment);
@@ -50,11 +49,13 @@ module.exports = {
     }
   },
 
-  // ✅ Randevu güncelle
+  // ✅ Randevu güncelle (sessionNumber güncellenmesin)
   async update(req, res) {
     try {
+      const { sessionNumber, ...safeData } = req.body;
+
       const updated = await Appointment.update(
-        { ...req.body },
+        { ...safeData },
         {
           where: {
             id: req.params.id,
@@ -95,7 +96,7 @@ module.exports = {
     }
   },
 
-  // ✅ Belirli randevuyu getir
+  // ✅ Belirli randevuyu getir (paket adı + süre + personel)
   async getOne(req, res) {
     try {
       const appointment = await Appointment.findOne({
@@ -110,21 +111,30 @@ module.exports = {
         return res.status(404).json({ error: 'Randevu bulunamadı' });
       }
 
-      const allAppointments = await Appointment.findAll({
-        where: {
-          CustomerId: appointment.CustomerId,
-          ServiceId: appointment.ServiceId,
-          CompanyId: req.company.companyId,
-          status: { [Op.ne]: 'iptal' }
-        },
-        order: [['date', 'ASC']]
-      });
+      // ✅ Paket adı (varsa)
+      let serviceName = '-';
 
-      const sessionNumber = allAppointments.findIndex(a => a.id === appointment.id) + 1;
+      if (appointment.SaleId) {
+        const sale = await Sale.findOne({
+          where: {
+            id: appointment.SaleId,
+            CompanyId: req.company.companyId
+          },
+          include: [Service]
+        });
+
+        serviceName = sale?.Service?.name || '-';
+      }
+
+      // ✅ Süre hesapla
+      const start = new Date(appointment.date);
+      const end = new Date(appointment.endDate);
+      const duration = Math.floor((end - start) / (1000 * 60)); // dakika cinsinden
 
       res.json({
         ...appointment.toJSON(),
-        sessionNumber
+        serviceName,
+        duration
       });
     } catch (err) {
       console.error(err);
