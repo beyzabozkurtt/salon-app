@@ -103,7 +103,7 @@ document.addEventListener("DOMContentLoaded", () => {
     try {
       const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
       const height = iframeDoc.documentElement.scrollHeight || iframeDoc.body.scrollHeight;
-      iframe.style.height = 600 + 'px';
+      iframe.style.height = 650 + 'px';
     } catch (e) {
       console.error("Iframe yüksekliği ayarlanamadı:", e);
     }

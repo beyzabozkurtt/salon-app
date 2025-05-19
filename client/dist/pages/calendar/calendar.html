@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <title>Takvim</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- Bootstrap -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet" />
+
+  <!-- FullCalendar -->
+  <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.css" rel="stylesheet" />
+
+  <!-- Flatpickr -->
+  <link href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" rel="stylesheet" />
+
+  <!-- Özel CSS -->
+  <link rel="stylesheet" href="./calendar.css" />
+</head>
+<body>
+  <div class="container-fluid">
+    <!-- Üst bar -->
+    <div class="sticky-header d-flex justify-content-between align-items-center flex-wrap gap-2 pt-3 pb-3">
+      <div class="d-flex gap-1">
+        <button class="btn btn-sm" id="prevDateBtn">
+          <i class="bi bi-chevron-left"></i>
+        </button>
+        <div class="position-relative">
+  <input id="datePicker" class="form-control pe-5" placeholder="Tarih seç" />
+  <i class="bi bi-calendar3 position-absolute top-50 end-0 translate-middle-y me-2 text-muted"></i>
+</div>
+        <button class="btn btn-sm" id="nextDateBtn">
+          <i class="bi bi-chevron-right"></i>
+        </button>
+        <button class="btn btn-sm btn-outline-primary" id="goToday">Bugün</button>
+      </div>
+
+      <div class="d-flex gap-1 align-items-center">
+        <!-- Filtre Dropdown -->
+        <div class="dropdown">
+          <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" id="filterDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+            <i class="bi bi-funnel me-1"></i> Filtrele
+          </button>
+          <div class="dropdown-menu dropdown-menu-sm small p-3" aria-labelledby="filterDropdown" style="min-width: 240px;">
+            <div class="mb-2">
+              <label class="form-label form-label-sm mb-1">Hizmet</label>
+              <select class="form-select form-select-sm">
+                <option value="">Tümü</option>
+                <option>Saç Kesimi</option>
+                <option>Masaj</option>
+                <option>Cilt Bakımı</option>
+              </select>
+            </div>
+            <div class="mb-2">
+              <label class="form-label form-label-sm mb-1">Personel</label>
+              <select class="form-select form-select-sm">
+                <option value="">Tümü</option>
+                <option>Ayşe</option>
+                <option>Mehmet</option>
+                <option>Elif</option>
+              </select>
+            </div>
+            <div class="mb-2">
+              <label class="form-label form-label-sm mb-1">Müşteri</label>
+              <select class="form-select form-select-sm">
+                <option value="">Tümü</option>
+                <option>Ayşe</option>
+                <option>Mehmet</option>
+                <option>Elif</option>
+              </select>
+            </div>
+            <div class="mb-2">
+              <label class="form-label form-label-sm mb-1">Durum</label>
+              <select class="form-select form-select-sm">
+                <option value="">Tümü</option>
+                <option value="bekliyor">Bekliyor</option>
+                <option value="tamamlandı">Tamamlandı</option>
+                <option value="iptal">İptal</option>
+              </select>
+            </div>
+            <div class="d-grid mt-2">
+              <button class="btn btn-sm btn-primary">Uygula</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Refresh İkonu -->
+        <button class="btn btn-sm btn-outline-secondary" title="Filtrele">
+          <i class="bi bi-arrow-clockwise"></i>
+        </button>
+
+        <!-- Görünüm Dropdown -->
+        <div class="dropdown">
+          <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" id="viewDropdown">
+            Gün
+          </button>
+          <ul class="dropdown-menu dropdown-menu-sm small" aria-labelledby="viewDropdown">
+            <li><a class="dropdown-item py-1 px-3" data-view="timeGridDay">Gün</a></li>
+            <li><hr class="dropdown-divider my-1"></li>
+            <li><a class="dropdown-item py-1 px-3" data-view="timeGridWeek">Hafta</a></li>
+            <li><hr class="dropdown-divider my-1"></li>
+            <li><a class="dropdown-item py-1 px-3" data-view="dayGridMonth">Ay</a></li>
+          </ul>
+        </div>
+
+        <!-- Yeni Ekle Butonu -->
+        <button class="btn btn-sm btn-success">+ Yeni Ekle</button>
+      </div>
+    </div>
+
+    <!-- Scroll Alanı -->
+
+  <div id="calendar">
+
+  </div>
+
+
+  <!-- JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/tr.js"></script>
+  <script src="./calendar.js"></script>
+</body>
+</html>
