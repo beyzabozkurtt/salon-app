@@ -49,15 +49,6 @@ document.addEventListener("DOMContentLoaded", () => {
   updatePageTitleByHref(iframe.getAttribute('src'));
 });
 
-// iframe yüksekliği
-function resizeIframe(iframe) {
-  try {
-    iframe.style.height = iframe.contentWindow.document.documentElement.scrollHeight + 'px';
-  } catch (e) {
-    console.warn("iframe içeriğine erişilemedi:", e);
-  }
-}
-
 // Kullanıcı adını token’dan çek
 document.addEventListener("DOMContentLoaded", () => {
   let name = "Kullanıcı";
@@ -107,4 +98,21 @@ document.addEventListener("DOMContentLoaded", () => {
     searchInput.classList.toggle("show");
   });
 });
+//iframe
+  function resizeIframe(iframe) {
+    try {
+      const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+      const height = iframeDoc.documentElement.scrollHeight || iframeDoc.body.scrollHeight;
+      iframe.style.height = 600 + 'px';
+    } catch (e) {
+      console.error("Iframe yüksekliği ayarlanamadı:", e);
+    }
+  }
 
+  // Dinamik yeniden yüklemelerde destek için postMessage dinle
+  window.addEventListener("message", (event) => {
+    if (event.data?.type === "iframeResize") {
+      const iframe = document.getElementById("icerikFrame");
+      if (iframe) iframe.style.height = event.data.height + "px";
+    }
+  });
