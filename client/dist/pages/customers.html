@@ -7,42 +7,70 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/intl-tel-input@17/build/css/intlTelInput.min.css" />
+      <style>
+        #phoneNumber {
+        font-family: monospace;
+      }
+      </style>
 
-  
+
 </head>
 <body class="bg-light">
   <div class="container py-4">
     <h3 class="mb-3">Müşteri Yönetimi</h3>
     <button class="btn btn-success mb-3" data-bs-toggle="modal" data-bs-target="#createModal">+ Müşteri Ekle</button>
     <ul id="customerList" class="list-group"></ul>
-    
   </div>
 
-  <!-- Create Modal -->
+  <!-- Yeni Müşteri Modal -->
   <div class="modal fade" id="createModal" tabindex="-1">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-dialog-centered">
       <form id="customerForm" class="modal-content">
         <div class="modal-header">
           <h5 class="modal-title">Yeni Müşteri</h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
         </div>
+
         <div class="modal-body">
-          <div class="mb-2">
-            <label class="form-label">İsim</label>
-            <input type="text" class="form-control" name="name" required />
+          <input type="text" class="form-control mb-2" name="name" placeholder="Ad soyad" required />
+
+         <div class="row g-2 align-items-center mb-2">
+          <!-- Ülke kodu -->
+          <div class="col-4">
+            <select id="countryCode" class="form-select" required>
+              <option value="+90" selected>+90</option>
+              <option value="+49">+49</option>
+              <option value="+1">+1</option>
+              <option value="+44">+44</option>
+            </select>
           </div>
-          <div class="mb-2">
-            <label class="form-label">E-posta</label>
-            <input type="email" class="form-control" name="email" required />
-          </div>
-          <div class="mb-2">
-            <label class="form-label">Telefon</label>
-            <input type="text" class="form-control" name="phone" required />
+
+          <!-- Telefon numarası -->
+          <div class="col-8">
+            <input id="phoneNumber" type="text" class="form-control" placeholder="Telefon numarası" required />
           </div>
         </div>
+
+
+
+
+          <input type="email" class="form-control mb-2" name="email" placeholder="E-posta adresi" />
+          <input type="date" class="form-control mb-2" name="birthDate" placeholder="Doğum tarihi" />
+
+          <select name="gender" class="form-select mb-2">
+            <option value="" disabled selected>Cinsiyet</option>
+            <option value="Kadın">Kadın</option>
+            <option value="Erkek">Erkek</option>
+            <option value="Belirtmek istemiyor">Belirtmek istemiyor</option>
+          </select>
+
+          <input type="text" class="form-control mb-2" name="reference" placeholder="Referans (isteğe bağlı)" />
+          <textarea class="form-control mb-2" name="notes" placeholder="Notlar" rows="2"></textarea>
+        </div>
+
         <div class="modal-footer">
-          <button type="submit" class="btn btn-primary">Kaydet</button>
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+          <button type="submit" class="btn btn-primary w-100">Kaydet</button>
         </div>
       </form>
     </div>
@@ -79,91 +107,140 @@
     </div>
   </div>
 
-<script>
-  const list = document.getElementById("customerList");
-  const createForm = document.getElementById("customerForm");
-  const updateForm = document.getElementById("updateForm");
+  <script>
+    const list = document.getElementById("customerList");
+    const createForm = document.getElementById("customerForm");
+    const updateForm = document.getElementById("updateForm");
 
-  const companyToken = localStorage.getItem("companyToken");
-  const axiosConfig = {
-    headers: {
-      Authorization: "Bearer " + companyToken,
-    },
-  };
+    const companyToken = localStorage.getItem("companyToken");
+    const axiosConfig = {
+      headers: {
+        Authorization: "Bearer " + companyToken,
+      },
+    };
 
-  createForm.addEventListener("submit", async (e) => {
-    e.preventDefault();
-    const data = Object.fromEntries(new FormData(createForm));
-    try {
-      await axios.post("http://localhost:5001/api/customers", data, axiosConfig);
-      createForm.reset();
-      bootstrap.Modal.getInstance(document.getElementById("createModal")).hide();
-      loadCustomers();
-    } catch (err) {
-      alert("Müşteri eklenirken hata oluştu.");
-      console.error(err);
-    }
-  });
+    createForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const formData = new FormData(createForm);
+      const data = Object.fromEntries(formData.entries());
 
-  updateForm.addEventListener("submit", async (e) => {
-    e.preventDefault();
-    const data = Object.fromEntries(new FormData(updateForm));
-    try {
-      await axios.put(`http://localhost:5001/api/customers/${data.id}`, data, axiosConfig);
-      bootstrap.Modal.getInstance(document.getElementById("updateModal")).hide();
-      loadCustomers();
-    } catch (err) {
-      alert("Müşteri güncellenirken hata oluştu.");
-      console.error(err);
-    }
-  });
+      // Telefonu birleştir
+      data.phone = `${data.prefix}${data.phone}`;
+      delete data.prefix;
 
-  async function loadCustomers() {
-    try {
-      const res = await axios.get("http://localhost:5001/api/customers", axiosConfig);
-      list.innerHTML = "";
-      res.data.forEach((c) => {
-        const item = document.createElement("li");
-        item.className = "list-group-item d-flex justify-content-between align-items-center";
-        item.innerHTML = `
-          <a href="customer-details.html?id=${c.id}" class="text-dark text-decoration-none">${c.name} • ${c.email}</a>
-          <div>
-            <button class="btn btn-sm btn-primary me-2" onclick='editCustomer(${JSON.stringify(c)})'>Düzenle</button>
-            <button class="btn btn-sm btn-danger" onclick='deleteCustomer(${c.id})'>Sil</button>
-          </div>
-        `;
-        list.appendChild(item);
-      });
-    } catch (err) {
-      alert("Müşteri listesi alınamadı.");
-      console.error(err);
-    }
-  }
-
-  function editCustomer(customer) {
-    updateForm.name.value = customer.name;
-    updateForm.email.value = customer.email;
-    updateForm.phone.value = customer.phone;
-    updateForm.id.value = customer.id;
-
-    const modal = new bootstrap.Modal(document.getElementById("updateModal"));
-    modal.show();
-  }
-
-  async function deleteCustomer(id) {
-    if (confirm("Müşteri silinsin mi?")) {
       try {
-        await axios.delete(`http://localhost:5001/api/customers/${id}`, axiosConfig);
+        await axios.post("http://localhost:5001/api/customers", data, axiosConfig);
+        createForm.reset();
+        bootstrap.Modal.getInstance(document.getElementById("createModal")).hide();
         loadCustomers();
       } catch (err) {
-        alert("Müşteri silinemedi.");
+        alert("Müşteri eklenirken hata oluştu.");
+        console.error(err);
+      }
+    });
+
+    updateForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const data = Object.fromEntries(new FormData(updateForm));
+      try {
+        await axios.put(`http://localhost:5001/api/customers/${data.id}`, data, axiosConfig);
+        bootstrap.Modal.getInstance(document.getElementById("updateModal")).hide();
+        loadCustomers();
+      } catch (err) {
+        alert("Müşteri güncellenirken hata oluştu.");
+        console.error(err);
+      }
+    });
+
+    async function loadCustomers() {
+      try {
+        const res = await axios.get("http://localhost:5001/api/customers", axiosConfig);
+        list.innerHTML = "";
+        res.data.forEach((c) => {
+          const item = document.createElement("li");
+          item.className = "list-group-item d-flex justify-content-between align-items-center";
+          item.innerHTML = `
+            <a href="customer-details.html?id=${c.id}" class="text-dark text-decoration-none">${c.name} • ${c.email}</a>
+            <div>
+              <button class="btn btn-sm btn-primary me-2" onclick='editCustomer(${JSON.stringify(c)})'>Düzenle</button>
+              <button class="btn btn-sm btn-danger" onclick='deleteCustomer(${c.id})'>Sil</button>
+            </div>
+          `;
+          list.appendChild(item);
+        });
+      } catch (err) {
+        alert("Müşteri listesi alınamadı.");
         console.error(err);
       }
     }
-  }
 
-  loadCustomers();
+    function editCustomer(customer) {
+      updateForm.name.value = customer.name;
+      updateForm.email.value = customer.email;
+      updateForm.phone.value = customer.phone;
+      updateForm.id.value = customer.id;
+
+      const modal = new bootstrap.Modal(document.getElementById("updateModal"));
+      modal.show();
+    }
+
+    async function deleteCustomer(id) {
+      if (confirm("Müşteri silinsin mi?")) {
+        try {
+          await axios.delete(`http://localhost:5001/api/customers/${id}`, axiosConfig);
+          loadCustomers();
+        } catch (err) {
+          alert("Müşteri silinemedi.");
+          console.error(err);
+        }
+      }
+    }
+
+    loadCustomers();
+  </script>
+
+
+<script src="https://cdn.jsdelivr.net/npm/intl-tel-input@17/build/js/intlTelInput.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/intl-tel-input@17/build/js/utils.js"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/intl-tel-input@17/build/js/intlTelInput.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/intl-tel-input@17/build/js/utils.js"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/intl-tel-input@17/build/js/intlTelInput.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/intl-tel-input@17/build/js/utils.js"></script>
+
+<script>
+  const phoneInput = document.getElementById("phoneNumber");
+  const countryCodeSelect = document.getElementById("countryCode");
+
+  // Sadece rakam ve otomatik boşluk formatı (örnek: 5XX XXX XX XX)
+  phoneInput.addEventListener("input", function () {
+    this.value = this.value.replace(/[^\d]/g, "");
+
+    let v = this.value.slice(0, 10);
+    let f = "";
+
+    if (v.length > 3) f += v.slice(0, 3) + " ";
+    else f += v;
+    if (v.length > 6) f += v.slice(3, 6) + " ";
+    else if (v.length > 3) f += v.slice(3);
+    if (v.length > 8) f += v.slice(6, 8) + " " + v.slice(8);
+    else if (v.length > 6) f += v.slice(6);
+
+    this.value = f.trim();
+  });
+
+  // Form submitte birleştir
+  document.getElementById("customerForm").addEventListener("submit", function (e) {
+    const phone = phoneInput.value.replace(/\s/g, "");
+    const fullPhone = countryCodeSelect.value + phone;
+    phoneInput.value = fullPhone; // veya direkt API'ye gönder
+  });
 </script>
+
+
+
+
 
 </body>
 </html>
