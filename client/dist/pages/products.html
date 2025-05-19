@@ -17,31 +17,44 @@
   </div>
 
   <!-- Ürün Modal -->
-  <div class="modal fade" id="productModal" tabindex="-1">
-    <div class="modal-dialog">
-      <form id="productForm" class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title" id="productModalTitle">Yeni Ürün</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+<div class="modal fade" id="productModal" tabindex="-1">
+  <div class="modal-dialog">
+    <form id="productForm" class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="productModalTitle">Yeni ürün</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+
+      <div class="modal-body">
+        <input type="hidden" name="id" />
+
+        <div class="mb-2">
+          <input type="text" class="form-control" name="name" placeholder="Ürün ismi" required />
         </div>
-        <div class="modal-body">
-          <input type="hidden" name="id" />
-          <div class="mb-2">
-            <label class="form-label">Ürün Adı</label>
-            <input type="text" class="form-control" name="name" required />
+
+        <div class="mb-2">
+          <div class="input-group">
+            <input type="number" class="form-control" name="price" placeholder="Fiyat" step="0.01" required />
+            <span class="input-group-text">TL</span>
           </div>
-          <div class="mb-2">
-            <label class="form-label">Fiyat</label>
-            <input type="number" class="form-control" name="price" step="0.01" required />
-          </div>
         </div>
-        <div class="modal-footer">
-          <button type="submit" class="btn btn-success">Kaydet</button>
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+
+        <div class="mb-2">
+          <input type="number" class="form-control" name="stock" placeholder="Stok adedi" min="0" />
         </div>
-      </form>
-    </div>
+
+        <div class="mb-2">
+          <input type="text" class="form-control" name="barcode" placeholder="Barkod" />
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="submit" class="btn btn-primary w-100">Kaydet</button>
+      </div>
+    </form>
   </div>
+</div>
+
 
   <script>
   const list = document.getElementById("productList");
