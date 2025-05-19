@@ -44,7 +44,7 @@
         </div>
 
         <div class="mb-2">
-          <input type="text" class="form-control" name="barcode" placeholder="Barkod" />
+          <input type="number" class="form-control" name="barcode" placeholder="Barkod" />
         </div>
       </div>
 
@@ -56,7 +56,7 @@
 </div>
 
 
-  <script>
+ <script>
   const list = document.getElementById("productList");
   const form = document.getElementById("productForm");
   const modal = new bootstrap.Modal(document.getElementById("productModal"));
@@ -68,10 +68,16 @@
     }
   };
 
+  // Ürün oluştur/güncelle
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
-    const data = Object.fromEntries(new FormData(form));
+    const formData = new FormData(form);
+    const data = Object.fromEntries(formData.entries());
     const id = data.id;
+
+    // Sayısal verileri güvenceye alalım
+    data.price = parseFloat(data.price);
+    data.stock = parseInt(data.stock);
 
     try {
       if (id) {
@@ -79,15 +85,17 @@
       } else {
         await axios.post("http://localhost:5001/api/products", data, axiosConfig);
       }
+
       form.reset();
       modal.hide();
       loadProducts();
     } catch (err) {
-      alert("Kayıt başarısız");
+      alert("❌ Kayıt başarısız!");
       console.error(err);
     }
   });
 
+  // Ürünleri listele
   async function loadProducts() {
     try {
       const res = await axios.get("http://localhost:5001/api/products", axiosConfig);
@@ -96,33 +104,44 @@
         const item = document.createElement("li");
         item.className = "list-group-item d-flex justify-content-between align-items-center";
         item.innerHTML = `
-          <span>${p.name} — ${Number(p.price).toFixed(2)} ₺</span>
+          <span>
+            <strong>${p.name}</strong> —
+            ${Number(p.price).toFixed(2)} ₺ •
+            Stok: ${p.stock || 0} •
+            Barkod: ${p.barcode || "-"}
+          </span>
           <button class="btn btn-sm btn-primary" onclick='editProduct(${JSON.stringify(p)})'>Düzenle</button>
         `;
         list.appendChild(item);
       });
     } catch (err) {
-      alert("Ürünler yüklenemedi");
+      alert("❌ Ürünler yüklenemedi!");
       console.error(err);
     }
   }
 
+  // Ürün düzenleme modalını aç
   function editProduct(product) {
     form.id.value = product.id;
     form.name.value = product.name;
     form.price.value = product.price;
+    form.stock.value = product.stock || 0;
+    form.barcode.value = product.barcode || "";
     document.getElementById("productModalTitle").textContent = "Ürünü Düzenle";
     modal.show();
   }
 
+  // Yeni ürün modalı
   function openCreateModal() {
     form.reset();
     form.id.value = "";
     document.getElementById("productModalTitle").textContent = "Yeni Ürün";
+    modal.show();
   }
 
   loadProducts();
 </script>
+
 
 </body>
 </html>

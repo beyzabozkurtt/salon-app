@@ -16,11 +16,13 @@ exports.getAll = async (req, res) => {
 // ➕ Yeni ürün oluştur
 exports.create = async (req, res) => {
   try {
-    const { name, price } = req.body;
+    const { name, price, stock, barcode } = req.body;
 
     const product = await Product.create({
       name,
       price,
+      stock: stock || 0,
+      barcode: barcode || null,
       CompanyId: req.company.companyId
     });
 
@@ -34,11 +36,16 @@ exports.create = async (req, res) => {
 // 🔄 Ürün güncelle
 exports.update = async (req, res) => {
   try {
-    const { name, price } = req.body;
+    const { name, price, stock, barcode } = req.body;
     const id = req.params.id;
 
     await Product.update(
-      { name, price },
+      {
+        name,
+        price,
+        stock: stock || 0,
+        barcode: barcode || null
+      },
       {
         where: {
           id,
@@ -53,3 +60,4 @@ exports.update = async (req, res) => {
     res.status(500).json({ error: "Ürün güncellenemedi" });
   }
 };
+

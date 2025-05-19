@@ -2,7 +2,7 @@ module.exports = (sequelize, DataTypes) => {
   const WorkingHours = sequelize.define('WorkingHours', {
     day: {
       type: DataTypes.STRING,
-      unique: true
+      
     },
     isOpen: DataTypes.BOOLEAN,
     startTime: DataTypes.TIME,

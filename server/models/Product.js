@@ -2,6 +2,18 @@ module.exports = (sequelize, DataTypes) => {
   return sequelize.define('Product', {
     name: DataTypes.STRING,
     price: DataTypes.DECIMAL(10, 2),
+
+    stock: {
+      type: DataTypes.INTEGER,
+      defaultValue: 0,
+      allowNull: false
+    },
+
+    barcode: {
+      type: DataTypes.INTEGER,
+      allowNull: true
+    },
+
     SaleId: {
       type: DataTypes.INTEGER,
       allowNull: true,
@@ -10,10 +22,10 @@ module.exports = (sequelize, DataTypes) => {
         key: 'id'
       }
     },
-    CompanyId: {
-  type: DataTypes.INTEGER,
-  allowNull: false
-}
 
+    CompanyId: {
+      type: DataTypes.INTEGER,
+      allowNull: false
+    }
   });
 };
