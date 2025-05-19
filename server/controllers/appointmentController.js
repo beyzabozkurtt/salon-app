@@ -97,48 +97,37 @@ module.exports = {
   },
 
   // ✅ Belirli randevuyu getir (paket adı + süre + personel)
-  async getOne(req, res) {
-    try {
-      const appointment = await Appointment.findOne({
-        where: {
-          id: req.params.id,
-          CompanyId: req.company.companyId
-        },
-        include: [Customer, User, Service],
-      });
+async getOne(req, res) {
+  try {
+    const appointment = await Appointment.findOne({
+      where: {
+        id: req.params.id,
+        CompanyId: req.company.companyId
+      },
+      include: [Customer, User, Service],
+    });
 
-      if (!appointment) {
-        return res.status(404).json({ error: 'Randevu bulunamadı' });
-      }
-
-      // ✅ Paket adı (varsa)
-      let serviceName = '-';
-
-      if (appointment.SaleId) {
-        const sale = await Sale.findOne({
-          where: {
-            id: appointment.SaleId,
-            CompanyId: req.company.companyId
-          },
-          include: [Service]
-        });
-
-        serviceName = sale?.Service?.name || '-';
-      }
-
-      // ✅ Süre hesapla
-      const start = new Date(appointment.date);
-      const end = new Date(appointment.endDate);
-      const duration = Math.floor((end - start) / (1000 * 60)); // dakika cinsinden
-
-      res.json({
-        ...appointment.toJSON(),
-        serviceName,
-        duration
-      });
-    } catch (err) {
-      console.error(err);
-      res.status(500).json({ error: 'Detay çekme hatası' });
+    if (!appointment) {
+      return res.status(404).json({ error: 'Randevu bulunamadı' });
     }
+
+    // ✅ Service adı doğrudan çekiliyor
+    const serviceName = appointment.Service?.name || '-';
+
+    // ✅ Süre hesaplama
+    const start = new Date(appointment.date);
+    const end = new Date(appointment.endDate);
+    const duration = Math.floor((end - start) / (1000 * 60)); // dakika
+
+    res.json({
+      ...appointment.toJSON(),
+      serviceName,
+      duration
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Detay çekme hatası' });
   }
+}
+
 };
