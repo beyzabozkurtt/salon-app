@@ -21,4 +21,7 @@ router.get('/:id', authMiddleware, saleController.getOne);
 // ✅ Satışa ait ödeme durumu
 router.get('/:id/payments-status', authMiddleware, saleController.getPaymentStatus);
 
+router.get('/by-customer/:id', authMiddleware, saleController.getByCustomer);
+
+
 module.exports = router;

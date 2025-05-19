@@ -135,5 +135,25 @@ module.exports = {
       console.error(err);
       res.status(500).json({ error: 'Silme hatası' });
     }
+  },
+    async getByCustomer(req, res) {
+    try {
+      const customerId = req.params.id;
+      const sales = await Sale.findAll({
+        where: {
+          CustomerId: customerId,
+          CompanyId: req.company.companyId
+        },
+        include: [Service],
+        order: [['createdAt', 'DESC']]
+      });
+
+      res.json(sales);
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ error: 'Müşteri satışları alınamadı.' });
+    }
   }
+
+  
 };

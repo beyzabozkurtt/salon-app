@@ -8,7 +8,10 @@ router.get('/by-customer/:id', authMiddleware, paymentController.getPaymentsByCu
 router.get('/all', authMiddleware, paymentController.getAllPayments);
 router.post('/pay/:id', authMiddleware, paymentController.makePayment); // 💰 Ödeme alma
 router.get('/cash-tracking', authMiddleware, paymentController.getCashTracking);
+router.get('/by-sale/:saleId', authMiddleware, paymentController.getBySale);
+
 
 router.patch('/:id', authMiddleware, paymentController.updatePayment); // ✅ Tekil güncelleme
+
 
 module.exports = router;

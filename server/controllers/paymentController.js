@@ -204,5 +204,23 @@ module.exports = {
       console.error("❌ getCashTracking hatası:", error);
       res.status(500).json({ error: 'Kasa takibi verileri alınamadı.' });
     }
+  },
+  async getBySale(req, res) {
+  try {
+    const payments = await Payment.findAll({
+      where: {
+        SaleId: req.params.saleId,
+        CompanyId: req.company.companyId,
+        status: 'bekliyor'
+      },
+      order: [['dueDate', 'ASC']]
+    });
+
+    res.json(payments);
+  } catch (err) {
+    console.error("Ödeme getirme hatası:", err);
+    res.status(500).json({ error: "Ödeme bilgileri alınamadı." });
   }
+}
+
 };
