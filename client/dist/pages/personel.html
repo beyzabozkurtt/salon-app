@@ -50,6 +50,14 @@
 
         <div class="mb-2">
           <select class="form-select" name="clientGender" required>
+            <option value="" disabled selected>personel cinsiyeti</option>
+            <option value="Kadın">Kadın</option>
+            <option value="Erkek">Erkek</option>
+          </select>
+        </div>
+
+        <div class="mb-2">
+          <select class="form-select" name="clientGender" required>
             <option value="" disabled selected>Müşteri cinsiyeti</option>
             <option value="Kadın">Kadın</option>
             <option value="Erkek">Erkek</option>
@@ -121,39 +129,105 @@
 </div>
 
 
-  <!-- Update Modal (eski haliyle bırakıldı) -->
-  <div class="modal fade" id="updateModal" tabindex="-1">
-    <div class="modal-dialog">
-      <form id="updateForm" class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title">Personel Güncelle</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+ 
+ <!-- Update Modal -->
+<div class="modal fade" id="updateModal" tabindex="-1">
+  <div class="modal-dialog">
+    <form id="updateForm" class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Personel Güncelle</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" name="id" />
+
+        <div class="mb-2">
+          <label class="form-label">İsim</label>
+          <input type="text" class="form-control" name="name" required />
         </div>
-        <div class="modal-body">
-          <input type="hidden" name="id" />
-          <div class="mb-2">
-            <label class="form-label">İsim</label>
-            <input type="text" class="form-control" name="name" required />
+
+        <div class="mb-2">
+          <label class="form-label">E-posta</label>
+          <input type="email" class="form-control" name="email" required />
+        </div>
+
+        <div class="mb-2">
+          <label class="form-label">Telefon</label>
+          <input type="tel" class="form-control" name="phone" required />
+        </div>
+
+        <div class="mb-2">
+          <label class="form-label">Rol</label>
+          <select class="form-select" name="role" required>
+            <option value="personel">Personel</option>
+            <option value="admin">Admin</option>
+          </select>
+        </div>
+
+        <div class="mb-2">
+          <label class="form-label">Personel Cinsiyeti</label>
+          <select class="form-select" name="userGender">
+            <option value="Kadın">Kadın</option>
+            <option value="Erkek">Erkek</option>
+          </select>
+        </div>
+
+        <div class="mb-2">
+          <label class="form-label">Müşteri Cinsiyeti</label>
+          <select class="form-select" name="clientGender">
+            <option value="Kadın">Kadın</option>
+            <option value="Erkek">Erkek</option>
+            <option value="Farketmez">Farketmez</option>
+          </select>
+        </div>
+
+        <div class="mb-2">
+          <label class="form-label">Sabit Maaş</label>
+          <input type="number" class="form-control" name="salary" />
+        </div>
+
+        <div class="row">
+          <div class="col">
+            <label class="form-label">Hizmet Nakit</label>
+            <input type="number" class="form-control" name="hizmetNakit" />
           </div>
-          <div class="mb-2">
-            <label class="form-label">E-posta</label>
-            <input type="email" class="form-control" name="email" required />
-          </div>
-          <div class="mb-2">
-            <label class="form-label">Rol</label>
-            <select class="form-select" name="role" required>
-              <option value="personel">Personel</option>
-              <option value="admin">Admin</option>
-            </select>
+          <div class="col">
+            <label class="form-label">Hizmet Kart</label>
+            <input type="number" class="form-control" name="hizmetKart" />
           </div>
         </div>
-        <div class="modal-footer">
-          <button type="submit" class="btn btn-primary">Güncelle</button>
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+
+        <div class="row mt-2">
+          <div class="col">
+            <label class="form-label">Ürün Nakit</label>
+            <input type="number" class="form-control" name="urunNakit" />
+          </div>
+          <div class="col">
+            <label class="form-label">Ürün Kart</label>
+            <input type="number" class="form-control" name="urunKart" />
+          </div>
         </div>
-      </form>
-    </div>
+
+        <div class="row mt-2">
+          <div class="col">
+            <label class="form-label">Paket Nakit</label>
+            <input type="number" class="form-control" name="paketNakit" />
+          </div>
+          <div class="col">
+            <label class="form-label">Paket Kart</label>
+            <input type="number" class="form-control" name="paketKart" />
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="submit" class="btn btn-primary">Güncelle</button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+      </div>
+    </form>
   </div>
+</div>
+
 
   <!-- Scripts -->
   <script>
@@ -175,6 +249,9 @@
         await axios.post("http://localhost:5001/api/users", data, axiosConfig);
         createForm.reset();
         bootstrap.Modal.getInstance(document.getElementById('createModal')).hide();
+        if (data.salary === "") {
+        data.salary = null;
+}
         loadUsers();
       } catch (err) {
         alert("Kayıt sırasında hata oluştu.");
@@ -188,6 +265,9 @@
       try {
         await axios.put(`http://localhost:5001/api/users/${data.id}`, data, axiosConfig);
         bootstrap.Modal.getInstance(document.getElementById('updateModal')).hide();
+        if (data.salary === "") {
+        data.salary = null;
+}
         loadUsers();
       } catch (err) {
         alert("Güncelleme sırasında hata oluştu.");
@@ -217,14 +297,27 @@
       }
     }
 
-    function editUser(user) {
-      updateForm.name.value = user.name;
-      updateForm.email.value = user.email;
-      updateForm.role.value = user.role;
-      updateForm.id.value = user.id;
-      const modal = new bootstrap.Modal(document.getElementById('updateModal'));
-      modal.show();
-    }
+function editUser(user) {
+  updateForm.id.value = user.id;
+  updateForm.name.value = user.name || "";
+  updateForm.email.value = user.email || "";
+  updateForm.phone.value = user.phone || "";
+  updateForm.role.value = user.role || "personel";
+  updateForm.userGender.value = user.userGender || "";
+  updateForm.clientGender.value = user.clientGender || "";
+  updateForm.salary.value = user.salary || 0;
+
+  updateForm.hizmetNakit.value = user.hizmetNakit || 0;
+  updateForm.hizmetKart.value = user.hizmetKart || 0;
+  updateForm.urunNakit.value = user.urunNakit || 0;
+  updateForm.urunKart.value = user.urunKart || 0;
+  updateForm.paketNakit.value = user.paketNakit || 0;
+  updateForm.paketKart.value = user.paketKart || 0;
+
+  const modal = new bootstrap.Modal(document.getElementById("updateModal"));
+  modal.show();
+}
+
 
     async function deleteUser(id) {
       if (confirm("Silmek istiyor musun?")) {

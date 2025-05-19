@@ -1,12 +1,10 @@
 const { User } = require('../models');
-const bcrypt = require('bcryptjs');
 
 // 🔎 Tüm personelleri getir (şirkete özel)
 exports.getAll = async (req, res) => {
   try {
     const users = await User.findAll({
-      where: { CompanyId: req.company.companyId },
-      attributes: { exclude: ['password'] } // Şifre gizli kalsın
+      where: { CompanyId: req.company.companyId }
     });
     res.json(users);
   } catch (err) {
@@ -15,43 +13,49 @@ exports.getAll = async (req, res) => {
   }
 };
 
-// ➕ Yeni personel oluştur
+// ➕ Yeni personel oluştur (şifresiz)
 exports.create = async (req, res) => {
   try {
-    const { name, email, password, role } = req.body;
-    const hashedPassword = await bcrypt.hash(password, 10);
+    const {
+      name, email, phone, role, clientGender,
+      salary, hizmetNakit, hizmetKart, urunNakit, urunKart, paketNakit, paketKart
+    } = req.body;
+
+    const parsedSalary = salary === '' ? null : parseFloat(salary);
 
     const newUser = await User.create({
       name,
       email,
-      password: hashedPassword,
+      phone,
       role,
+      clientGender,
+      salary: parsedSalary,
+      hizmetNakit,
+      hizmetKart,
+      urunNakit,
+      urunKart,
+      paketNakit,
+      paketKart,
       CompanyId: req.company.companyId
     });
 
-    const { password: _, ...userWithoutPassword } = newUser.toJSON();
-    res.status(201).json(userWithoutPassword);
+    res.status(201).json(newUser);
   } catch (err) {
     console.error("❌ Kullanıcı ekleme hatası:", err);
     res.status(500).json({ error: 'Kullanıcı eklenemedi' });
   }
 };
 
+
 // 🔄 Kullanıcı güncelle (şirket kontrolü dahil)
 exports.update = async (req, res) => {
   try {
-    const { name, email, role } = req.body;
-    const id = req.params.id;
-
-    await User.update(
-      { name, email, role },
-      {
-        where: {
-          id,
-          CompanyId: req.company.companyId
-        }
+    await User.update(req.body, {
+      where: {
+        id: req.params.id,
+        CompanyId: req.company.companyId
       }
-    );
+    });
 
     res.json({ message: 'Kullanıcı güncellendi' });
   } catch (err) {
@@ -63,11 +67,9 @@ exports.update = async (req, res) => {
 // 🗑️ Kullanıcı sil (şirkete aitse)
 exports.delete = async (req, res) => {
   try {
-    const id = req.params.id;
-
     await User.destroy({
       where: {
-        id,
+        id: req.params.id,
         CompanyId: req.company.companyId
       }
     });
