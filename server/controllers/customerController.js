@@ -30,13 +30,20 @@ exports.getOne = async (req, res) => {
 };
 
 // ✅ Yeni müşteri ekle (şirket ID'si ekleniyor)
+// ✅ Yeni müşteri ekle (şirket ID'si ekleniyor)
 exports.create = async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
 
   try {
     const yeni = await Customer.create({
-      ...req.body,
+      name: req.body.name,
+      phone: req.body.phone,
+      email: req.body.email,
+      birthDate: req.body.birthDate || null,
+      gender: req.body.gender || null,
+      reference: req.body.reference || null,
+      notes: req.body.notes || null,
       CompanyId: req.company.companyId
     });
     res.status(201).json(yeni);
@@ -49,7 +56,15 @@ exports.create = async (req, res) => {
 // ✅ Müşteri güncelle (şirket doğrulaması dahil)
 exports.update = async (req, res) => {
   try {
-    const result = await Customer.update(req.body, {
+    const result = await Customer.update({
+      name: req.body.name,
+      phone: req.body.phone,
+      email: req.body.email,
+      birthDate: req.body.birthDate || null,
+      gender: req.body.gender || null,
+      reference: req.body.reference || null,
+      notes: req.body.notes || null
+    }, {
       where: {
         id: req.params.id,
         CompanyId: req.company.companyId
@@ -60,6 +75,7 @@ exports.update = async (req, res) => {
     res.status(500).json({ error: 'Güncelleme hatası' });
   }
 };
+
 
 // ✅ Müşteri sil (şirket kontrolüyle)
 exports.delete = async (req, res) => {

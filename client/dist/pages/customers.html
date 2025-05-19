@@ -65,7 +65,14 @@
             <option value="Belirtmek istemiyor">Belirtmek istemiyor</option>
           </select>
 
-          <input type="text" class="form-control mb-2" name="reference" placeholder="Referans (isteğe bağlı)" />
+          <select name="reference" class="form-select mb-2" required>
+          <option disabled selected>Referans türünü seçin</option>
+          <option value="Tabela satışı">Tabela satışı</option>
+          <option value="Müşteri referansı">Müşteri referansı</option>
+          <option value="Anket satışı">Anket satışı</option>
+          <option value="Web satışı">Web satışı</option>
+          <option value="Diğer">Diğer</option>
+        </select>
           <textarea class="form-control mb-2" name="notes" placeholder="Notlar" rows="2"></textarea>
         </div>
 
@@ -76,36 +83,74 @@
     </div>
   </div>
 
-  <!-- Update Modal -->
-  <div class="modal fade" id="updateModal" tabindex="-1">
-    <div class="modal-dialog">
-      <form id="updateForm" class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title">Müşteri Güncelle</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+
+<!-- Update Modal -->
+<div class="modal fade" id="updateModal" tabindex="-1">
+  <div class="modal-dialog">
+    <form id="updateForm" class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Müşteri Güncelle</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" name="id" />
+
+        <div class="mb-2">
+          <label class="form-label">İsim</label>
+          <input type="text" class="form-control" name="name" required />
         </div>
-        <div class="modal-body">
-          <input type="hidden" name="id" />
-          <div class="mb-2">
-            <label class="form-label">İsim</label>
-            <input type="text" class="form-control" name="name" required />
-          </div>
-          <div class="mb-2">
-            <label class="form-label">E-posta</label>
-            <input type="email" class="form-control" name="email" required />
-          </div>
-          <div class="mb-2">
-            <label class="form-label">Telefon</label>
-            <input type="text" class="form-control" name="phone" required />
-          </div>
+
+        <div class="mb-2">
+          <label class="form-label">E-posta</label>
+          <input type="email" class="form-control" name="email" required />
         </div>
-        <div class="modal-footer">
-          <button type="submit" class="btn btn-primary">Güncelle</button>
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+
+        <div class="mb-2">
+          <label class="form-label">Telefon</label>
+          <input type="text" class="form-control" name="phone" required />
         </div>
-      </form>
-    </div>
+
+        <div class="mb-2">
+          <label class="form-label">Doğum Tarihi</label>
+          <input type="date" class="form-control" name="birthDate" />
+        </div>
+
+        <div class="mb-2">
+          <label class="form-label">Cinsiyet</label>
+          <select name="gender" class="form-select">
+            <option value="">Seçiniz</option>
+            <option value="Kadın">Kadın</option>
+            <option value="Erkek">Erkek</option>
+            <option value="Belirtmek istemiyor">Belirtmek istemiyor</option>
+          </select>
+        </div>
+
+        <div class="mb-2">
+          <label class="form-label">Referans</label>
+          <select name="reference" class="form-select">
+            <option value="">Seçiniz</option>
+            <option value="Tabela satışı">Tabela satışı</option>
+            <option value="Müşteri referansı">Müşteri referansı</option>
+            <option value="Anket satışı">Anket satışı</option>
+            <option value="Web satışı">Web satışı</option>
+            <option value="Diğer">Diğer</option>
+          </select>
+        </div>
+
+        <div class="mb-2">
+          <label class="form-label">Notlar</label>
+          <textarea class="form-control" name="notes" rows="2"></textarea>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="submit" class="btn btn-primary">Güncelle</button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+      </div>
+    </form>
   </div>
+</div>
+
 
   <script>
     const list = document.getElementById("customerList");
@@ -119,25 +164,7 @@
       },
     };
 
-    createForm.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const formData = new FormData(createForm);
-      const data = Object.fromEntries(formData.entries());
 
-      // Telefonu birleştir
-      data.phone = `${data.prefix}${data.phone}`;
-      delete data.prefix;
-
-      try {
-        await axios.post("http://localhost:5001/api/customers", data, axiosConfig);
-        createForm.reset();
-        bootstrap.Modal.getInstance(document.getElementById("createModal")).hide();
-        loadCustomers();
-      } catch (err) {
-        alert("Müşteri eklenirken hata oluştu.");
-        console.error(err);
-      }
-    });
 
     updateForm.addEventListener("submit", async (e) => {
       e.preventDefault();
@@ -174,15 +201,20 @@
       }
     }
 
-    function editCustomer(customer) {
-      updateForm.name.value = customer.name;
-      updateForm.email.value = customer.email;
-      updateForm.phone.value = customer.phone;
-      updateForm.id.value = customer.id;
+function editCustomer(customer) {
+  updateForm.name.value = customer.name;
+  updateForm.email.value = customer.email;
+  updateForm.phone.value = customer.phone;
+  updateForm.birthDate.value = customer.birthDate || "";
+  updateForm.gender.value = customer.gender || "";
+  updateForm.reference.value = customer.reference || "";
+  updateForm.notes.value = customer.notes || "";
+  updateForm.id.value = customer.id;
 
-      const modal = new bootstrap.Modal(document.getElementById("updateModal"));
-      modal.show();
-    }
+  const modal = new bootstrap.Modal(document.getElementById("updateModal"));
+  modal.show();
+}
+
 
     async function deleteCustomer(id) {
       if (confirm("Müşteri silinsin mi?")) {
@@ -231,11 +263,29 @@
   });
 
   // Form submitte birleştir
-  document.getElementById("customerForm").addEventListener("submit", function (e) {
-    const phone = phoneInput.value.replace(/\s/g, "");
-    const fullPhone = countryCodeSelect.value + phone;
-    phoneInput.value = fullPhone; // veya direkt API'ye gönder
-  });
+document.getElementById("customerForm").addEventListener("submit", async function (e) {
+  e.preventDefault();
+
+  const phoneRaw = phoneInput.value.replace(/\s/g, "");        // boşlukları temizle
+  const fullPhone = countryCodeSelect.value + phoneRaw;        // +90555xxxxxxx
+  const convertedPhone = fullPhone.replace("+90", "0");        // 0555xxxxxxx
+
+  const formData = new FormData(this);
+  const data = Object.fromEntries(formData.entries());
+
+  data.phone = convertedPhone;
+
+  try {
+    await axios.post("http://localhost:5001/api/customers", data, axiosConfig);
+    this.reset();
+    bootstrap.Modal.getInstance(document.getElementById("createModal")).hide();
+    loadCustomers();
+  } catch (err) {
+    alert("Müşteri eklenirken hata oluştu.");
+    console.error(err);
+  }
+});
+
 </script>
 
 

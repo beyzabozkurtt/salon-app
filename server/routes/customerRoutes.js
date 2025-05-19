@@ -4,34 +4,51 @@ const { body } = require('express-validator');
 const customerController = require('../controllers/customerController');
 const authMiddleware = require('../middleware/authMiddleware'); // ✨ auth kontrolü
 
-// Listele
+// ✅ Tüm müşterileri getir
 router.get('/', authMiddleware, customerController.getAll);
 
-// Tek müşteri
+// ✅ Tek müşteri getir
 router.get('/:id', authMiddleware, customerController.getOne);
 
-// Müşteriye ait paketler
+// ✅ Müşterinin satın aldığı paketleri getir
 router.get('/:id/packages', authMiddleware, customerController.getCustomerPackages);
 
-// Detaylı seanslı müşteri bilgisi
+// ✅ Seanslı detaylı müşteri bilgisi
 router.get('/:id/details', authMiddleware, customerController.getDetailsWithSessions);
 
-// Yeni müşteri
+// ✅ Yeni müşteri oluştur
 router.post(
   '/',
-  authMiddleware, // ✨ middleware burada da
+  authMiddleware,
   [
     body('name').notEmpty().withMessage('İsim zorunludur'),
-    body('email').isEmail().withMessage('Geçerli e-posta girin'),
-    body('phone').notEmpty().withMessage('Telefon zorunludur')
+    body('phone').notEmpty().withMessage('Telefon zorunludur'),
+    body('email').optional().isEmail().withMessage('Geçerli bir e-posta girin'),
+    body('birthDate').optional().isISO8601().toDate().withMessage('Geçerli bir doğum tarihi girin'),
+    body('gender').optional().isIn(['Kadın', 'Erkek', 'Belirtmek istemiyor']).withMessage('Geçerli bir cinsiyet seçin'),
+    body('reference').optional().isString(),
+    body('notes').optional().isString()
   ],
   customerController.create
 );
 
-// Güncelle
-router.put('/:id', authMiddleware, customerController.update);
+// ✅ Mevcut müşteriyi güncelle
+router.put(
+  '/:id',
+  authMiddleware,
+  [
+    body('name').notEmpty().withMessage('İsim zorunludur'),
+    body('phone').notEmpty().withMessage('Telefon zorunludur'),
+    body('email').optional().isEmail().withMessage('Geçerli bir e-posta girin'),
+    body('birthDate').optional().isISO8601().toDate(),
+    body('gender').optional().isIn(['Kadın', 'Erkek', 'Belirtmek istemiyor']),
+    body('reference').optional().isString(),
+    body('notes').optional().isString()
+  ],
+  customerController.update
+);
 
-// Sil
+// ✅ Müşteri sil
 router.delete('/:id', authMiddleware, customerController.delete);
 
 module.exports = router;
