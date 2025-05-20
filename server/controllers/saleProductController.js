@@ -106,24 +106,33 @@ async create(req, res) {
 
 
   // 🔄 Satışı güncelle
-  async update(req, res) {
-    try {
-      const { quantity, UserId } = req.body;
-      await SaleProduct.update(
-        { quantity, UserId },
-        {
-          where: {
-            id: req.params.id,
-            CompanyId: req.company.companyId
-          }
+ // 🔄 Satışı güncelle
+async update(req, res) {
+  try {
+    const { quantity, UserId, paymentMethod, notes, CustomerId } = req.body;
+
+    await SaleProduct.update(
+      {
+        quantity,
+        UserId,
+        paymentMethod,
+        notes,
+        CustomerId
+      },
+      {
+        where: {
+          id: req.params.id,
+          CompanyId: req.company.companyId
         }
-      );
-      res.json({ message: "Satış güncellendi." });
-    } catch (err) {
-      console.error(err);
-      res.status(500).json({ error: 'Satış güncelleme hatası.' });
-    }
-  },
+      }
+    );
+
+    res.json({ message: "Satış güncellendi." });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Satış güncelleme hatası.' });
+  }
+},
 
   // 🗑️ Satışı sil
   async delete(req, res) {

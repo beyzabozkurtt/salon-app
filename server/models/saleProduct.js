@@ -26,20 +26,24 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.DECIMAL(10, 2),
       allowNull: false
     },
+    paymentMethod: {
+      type: DataTypes.STRING(50), // 💳 Nakit, Kredi Kartı, vb.
+      allowNull: true
+    },
+    notes: {
+      type: DataTypes.TEXT, // 📝 Uzun açıklama veya notlar
+      allowNull: true
+    },
     CompanyId: {
-  type: DataTypes.INTEGER,
-  allowNull: false
-}
-
+      type: DataTypes.INTEGER,
+      allowNull: false
+    }
   });
 
-  // 🧩 İlişkiler burada tanımlanmalı
   SaleProduct.associate = models => {
     SaleProduct.belongsTo(models.Customer, { foreignKey: 'CustomerId' });
     SaleProduct.belongsTo(models.Product, { foreignKey: 'ProductId' });
     SaleProduct.belongsTo(models.Sale, { foreignKey: 'SaleId' });
-
-    // 💸 Her ürün satışı birden fazla ödemeyle eşleşebilir
     SaleProduct.hasMany(models.Payment, { foreignKey: 'SaleProductId' });
   };
 

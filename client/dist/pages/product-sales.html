@@ -96,27 +96,53 @@
 <!-- Düzenle Modal -->
 <div class="modal fade" id="editProductModal" tabindex="-1">
   <div class="modal-dialog">
-    <form id="editProductForm" class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title">Ürün Satışı Düzenle</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-      </div>
-      <div class="modal-body">
-        <input type="hidden" name="id" id="editProductId" />
-        <div class="mb-2">
-          <label class="form-label">Adet</label>
-          <input type="number" class="form-control" name="quantity" id="editQuantity" required />
-        </div>
-        <div class="mb-2">
-          <label class="form-label">Personel</label>
-          <select class="form-select" name="UserId" id="editUserSelect" required></select>
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button class="btn btn-success" type="submit">Güncelle</button>
-        <button class="btn btn-secondary" type="button" data-bs-dismiss="modal">İptal</button>
-      </div>
-    </form>
+<form id="editProductForm" class="modal-content">
+  <div class="modal-header">
+    <h5 class="modal-title">Ürün Satışı Düzenle</h5>
+    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+  </div>
+  <div class="modal-body">
+    <input type="hidden" name="id" id="editProductId" />
+
+    <div class="mb-2">
+      <label class="form-label">Müşteri</label>
+      <input type="text" class="form-control" id="editCustomerInput" placeholder="Müşteri adı girin" autocomplete="off" />
+      <div id="editCustomerDropdown" class="list-group position-absolute w-100" style="z-index: 1000;"></div>
+    </div>
+
+    <div class="mb-2">
+      <label class="form-label">Adet</label>
+      <input type="number" class="form-control" name="quantity" id="editQuantity" required />
+    </div>
+
+    <div class="mb-2">
+      <label class="form-label">Ödeme Yöntemi</label>
+      <select class="form-select" name="paymentMethod" id="editPaymentMethod" required>
+        <option value="">Seçiniz</option>
+        <option>Nakit</option>
+        <option>Kredi kartı</option>
+        <option>Havale</option>
+        <option>Online ödeme</option>
+        <option>Diğer</option>
+      </select>
+    </div>
+
+    <div class="mb-2">
+      <label class="form-label">Personel</label>
+      <select class="form-select" name="UserId" id="editUserSelect" required></select>
+    </div>
+
+    <div class="mb-2">
+      <label class="form-label">Notlar</label>
+      <textarea class="form-control" name="notes" id="editNotes" rows="2"></textarea>
+    </div>
+  </div>
+  <div class="modal-footer">
+    <button class="btn btn-success" type="submit">Güncelle</button>
+    <button class="btn btn-secondary" type="button" data-bs-dismiss="modal">İptal</button>
+  </div>
+</form>
+
   </div>
 </div>
 
@@ -198,7 +224,6 @@ function bindProductAutocomplete(inputEl, priceInputEl) {
   const wrapper = document.createElement("div");
   wrapper.classList.add("position-relative", "w-100");
 
-  // input'u sarmala
   const parent = inputEl.parentElement;
   parent.insertBefore(wrapper, inputEl);
   wrapper.appendChild(inputEl);
@@ -218,6 +243,9 @@ function bindProductAutocomplete(inputEl, priceInputEl) {
   resultBox.style.display = "none";
   wrapper.appendChild(resultBox);
 
+  // 💾 Seçilen ürünün birim fiyatını burada saklayalım
+  let selectedUnitPrice = 0;
+
   inputEl.addEventListener("input", () => {
     const value = inputEl.value.toLowerCase().trim();
     resultBox.innerHTML = "";
@@ -235,11 +263,22 @@ function bindProductAutocomplete(inputEl, priceInputEl) {
         item.classList.add("list-group-item", "list-group-item-action");
         item.addEventListener("click", () => {
           inputEl.value = label;
-          priceInputEl.value = productPriceMap[label] || "";
+          selectedUnitPrice = productPriceMap[label] || 0;
+          const quantityInput = wrapper.parentElement.querySelector(".quantity-input");
+          const quantity = parseInt(quantityInput?.value);
+
+          // 🧮 Tutarı hesapla
+          if (!isNaN(quantity)) {
+            priceInputEl.value = (selectedUnitPrice * quantity).toFixed(2);
+          } else {
+            priceInputEl.value = selectedUnitPrice;
+          }
+
+          // ✅ Uyarıyı anında temizle
+          inputEl.setCustomValidity("");
+          inputEl.classList.remove("is-invalid");
+
           resultBox.style.display = "none";
-            // ✅ Uyarıyı anında temizle
-  inputEl.setCustomValidity("");
-  inputEl.classList.remove("is-invalid");
         });
         resultBox.appendChild(item);
       }
@@ -248,10 +287,20 @@ function bindProductAutocomplete(inputEl, priceInputEl) {
     resultBox.style.display = "block";
   });
 
-  // dış tıklamada kapan
   document.addEventListener("click", e => {
     if (!wrapper.contains(e.target)) resultBox.style.display = "none";
   });
+
+  // ✅ Adet değiştiğinde otomatik çarp
+  const quantityInput = wrapper.parentElement.querySelector(".quantity-input");
+  if (quantityInput) {
+    quantityInput.addEventListener("input", () => {
+      const quantity = parseInt(quantityInput.value);
+      if (!isNaN(quantity) && selectedUnitPrice) {
+        priceInputEl.value = (selectedUnitPrice * quantity).toFixed(2);
+      }
+    });
+  }
 }
 
 
@@ -409,27 +458,83 @@ if (!formIsValid) {
 
 // 🌟 Ürün düzenleme modalı
 async function openEditModal(id) {
-  const [res, usersRes] = await Promise.all([
+  const [res, usersRes, customersRes] = await Promise.all([
     axios.get(`http://localhost:5001/api/sale-products/single/${id}`, axiosConfig),
-    axios.get("http://localhost:5001/api/users", axiosConfig)
+    axios.get("http://localhost:5001/api/users", axiosConfig),
+    axios.get("http://localhost:5001/api/customers", axiosConfig)
   ]);
 
   const productSale = res.data;
+
+  // Satış ID
   document.getElementById("editProductId").value = productSale.id;
+
+  // Adet
   document.getElementById("editQuantity").value = productSale.quantity;
-  editUserSelect.innerHTML = usersRes.data.map(u => `<option value="${u.id}">${u.name}</option>`).join("");
+
+  // Notlar
+  document.getElementById("editNotes").value = productSale.notes || "";
+
+  // Ödeme Yöntemi
+  // Ödeme Yöntemi
+const paymentMethodValue = (productSale.paymentMethod || "").toLowerCase();
+const paymentSelect = document.getElementById("editPaymentMethod");
+const options = paymentSelect.options;
+
+let matched = false;
+for (let i = 0; i < options.length; i++) {
+  if (options[i].textContent.toLowerCase() === paymentMethodValue) {
+    paymentSelect.selectedIndex = i;
+    matched = true;
+    break;
+  }
+}
+if (!matched) {
+  paymentSelect.selectedIndex = 0;
+}
+
+
+  // Personel listesi
+  const editUserSelect = document.getElementById("editUserSelect");
+  editUserSelect.innerHTML = usersRes.data
+    .map(u => `<option value="${u.id}">${u.name}</option>`)
+    .join("");
   editUserSelect.value = productSale.UserId;
+
+  // Müşteri alanı
+  const editCustomerInput = document.getElementById("editCustomerInput");
+  editCustomerInput.value = productSale.Customer?.name || "";
+
+  // Müşteri autocomplete listesi
+  window.editCustomerMap = {};
+  customersRes.data.forEach(c => {
+    window.editCustomerMap[c.name] = c.id;
+  });
+
+  // Modalı göster
   editModal.show();
 }
+
+
 
 // 🌟 Satışı güncelle
 editProductForm.addEventListener("submit", async e => {
   e.preventDefault();
   const data = Object.fromEntries(new FormData(editProductForm).entries());
+  const CustomerId = window.editCustomerMap[document.getElementById("editCustomerInput").value.trim()] || null;
+
+  if (!CustomerId) {
+    alert("Lütfen geçerli bir müşteri seçin.");
+    return;
+  }
+
+  data.CustomerId = CustomerId;
+
   await axios.put(`http://localhost:5001/api/sale-products/${data.id}`, data, axiosConfig);
   editModal.hide();
   loadProductSales();
 });
+
 
 // 🌟 Satışı sil
 async function deleteProductSale(id) {
