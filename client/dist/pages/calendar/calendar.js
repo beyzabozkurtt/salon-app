@@ -5,18 +5,6 @@ document.addEventListener('DOMContentLoaded', function () {
   const calendarEl = document.getElementById('calendar');
   const dateInput = document.getElementById("datePicker");
 
-  // Flatpickr başlat
-  flatpickrInstance = flatpickr(dateInput, {
-    dateFormat: "d.m.Y",
-    defaultDate: new Date(),
-    locale: "tr",
-    onChange: function (selectedDates) {
-      if (selectedDates.length > 0) {
-        calendar.gotoDate(selectedDates[0]);
-      }
-    }
-  });
-
   // FullCalendar başlat
   calendar = new FullCalendar.Calendar(calendarEl, {
     initialView: 'timeGridDay',
@@ -35,32 +23,108 @@ document.addEventListener('DOMContentLoaded', function () {
       minute: '2-digit',
       hour12: false
     },
-  datesSet: function () {
-  const selectedDate = calendar.getDate();
-  flatpickrInstance.setDate(selectedDate, false);
-  updateCustomHeader(selectedDate); // başlığı güncelle
-}
+    firstDay: 1,
+dayHeaderContent: function(arg) {
+  const currentView = calendar.view.type;
 
+  if (currentView === 'dayGridMonth') {
+    // 🔥 Sadece gün adı (Pazartesi, Salı...) yaz
+    const gun = new Intl.DateTimeFormat('tr-TR', {
+      weekday: 'long'
+    }).format(arg.date);
+
+    return {
+      html: `<div style="text-align: center;font-weight: 600; font-size:14px;">${gun.charAt(0).toUpperCase() + gun.slice(1)}</div>`
+    };
+  }
+
+  if (currentView === 'timeGridWeek') {
+    const tarih = new Intl.DateTimeFormat('tr-TR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    }).format(arg.date);
+
+    const gun = new Intl.DateTimeFormat('tr-TR', {
+      weekday: 'long'
+    }).format(arg.date);
+
+    return {
+      html: `
+        <div style="display: flex; flex-direction: column; text-align: center; line-height: 1.2;">
+          <span style="font-weight: 600; font-size:14px;">${tarih}</span>
+          <span style="font-weight: 400;font-size:14px;">${gun.charAt(0).toUpperCase() + gun.slice(1)}</span>
+        </div>
+      `
+    };
+  }
+
+  // Gün görünümü
+  const tarih = new Intl.DateTimeFormat('tr-TR', {
+    day: '2-digit',
+    month: 'long',
+    year: 'numeric'
+  }).format(arg.date);
+
+  const gun = new Intl.DateTimeFormat('tr-TR', {
+    weekday: 'long'
+  }).format(arg.date);
+
+  return {
+    html: `<div>${tarih} / ${gun.charAt(0).toUpperCase() + gun.slice(1)}</div>`
+  };
+},
+
+    datesSet: function () {
+      const selectedDate = calendar.getDate();
+      if (flatpickrInstance) {
+        flatpickrInstance.setDate(selectedDate, false);
+      }
+      updateCustomHeader(selectedDate);
+        // 🔥 Sadece ay görünümünde Mayıs 2025 başlığı göster
+  const viewType = calendar.view.type;
+  const header = document.getElementById("monthHeader");
+
+ if (header) {
+  if (viewType === "dayGridMonth") {
+    const ay = new Intl.DateTimeFormat('tr-TR', { month: 'long' }).format(selectedDate);
+    const yil = new Intl.DateTimeFormat('tr-TR', { year: 'numeric' }).format(selectedDate);
+
+    header.innerHTML = `${ay.charAt(0).toUpperCase() + ay.slice(1)}, ${yil}`;
+  } else {
+    header.innerHTML = ""; // Diğer görünümlerde gizle
+  }
+}
+    }
   });
 
   calendar.render();
 
+  // Flatpickr başlat (calendar render edildikten sonra)
+  flatpickrInstance = flatpickr(dateInput, {
+    dateFormat: "d.m.Y",
+    defaultDate: new Date(),
+    locale: "tr",
+    onChange: function (selectedDates) {
+      if (selectedDates.length > 0) {
+        calendar.gotoDate(selectedDates[0]);
+      }
+    }
+  });
+
   // Geri (←) butonu
   document.getElementById("prevDateBtn").addEventListener("click", () => {
     calendar.prev();
-    flatpickrInstance.setDate(calendar.getDate(), false);
   });
 
   // İleri (→) butonu
   document.getElementById("nextDateBtn").addEventListener("click", () => {
     calendar.next();
-    flatpickrInstance.setDate(calendar.getDate(), false);
   });
 
   // Bugün butonu
   document.getElementById("goToday").addEventListener("click", () => {
     calendar.today();
-    flatpickrInstance.setDate(calendar.getDate(), false);
   });
 
   // Görünüm dropdown (Gün / Hafta / Ay)
@@ -80,8 +144,11 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   }
 });
+
+// Tarih başlığını güncelle
 function updateCustomHeader(date) {
   const headerEl = document.getElementById("customHeader");
+  if (!headerEl) return;
   const options = { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' };
   const formatted = new Intl.DateTimeFormat('tr-TR', options).format(date);
   headerEl.textContent = formatted.charAt(0).toUpperCase() + formatted.slice(1);
