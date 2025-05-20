@@ -1,6 +1,7 @@
 const { SaleProduct, Product, User, Customer, Payment } = require('../models');
 
 module.exports = {
+  // 🔍 Tüm satışları getir
   async getAll(req, res) {
     try {
       const items = await SaleProduct.findAll({
@@ -9,10 +10,12 @@ module.exports = {
       });
       res.json(items);
     } catch (err) {
+      console.error(err);
       res.status(500).json({ error: 'Ürün satışları alınamadı.' });
     }
   },
 
+  // 🔍 Belirli bir satışa ait ürünleri getir
   async getBySaleId(req, res) {
     try {
       const items = await SaleProduct.findAll({
@@ -28,6 +31,7 @@ module.exports = {
     }
   },
 
+  // 🔍 Tek kayıt getir
   async getOne(req, res) {
     try {
       const item = await SaleProduct.findOne({
@@ -44,51 +48,64 @@ module.exports = {
     }
   },
 
-  async create(req, res) {
-    try {
-      const { ProductId, quantity, UserId, CustomerId, SaleId = null } = req.body;
-      const product = await Product.findOne({
-        where: {
-          id: ProductId,
-          CompanyId: req.company.companyId
-        }
-      });
-      if (!product) return res.status(404).json({ error: "Ürün bulunamadı." });
+// ➕ Yeni satış ekle
+async create(req, res) {
+  try {
+    const {
+      ProductId, quantity, price, UserId, CustomerId,
+      paymentMethod, notes, SaleId = null,
+      paymentCollected, saleDate
+    } = req.body;
 
-      const newItem = await SaleProduct.create({
-        ProductId,
-        quantity,
-        UserId,
+    const product = await Product.findOne({
+      where: {
+        id: ProductId,
+        CompanyId: req.company.companyId
+      }
+    });
+    if (!product) return res.status(404).json({ error: "Ürün bulunamadı." });
+
+    const newItem = await SaleProduct.create({
+      ProductId,
+      quantity,
+      price,
+      UserId,
+      CustomerId,
+      SaleId,
+      notes,
+      paymentMethod,
+      saleDate: saleDate || null,
+      CompanyId: req.company.companyId
+    });
+
+    // 🧾 Ödeme kaydı oluştur
+    if (CustomerId) {
+      const totalAmount = parseFloat(price) * parseInt(quantity);
+      const now = new Date();
+
+      await Payment.create({
         SaleId,
-        CustomerId,
-        price: product.price,
+        ProductId,
+        SaleProductId: newItem.id,
+        installmentNo: 1,
+        amount: totalAmount,
+        dueDate: now,
+        status: paymentCollected === "true" ? "ödenmiş" : "bekliyor",
+        paymentDate: paymentCollected === "true" ? now : null,
+        paymentType: paymentCollected === "true" ? paymentMethod : null,
         CompanyId: req.company.companyId
       });
-
-      // 🧾 Ödeme kaydı oluştur (Customer varsa)
-      if (CustomerId) {
-        const totalAmount = parseFloat(product.price) * parseInt(quantity);
-        const dueDate = new Date();
-
-        await Payment.create({
-          SaleId,
-          ProductId,
-          SaleProductId: newItem.id,
-          installmentNo: 1,
-          amount: totalAmount,
-          dueDate,
-          status: 'bekliyor',
-          CompanyId: req.company.companyId
-        });
-      }
-
-      res.json(newItem);
-    } catch (err) {
-      console.error(err);
-      res.status(500).json({ error: 'Ürün eklenemedi.' });
     }
-  },
 
+    res.status(201).json(newItem);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Ürün satışı eklenemedi.' });
+  }
+},
+
+
+  // 🔄 Satışı güncelle
   async update(req, res) {
     try {
       const { quantity, UserId } = req.body;
@@ -101,13 +118,14 @@ module.exports = {
           }
         }
       );
-      res.json({ message: "Güncellendi." });
+      res.json({ message: "Satış güncellendi." });
     } catch (err) {
       console.error(err);
-      res.status(500).json({ error: 'Güncelleme hatası.' });
+      res.status(500).json({ error: 'Satış güncelleme hatası.' });
     }
   },
 
+  // 🗑️ Satışı sil
   async delete(req, res) {
     try {
       const item = await SaleProduct.findOne({
@@ -116,7 +134,7 @@ module.exports = {
           CompanyId: req.company.companyId
         }
       });
-      if (!item) return res.status(404).json({ error: "Kayıt bulunamadı." });
+      if (!item) return res.status(404).json({ error: "Satış bulunamadı." });
 
       await Payment.destroy({
         where: {
@@ -132,10 +150,10 @@ module.exports = {
         }
       });
 
-      res.json({ message: 'Ürün satıştan ve ödemeden kaldırıldı' });
+      res.json({ message: 'Satış ve ilgili ödeme kaydı silindi.' });
     } catch (err) {
       console.error(err);
-      res.status(500).json({ error: 'Silme işlemi başarısız.' });
+      res.status(500).json({ error: 'Satış silme hatası.' });
     }
   }
 };

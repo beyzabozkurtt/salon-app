@@ -24,7 +24,9 @@
 <!-- Ürün Ekle Modal -->
 <div class="modal fade" id="addProductModal" tabindex="-1">
   <div class="modal-dialog modal-dialog-centered modal-lg">
-    <form id="addProductForm" class="modal-content">
+    
+    <form id="addProductForm" class="modal-content" novalidate>
+
       <div class="modal-header">
         <h5 class="modal-title">Yeni ürün satışı</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
@@ -39,20 +41,22 @@
       </div>
 
         <div class="mb-2">
-          <input class="form-control" id="customerInput" list="customerOptions" placeholder="Müşteri" required />
-          <datalist id="customerOptions"></datalist>
+<input type="text" id="customerInput" class="form-control" placeholder="Müşteri adı girin" autocomplete="off" />
+<div id="customerDropdown" class="list-group position-absolute w-100" style="z-index: 1000;"></div>
+
         </div>
 
         <!-- Ürün ekleme alanı -->
         <div id="productItems">
           <div class="d-flex gap-2 align-items-center mb-2">
-            <input class="form-control" list="productOptions" placeholder="Ürün adı veya barkoduyla arayın" required />
+<!-- Ürün input (her satır için ayrı) -->
+            <input class="form-control product-search-input"  placeholder="Ürün adı veya barkoduyla arayın"  required autocomplete="off"/>
             <datalist id="productOptions"></datalist>
-
-            <input type="number" class="form-control" placeholder="1" style="width: 70px;" required />
+            <input type="number" class="form-control" placeholder="0" style="width: 70px;" required />
             <span>ad</span>
 
-            <input type="number" class="form-control" placeholder="Tutar" style="width: 120px;" required />
+            <input type="number" class="form-control price-input" placeholder="Tutar" style="width: 120px;" required />
+
             <span>TL</span>
 
             <button type="button" class="btn btn-danger" onclick="removeProductRow(this)">🗑️</button>
@@ -116,6 +120,49 @@
   </div>
 </div>
 
+<style>
+  .customerDropdown {
+    max-height: 200px;
+    overflow-y: auto;
+    background: white;
+    border: 1px solid #dee2e6;
+    border-top: none;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+    position: absolute;
+    z-index: 9999;
+    width: 100%;
+    display: none;
+  }
+  .customerDropdown button {
+    text-align: left;
+    padding: 8px 12px;
+    background: white;
+    border: none;
+    width: 100%;
+  }
+  .customerDropdown button:hover {
+    background-color: #f1f1f1;
+  }
+  .autocomplete-results {
+  position: absolute;
+  z-index: 9999;
+  background: white;
+  border: 1px solid #ccc;
+  width: 100%;
+  max-height: 180px;
+  overflow-y: auto;
+  border-radius: 4px;
+}
+
+.autocomplete-results div {
+  padding: 8px 12px;
+  cursor: pointer;
+}
+
+.autocomplete-results div:hover {
+  background: #f1f1f1;
+}
+</style>
 <script>
 const productSaleList = document.getElementById("productSaleList");
 const editProductForm = document.getElementById("editProductForm");
@@ -126,17 +173,89 @@ const addModal = new bootstrap.Modal(document.getElementById("addProductModal"))
 
 const editUserSelect = document.getElementById("editUserSelect");
 const addUserSelect = document.getElementById("addUserSelect");
-const addProductSelect = document.getElementById("addProductSelect");
 const customerInput = document.getElementById("customerInput");
-const customerOptions = document.getElementById("customerOptions");
+const productOptionsElement = document.getElementById("productOptions");
+
+const customerDropdown = document.createElement("div");
+customerDropdown.id = "customerDropdown";
+customerDropdown.className = "list-group position-absolute w-100";
+customerDropdown.style.zIndex = "1000";
+customerDropdown.style.maxHeight = "200px";
+customerDropdown.style.overflowY = "auto";
+customerDropdown.style.display = "none";
+customerInput.parentElement.appendChild(customerDropdown);
 
 const token = localStorage.getItem("companyToken");
-const axiosConfig = {
-  headers: { Authorization: "Bearer " + token }
-};
+const axiosConfig = { headers: { Authorization: "Bearer " + token } };
 
 let customerMap = {};
+let productMap = {};
+let productPriceMap = {};
+let customers = [];
 
+// 🌟 Ürün inputuna özel autocomplete ve fiyat bağlama
+function bindProductAutocomplete(inputEl, priceInputEl) {
+  const wrapper = document.createElement("div");
+  wrapper.classList.add("position-relative", "w-100");
+
+  // input'u sarmala
+  const parent = inputEl.parentElement;
+  parent.insertBefore(wrapper, inputEl);
+  wrapper.appendChild(inputEl);
+
+  const resultBox = document.createElement("div");
+  resultBox.classList.add("autocomplete-results");
+  resultBox.style.position = "absolute";
+  resultBox.style.top = "100%";
+  resultBox.style.left = "0";
+  resultBox.style.right = "0";
+  resultBox.style.zIndex = "1000";
+  resultBox.style.backgroundColor = "#fff";
+  resultBox.style.border = "1px solid #ccc";
+  resultBox.style.borderRadius = "4px";
+  resultBox.style.maxHeight = "160px";
+  resultBox.style.overflowY = "auto";
+  resultBox.style.display = "none";
+  wrapper.appendChild(resultBox);
+
+  inputEl.addEventListener("input", () => {
+    const value = inputEl.value.toLowerCase().trim();
+    resultBox.innerHTML = "";
+    if (value.length < 3) {
+      resultBox.style.display = "none";
+      return;
+    }
+
+    Object.keys(productMap).forEach(label => {
+      if (label.toLowerCase().includes(value)) {
+        const item = document.createElement("div");
+        item.textContent = label;
+        item.style.padding = "8px";
+        item.style.cursor = "pointer";
+        item.classList.add("list-group-item", "list-group-item-action");
+        item.addEventListener("click", () => {
+          inputEl.value = label;
+          priceInputEl.value = productPriceMap[label] || "";
+          resultBox.style.display = "none";
+            // ✅ Uyarıyı anında temizle
+  inputEl.setCustomValidity("");
+  inputEl.classList.remove("is-invalid");
+        });
+        resultBox.appendChild(item);
+      }
+    });
+
+    resultBox.style.display = "block";
+  });
+
+  // dış tıklamada kapan
+  document.addEventListener("click", e => {
+    if (!wrapper.contains(e.target)) resultBox.style.display = "none";
+  });
+}
+
+
+// 🌟 Satışları yükle
 async function loadProductSales() {
   const res = await axios.get("http://localhost:5001/api/sale-products", axiosConfig);
   productSaleList.innerHTML = "";
@@ -146,7 +265,6 @@ async function loadProductSales() {
     li.className = "list-group-item d-flex justify-content-between align-items-center";
     li.innerHTML = `
       ${item.Product?.name} (${item.quantity} adet) - ${item.User?.name} • ${item.Customer?.name || "Müşteri yok"} • ${(item.price * item.quantity).toFixed(2)}₺
-
       <div>
         <button class="btn btn-sm btn-primary me-2" onclick="openEditModal(${item.id})">Düzenle</button>
         <button class="btn btn-sm btn-danger" onclick="deleteProductSale(${item.id})">Sil</button>
@@ -156,6 +274,140 @@ async function loadProductSales() {
   });
 }
 
+// 🌟 Modal aç
+function openAddProductModal() {
+  loadAddModalDropdowns();
+  addModal.show();
+}
+
+// 🌟 Dropdownları yükle
+async function loadAddModalDropdowns() {
+  const [productsRes, usersRes, customersRes] = await Promise.all([
+    axios.get("http://localhost:5001/api/products", axiosConfig),
+    axios.get("http://localhost:5001/api/users", axiosConfig),
+    axios.get("http://localhost:5001/api/customers", axiosConfig)
+  ]);
+
+  const products = productsRes.data;
+  productMap = {};
+  productPriceMap = {};
+
+  const productOptionsHTML = products.map(p => {
+    const label = `${p.name}${p.barcode ? " • " + p.barcode : ""}`;
+    productMap[label] = p.id;
+    productPriceMap[label] = p.price;
+    return `<option value="${label}"></option>`;
+  }).join("");
+  productOptionsElement.innerHTML = productOptionsHTML;
+
+  addUserSelect.innerHTML = usersRes.data.map(u => `<option value="${u.id}">${u.name}</option>`).join("");
+
+  customers = customersRes.data;
+  customerMap = {};
+  customers.forEach(c => customerMap[c.name] = c.id);
+}
+
+// 🌟 Satış kaydet
+addProductForm.addEventListener("submit", async e => {
+
+  e.preventDefault();
+
+  const productRows = document.querySelectorAll("#productItems .d-flex");
+  const selectedCustomerName = customerInput.value;
+  const CustomerId = customerMap[selectedCustomerName] || null;
+  const UserId = addUserSelect.value;
+  const paymentMethod = addProductForm.paymentMethod.value;
+  const notes = addProductForm.notes.value;
+  const saleDate = document.getElementById("saleDate").value;
+  const paymentCollected = document.getElementById("paymentCollected").checked;
+
+  for (const row of productRows) {
+    const inputs = row.querySelectorAll("input");
+    const productLabel = inputs[0].value.trim();
+    const quantity = parseInt(inputs[1].value);
+    const price = parseFloat(inputs[2].value);
+    const ProductId = productMap[productLabel];
+
+
+if (!CustomerId) {
+  customerInput.setCustomValidity("Lütfen bir müşteri seçin.");
+  customerInput.reportValidity(); // ✨ Uyarıyı göster
+  customerInput.classList.add("is-invalid");
+  return;
+} else {
+  customerInput.setCustomValidity("");
+  customerInput.classList.remove("is-invalid");
+}
+const productInputEl = inputs[0]; // 🔥 burası eksikti
+    if (!ProductId) {
+        productInputEl.setCustomValidity("Lütfen bir ürün seçin.");
+        productInputEl.reportValidity(); // ✨ Uyarıyı göster
+        productInputEl.classList.add("is-invalid");
+      return;
+    }else {
+  productInputEl.setCustomValidity("");
+  productInputEl.classList.remove("is-invalid");
+}
+if (!quantity || quantity < 1) {
+  inputs[1].setCustomValidity("Lütfen adet girin.");
+  inputs[1].reportValidity();
+  return;
+} else {
+  inputs[1].setCustomValidity("");
+}
+const paymentSelect = addProductForm.paymentMethod;
+const userSelect = addProductForm.UserId;
+
+let formIsValid = true;
+
+// 🔴 Ödeme yöntemi seçilmemişse
+if (!paymentSelect.value) {
+  paymentSelect.setCustomValidity("Lütfen bir ödeme yöntemi seçin.");
+  paymentSelect.classList.add("is-invalid");
+  formIsValid = false;
+} else {
+  paymentSelect.setCustomValidity("");
+  paymentSelect.classList.remove("is-invalid");
+}
+
+// 🔴 Personel seçilmemişse
+if (!userSelect.value) {
+  userSelect.setCustomValidity("Lütfen bir personel seçin.");
+  userSelect.classList.add("is-invalid");
+  formIsValid = false;
+} else {
+  userSelect.setCustomValidity("");
+  userSelect.classList.remove("is-invalid");
+}
+
+if (!formIsValid) {
+  paymentSelect.reportValidity();
+  userSelect.reportValidity();
+  return; // işlemi durdur
+}
+
+    
+
+    await axios.post("http://localhost:5001/api/sale-products", {
+      ProductId,
+      quantity,
+      price,
+      UserId,
+      CustomerId,
+      SaleId: null,
+      paymentMethod,
+      notes,
+      saleDate,
+      paymentCollected
+    }, axiosConfig);
+  }
+
+  addProductForm.reset();
+  addModal.hide();
+  loadProductSales();
+});
+
+// 🌟 Ürün düzenleme modalı
 async function openEditModal(id) {
   const [res, usersRes] = await Promise.all([
     axios.get(`http://localhost:5001/api/sale-products/single/${id}`, axiosConfig),
@@ -165,107 +417,131 @@ async function openEditModal(id) {
   const productSale = res.data;
   document.getElementById("editProductId").value = productSale.id;
   document.getElementById("editQuantity").value = productSale.quantity;
-
   editUserSelect.innerHTML = usersRes.data.map(u => `<option value="${u.id}">${u.name}</option>`).join("");
   editUserSelect.value = productSale.UserId;
-
   editModal.show();
 }
 
+// 🌟 Satışı güncelle
 editProductForm.addEventListener("submit", async e => {
   e.preventDefault();
-  const formData = new FormData(editProductForm);
-  const data = Object.fromEntries(formData.entries());
-
+  const data = Object.fromEntries(new FormData(editProductForm).entries());
   await axios.put(`http://localhost:5001/api/sale-products/${data.id}`, data, axiosConfig);
   editModal.hide();
   loadProductSales();
 });
 
+// 🌟 Satışı sil
 async function deleteProductSale(id) {
   if (!confirm("Bu ürün satışını silmek istiyor musun?")) return;
   await axios.delete(`http://localhost:5001/api/sale-products/${id}`, axiosConfig);
   loadProductSales();
 }
 
-function openAddProductModal() {
-  loadAddModalDropdowns();
-  addModal.show();
+// 🌟 Yeni ürün satırı ekle
+function addProductRow() {
+  const container = document.getElementById("productItems");
+  const row = document.createElement("div");
+  row.className = "d-flex gap-2 align-items-center mb-2";
+  row.innerHTML = `
+    <input type="text" class="form-control product-search-input" placeholder="Ürün adı veya barkoduyla arayın" required autocomplete="off" />
+    <input type="number" class="form-control quantity-input" placeholder="0" style="width: 70px;" required />
+    <span>ad</span>
+    <input type="number" class="form-control price-input" placeholder="Tutar" style="width: 120px;" required />
+    <span>TL</span>
+    <button type="button" class="btn btn-danger" onclick="removeProductRow(this)">🗑️</button>
+  `;
+  container.appendChild(row);
+
+  // ✅ Yeni eklenen satırdaki inputları seç ve bind işlemini uygula
+  const productInput = row.querySelector(".product-search-input");
+  const priceInput = row.querySelector(".price-input");
+  bindProductAutocomplete(productInput, priceInput);
 }
 
-async function loadAddModalDropdowns() {
-  const [productsRes, usersRes, customersRes] = await Promise.all([
-    axios.get("http://localhost:5001/api/products", axiosConfig),
-    axios.get("http://localhost:5001/api/users", axiosConfig),
-    axios.get("http://localhost:5001/api/customers", axiosConfig)
-  ]);
-
-  addProductSelect.innerHTML = productsRes.data.map(p => `<option value="${p.id}">${p.name}</option>`).join("");
-  addUserSelect.innerHTML = usersRes.data.map(u => `<option value="${u.id}">${u.name}</option>`).join("");
-  customerOptions.innerHTML = customersRes.data.map(c => {
-    customerMap[c.name] = c.id;
-    return `<option value="${c.name}"></option>`;
-  }).join("");
+// 🌟 Satırı sil
+function removeProductRow(btn) {
+  btn.parentElement.remove();
 }
 
-addProductForm.addEventListener("submit", async e => {
-  e.preventDefault();
-  const formData = new FormData(addProductForm);
-  const data = Object.fromEntries(formData.entries());
+// 🌟 Takvim ve müşteri
+document.addEventListener("DOMContentLoaded", () => {
+  // 📅 Takvim kur
+  const fp = flatpickr("#saleDate", {
+    dateFormat: "d.m.Y",
+    position: "auto right",
+    defaultDate: new Date(),
+    clickOpens: false
+  });
 
-  const selectedCustomerName = customerInput.value;
-  data.CustomerId = customerMap[selectedCustomerName] || null;
+  document.getElementById("calendarTrigger").addEventListener("click", () => fp.open());
 
-  await axios.post("http://localhost:5001/api/sale-products", {
-    ...data,
-    SaleId: null
-  }, axiosConfig);
-
-  addProductForm.reset();
-  addModal.hide();
+  // 📦 Ürün satışlarını yükle
   loadProductSales();
+  window.openAddProductModal = openAddProductModal;
+
+  // ✅ Ödeme yöntemi seçildiğinde uyarıyı temizle
+  const paymentSelect = addProductForm.paymentMethod;
+  paymentSelect.addEventListener("change", () => {
+    paymentSelect.setCustomValidity("");
+    paymentSelect.classList.remove("is-invalid");
+  });
+
+  // (İsteğe bağlı) Personel seçimi için uyarı temizleme
+  const userSelect = addProductForm.UserId;
+  userSelect.addEventListener("change", () => {
+    userSelect.setCustomValidity("");
+    userSelect.classList.remove("is-invalid");
+  });
+
+  // İlk ürün satırındaki autocomplete bağlama (zaten vardı)
+  const firstProductInput = document.querySelector("#productItems .product-search-input");
+  const firstPriceInput = document.querySelector("#productItems .price-input");
+  if (firstProductInput && firstPriceInput) {
+    bindProductAutocomplete(firstProductInput, firstPriceInput);
+  }
+});
+// 🌟 Müşteri autocomplete
+customerInput.addEventListener("input", () => {
+    customerInput.setCustomValidity("");
+  customerInput.classList.remove("is-invalid");
+  const val = customerInput.value.toLowerCase();
+  customerDropdown.innerHTML = "";
+  if (val.length < 3) {
+    customerDropdown.style.display = "none";
+    return;
+  }
+
+  const filtered = customers.filter(c => c.name.toLowerCase().includes(val));
+  filtered.forEach(c => {
+    const option = document.createElement("button");
+    option.type = "button";
+    option.className = "list-group-item list-group-item-action";
+    option.textContent = `${c.name} • ${c.phone || ""}`;
+    option.addEventListener("click", () => {
+      customerInput.value = c.name;
+      customerMap[c.name] = c.id;
+      customerDropdown.innerHTML = "";
+      customerDropdown.style.display = "none";
+    });
+    customerDropdown.appendChild(option);
+  });
+
+  customerDropdown.style.display = "block";
 });
 
-loadProductSales();
-</script>
-
-<script>
-  function addProductRow() {
-    const container = document.getElementById("productItems");
-    const row = document.createElement("div");
-    row.className = "d-flex gap-2 align-items-center mb-2";
-    row.innerHTML = `
-      <input class="form-control" list="productOptions" placeholder="Ürün adı veya barkoduyla arayın" required />
-      <input type="number" class="form-control" placeholder="1" style="width: 70px;" required />
-      <span>ad</span>
-      <input type="number" class="form-control" placeholder="Tutar" style="width: 120px;" required />
-      <span>TL</span>
-      <button type="button" class="btn btn-danger" onclick="removeProductRow(this)">🗑️</button>
-    `;
-    container.appendChild(row);
+// 🌟 Dış tıklamada müşteri dropdown kapanır
+document.addEventListener("click", e => {
+  if (!customerDropdown.contains(e.target) && e.target !== customerInput) {
+    customerDropdown.style.display = "none";
   }
-
-  function removeProductRow(btn) {
-    btn.parentElement.remove();
+});
+  const firstProductInput = document.querySelector("#productItems .product-search-input");
+  const firstPriceInput = document.querySelector("#productItems .price-input");
+  if (firstProductInput && firstPriceInput) {
+    bindProductAutocomplete(firstProductInput, firstPriceInput);
   }
 </script>
-
-
-<script>
-  document.addEventListener("DOMContentLoaded", () => {
-    const fp = flatpickr("#saleDate", {
-      dateFormat: "d.m.Y",
-      position: "auto right",
-      defaultDate: new Date(),
-      clickOpens: false
-    });
-
-    document.getElementById("calendarTrigger").addEventListener("click", () => {
-      fp.open();
-    });
-  });
-</script>
-
 
 
 </body>
