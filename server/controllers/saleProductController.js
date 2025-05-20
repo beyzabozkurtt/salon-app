@@ -145,35 +145,51 @@ async update(req, res) {
   }
 },
 
-  // 🗑️ Satışı sil
-  async delete(req, res) {
-    try {
-      const item = await SaleProduct.findOne({
-        where: {
-          id: req.params.id,
-          CompanyId: req.company.companyId
-        }
-      });
-      if (!item) return res.status(404).json({ error: "Satış bulunamadı." });
+// 🗑️ Satışı sil
+async delete(req, res) {
+  try {
+    const item = await SaleProduct.findOne({
+      where: {
+        id: req.params.id,
+        CompanyId: req.company.companyId
+      }
+    });
 
-      await Payment.destroy({
-        where: {
-          SaleProductId: item.id,
-          CompanyId: req.company.companyId
-        }
-      });
+    if (!item) return res.status(404).json({ error: "Satış bulunamadı." });
 
-      await SaleProduct.destroy({
-        where: {
-          id: req.params.id,
-          CompanyId: req.company.companyId
-        }
-      });
+    // 📦 Stok geri artırma
+    const product = await Product.findOne({
+      where: {
+        id: item.ProductId,
+        CompanyId: req.company.companyId
+      }
+    });
 
-      res.json({ message: 'Satış ve ilgili ödeme kaydı silindi.' });
-    } catch (err) {
-      console.error(err);
-      res.status(500).json({ error: 'Satış silme hatası.' });
+    if (product) {
+      await product.increment('stock', { by: item.quantity });
     }
+
+    // 💸 Ödemeyi sil
+    await Payment.destroy({
+      where: {
+        SaleProductId: item.id,
+        CompanyId: req.company.companyId
+      }
+    });
+
+    // 🗑️ Satışı sil
+    await SaleProduct.destroy({
+      where: {
+        id: req.params.id,
+        CompanyId: req.company.companyId
+      }
+    });
+
+    res.json({ message: 'Satış, ödeme ve stok güncellemesi tamamlandı.' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Satış silme hatası.' });
   }
+}
+
 };
