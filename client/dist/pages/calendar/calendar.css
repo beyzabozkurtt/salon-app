@@ -1,15 +1,18 @@
     @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+
     body {
       background-color: #f8f9fa;
       font-family: 'Poppins', sans-serif;
-      font-size: 14px ;
+      font-size: 14px;
+      overflow: hidden !important;
+      height: 100% !important;
     }
 
     .sticky-header {
       position: sticky;
       z-index: 999;
       padding: 10px;
-      
+
     }
 
     .scroll-wrapper {
@@ -34,107 +37,163 @@
       background-color: #f0f0f0;
     }
 
-   #calendar {
-  height: calc(100vh - 100px); /* sticky header yüksekliğine göre ayarlayabilirsin */
-  overflow-y: auto;
-}
+    #calendar {
+      height: calc(100vh - 100px);
+      /* sticky header yüksekliğine göre ayarlayabilirsin */
+      overflow-y: auto;
+      margin-top:-20px;
+    }
+
+    #calendar::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    #calendar::-webkit-scrollbar-thumb {
+      background: #bbb;
+      border-radius: 4px;
+    }
 
     .fc-scrollgrid {
       background-color: #faf9dd !important;
     }
 
     .fc-col-header-cell-cushion {
-      color: #333 !important;
-      display:block;
-      padding: 10px;
+      display: flex !important;
       justify-content: center;
       align-items: center;
-      font-size: 1rem;
+      height: 100%;
+      padding: 0 10px;
       text-align: center;
+      color: #333 !important;
+      font-size: 1rem;
       font-weight: 600;
+      text-decoration: none !important;
     }
-    
+
+    .fc-scrollgrid-sync-inner {
+      height: 50px;
+    }
+
+    /* Ay görünümündeki tüm hücreleri kare yap */
+    .fc-daygrid-day-frame {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      align-items: flex-start;
+      padding: 6px;
+      box-sizing: border-box;
+    }
+
+    /* Gün hücrelerini içeren tablo hücrelerini kare şekle getir */
+    .fc-daygrid-day {
+      aspect-ratio: 1 / 1;
+      /* Bu kilit özellik! */
+      min-height: 100px;
+      /* Yüksekliği sabitle (istenirse) */
+      padding: 0;
+      margin: 0;
+      box-sizing: border-box;
+    }
+
     .dropdown-menu {
       max-height: 400px;
       overflow-y: auto;
       border-radius: 8px;
     }
+
     .dropdown-menu-sm {
       font-size: 0.775rem;
       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
       border-radius: 8px;
     }
+
     .form-label-sm {
       font-size: 0.75rem;
       font-weight: 600;
     }
+
     .form-select-sm {
       font-size: 0.75rem;
       padding: 0.25rem 0.5rem;
       border-radius: 8px;
     }
+
     .form-control-sm {
       font-size: 0.75rem;
       padding: 0.25rem 0.5rem;
       border-radius: 8px;
     }
+
     /* Flatpickr tarih seçici uyumu */
-.flatpickr-calendar {
-  font-family: 'Poppins', sans-serif;
-  border: none;
-  box-shadow: 0 5px 20px rgba(0,0,0,0.1);
-  border-radius: 12px;
-  overflow: hidden;
-  z-index: 9999 !important;
-  margin-top: 10px;
-}
+    .flatpickr-calendar {
+      font-family: 'Poppins', sans-serif;
+      border: none;
+      box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+      border-radius: 12px;
+      overflow: hidden;
+      z-index: 9999 !important;
+      margin-top: 10px;
+    }
 
-.flatpickr-months {
-  background-color: #ffffff;
-  padding: 10px 0;
-  border-bottom: 1px solid #eee;
-}
+    .flatpickr-months {
+      background-color: #ffffff;
+      padding: 10px 0;
+      border-bottom: 1px solid #eee;
+    }
 
-.flatpickr-months .flatpickr-prev-month,
-.flatpickr-months .flatpickr-next-month {
-  color: #333;
-  padding:15px 15px;
-  transition: all 0.2s ease-in-out;
-}
-.flatpickr-months .flatpickr-prev-month:hover,
-.flatpickr-months .flatpickr-next-month:hover {
-  background: #f0f0f0;
-  border-radius: 4px;
-}
+    .flatpickr-months .flatpickr-prev-month,
+    .flatpickr-months .flatpickr-next-month {
+      color: #333;
+      width: 32px;
+      height: 32px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      border-radius: 4px;
+      transition: all 0.2s ease-in-out;
+      padding: 0;
+      /* 💥 padding kaldırıldı */
+      margin: 0 5px;
+      /* simetrik boşluk */
+      margin-top: 10px;
+      /* üst boşluk */
+    }
 
-.flatpickr-weekdays {
-  background-color: #fafafa;
-  border-bottom: 1px solid #eee;
-}
+    .flatpickr-months .flatpickr-prev-month:hover,
+    .flatpickr-months .flatpickr-next-month:hover {
+      background: #f0f0f0;
+    }
 
-.flatpickr-weekday {
-  font-weight: 500;
-  font-size: 13px;
-  color: #333;
-}
+    .flatpickr-weekdays {
+      background-color: #fafafa;
+      border-bottom: 1px solid #eee;
+    }
 
-.flatpickr-day {
-  font-size: 13px;
-  color: #333;
-  border-radius: 6px;
-  transition: background-color 0.2s;
-}
-.flatpickr-day:hover {
-  background-color: #d0ebff;
-}
+    .flatpickr-weekday {
+      font-weight: 500;
+      font-size: 13px;
+      color: #333;
+    }
 
-.flatpickr-day.today {
-  border: 1px solid #007bff;
-}
+    .flatpickr-day {
+      font-size: 13px;
+      color: #333;
+      border-radius: 6px;
+      transition: background-color 0.2s;
+    }
 
-.flatpickr-day.selected,
-.flatpickr-day.startRange,
-.flatpickr-day.endRange {
-  background-color: #007bff;
-  color: white;
-}
+    .flatpickr-day:hover {
+      background-color: #d0ebff;
+    }
+
+    .flatpickr-day.today {
+      border: 1px solid #007bff;
+    }
+
+    .flatpickr-day.selected,
+    .flatpickr-day.startRange,
+    .flatpickr-day.endRange {
+      background-color: #007bff;
+      color: white;
+    }
