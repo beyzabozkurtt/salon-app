@@ -49,6 +49,7 @@ module.exports = {
   },
 
 // ➕ Yeni satış ekle
+// ➕ Yeni satış ekle
 async create(req, res) {
   try {
     const {
@@ -65,6 +66,12 @@ async create(req, res) {
     });
     if (!product) return res.status(404).json({ error: "Ürün bulunamadı." });
 
+    // 🔻 Yetersiz stok kontrolü (opsiyonel ama mantıklı)
+    if (product.stock < quantity) {
+      return res.status(400).json({ error: "Yetersiz stok." });
+    }
+
+    // 🧾 Yeni satış kaydı oluştur
     const newItem = await SaleProduct.create({
       ProductId,
       quantity,
@@ -78,7 +85,10 @@ async create(req, res) {
       CompanyId: req.company.companyId
     });
 
-    // 🧾 Ödeme kaydı oluştur
+    // 🧮 Stoktan düş
+    await product.decrement('stock', { by: quantity });
+
+    // 🧾 Ödeme oluştur
     if (CustomerId) {
       const totalAmount = parseFloat(price) * parseInt(quantity);
       const now = new Date();
@@ -103,6 +113,7 @@ async create(req, res) {
     res.status(500).json({ error: 'Ürün satışı eklenemedi.' });
   }
 },
+
 
 
   // 🔄 Satışı güncelle

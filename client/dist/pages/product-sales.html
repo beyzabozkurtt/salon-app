@@ -16,7 +16,7 @@
 <div class="container py-4">
   <div class="d-flex justify-content-between align-items-center mb-3">
     <h3>Ürün Satışları</h3>
-    <button class="btn btn-success" onclick="openAddProductModal()">+ Ürün Ekle</button>
+    <button class="btn btn-success" onclick="openAddProductModal()">+ Ürün Satışı Oluştur</button>
   </div>
   <ul id="productSaleList" class="list-group"></ul>
 </div>
@@ -52,7 +52,8 @@
 <!-- Ürün input (her satır için ayrı) -->
             <input class="form-control product-search-input"  placeholder="Ürün adı veya barkoduyla arayın"  required autocomplete="off"/>
             <datalist id="productOptions"></datalist>
-            <input type="number" class="form-control" placeholder="0" style="width: 70px;" required />
+            <input type="number" class="form-control quantity-input" placeholder="0" style="width: 70px;" required />
+
             <span>ad</span>
 
             <input type="number" class="form-control price-input" placeholder="Tutar" style="width: 120px;" required />
