@@ -197,3 +197,10 @@
       background-color: #007bff;
       color: white;
     }
+    .modal-backdrop.show {
+  background-color: white !important;
+}
+body.modal-open {
+  overflow: hidden !important;  /* Arka plan kaymasını engeller */
+}
+    
