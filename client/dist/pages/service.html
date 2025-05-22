@@ -19,175 +19,323 @@
       cursor: pointer;
       opacity: 0.8;
     }
+    .color-circle.selected {
+      border: 3px solid black;
+    }
+.scroll-container {
+  max-height: 400px;           /* ↕️ Görünür yükseklik sınırı */
+  overflow-y: auto;            /* 🧭 Dikey kaydırma */
+  background-color: #fff;
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+  padding: 10px;
+  box-shadow: 0 0 6px rgba(0,0,0,0.05);
+}
+
+
   </style>
 </head>
 <body class="bg-light">
-  <div class="container py-5">
-   
-    <button class="btn btn-primary mb-3" data-bs-toggle="modal" data-bs-target="#createModal">+ Hizmet Oluştur</button>
-    <ul id="serviceList" class="list-group"></ul>
+
+<div class="container py-4">
+<!-- 🔼 Paketli Hizmetler -->
+<div class="mb-5">
+  <h4 class="mb-3 text-primary">📦 Paketli Hizmetler</h4>
+  <button class="btn btn-primary mb-3" data-bs-toggle="modal" data-bs-target="#createPackageModal">+ Paket Oluştur</button>
+  <div class="scroll-container">
+    <ul id="packageServiceList" class="list-group"></ul>
   </div>
+</div>
 
-  <!-- Hizmet Ekle Modal -->
-  <div class="modal fade" id="createModal" tabindex="-1">
-    <div class="modal-dialog">
-      <form id="createForm" class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title">Yeni Hizmet</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-        </div>
-        <div class="modal-body">
-          <label class="form-label">Hizmet Adı</label>
-          <input type="text" name="name" class="form-control mb-2" required />
-
-          <label class="form-label">Renk Seç</label>
-          <div id="colorOptions" class="d-flex gap-2 flex-wrap mb-2"></div>
-          <input type="hidden" name="color" id="selectedColor" required />
-        </div>
-        <div class="modal-footer">
-          <button type="submit" class="btn btn-success">Kaydet</button>
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
-        </div>
-      </form>
-    </div>
+<!-- 🔽 Tek Seferlik Hizmetler -->
+<div>
+  <h4 class="mb-3 text-success">🕐 Tek Seferlik Hizmetler</h4>
+  <button class="btn btn-success mb-3" data-bs-toggle="modal" data-bs-target="#createSingleModal">+ Hizmet Oluştur</button>
+  <div class="scroll-container">
+    <ul id="singleServiceList" class="list-group"></ul>
   </div>
+</div>
 
-  <!-- Hizmet Güncelle Modal -->
-  <div class="modal fade" id="editModal" tabindex="-1">
-    <div class="modal-dialog">
-      <form id="editForm" class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title">Hizmeti Güncelle</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-        </div>
-        <div class="modal-body">
-          <input type="hidden" name="id" />
-          <label class="form-label">Hizmet Adı</label>
-          <input type="text" name="name" class="form-control mb-2" required />
-
-          <label class="form-label">Renk Seç</label>
-          <div id="editColorOptions" class="d-flex gap-2 flex-wrap mb-2"></div>
-          <input type="hidden" name="color" id="editSelectedColor" required />
-        </div>
-        <div class="modal-footer">
-          <button type="submit" class="btn btn-primary">Güncelle</button>
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
-        </div>
-      </form>
-    </div>
+<!-- 🎁 Paketli Hizmet Ekle Modal -->
+<div class="modal fade" id="createPackageModal" tabindex="-1">
+  <div class="modal-dialog">
+    <form id="createPackageForm" class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Yeni Paket</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <label class="form-label">Hizmet Adı</label>
+        <input type="text" name="name" class="form-control mb-2" required />
+        <label class="form-label">Renk Seç</label>
+        <div id="packageColorOptions" class="d-flex gap-2 flex-wrap mb-2"></div>
+        <input type="hidden" name="color" id="selectedPackageColor" required />
+      </div>
+      <div class="modal-footer">
+        <button type="submit" class="btn btn-success">Kaydet</button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+      </div>
+    </form>
   </div>
+</div>
+<!--paket düzenle modal-->
+<div class="modal fade" id="editPackageModal" tabindex="-1">
+  <div class="modal-dialog">
+    <form id="editPackageForm" class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Paket Güncelle</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" name="id" />
+        <label class="form-label">Hizmet Adı</label>
+        <input type="text" name="name" class="form-control mb-2" required />
+        <label class="form-label">Renk Seç</label>
+        <div id="editPackageColorOptions" class="d-flex gap-2 flex-wrap mb-2"></div>
+        <input type="hidden" name="color" id="editPackageColor" required />
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-primary" type="submit">Güncelle</button>
+      </div>
+    </form>
+  </div>
+</div>
 
- <script>
-  const list = document.getElementById("serviceList");
-  const createForm = document.getElementById("createForm");
-  const editForm = document.getElementById("editForm");
 
-  const token = localStorage.getItem("companyToken");
-  const axiosConfig = {
-    headers: { Authorization: "Bearer " + token }
-  };
+<!-- 🕐 Tek Seferlik Hizmet Modal -->
+<div class="modal fade" id="createSingleModal" tabindex="-1">
+  <div class="modal-dialog">
+    <form id="createSingleForm" class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Yeni Hizmet</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <label>Hizmet Adı</label>
+        <input type="text" name="name" class="form-control mb-2" required />
+        <label>Fiyat (₺)</label>
+        <input type="number" name="price" class="form-control mb-2" step="0.01" required />
+        <label>Süre (dk)</label>
+        <input type="number" name="duration" class="form-control mb-2" required />
+        <label>Renk Seç</label>
+        <div id="singleColorOptions" class="d-flex gap-2 flex-wrap mb-2"></div>
+        <input type="hidden" name="color" id="selectedSingleColor" required />
+      </div>
+      <div class="modal-footer">
+        <button type="submit" class="btn btn-success">Kaydet</button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+      </div>
+    </form>
+  </div>
+</div>
 
-  const colorList = [
-    "#33FF57", "#3357FF", "#FF33D4", "#FF8C00", "#800080",
-    "#00CED1", "#FFD700", "#A52A2A", "#708090", "#8B4513"
-  ];
+<!--tekseferlik hizmet düzenle modal-->
+<div class="modal fade" id="editSingleModal" tabindex="-1">
+  <div class="modal-dialog">
+    <form id="editSingleForm" class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Hizmet Güncelle</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" name="id" />
+        <label>Hizmet Adı</label>
+        <input type="text" name="name" class="form-control mb-2" required />
+        <label>Fiyat (₺)</label>
+        <input type="number" name="price" class="form-control mb-2" step="0.01" required />
+        <label>Süre (dk)</label>
+        <input type="number" name="duration" class="form-control mb-2" required />
+        <label>Renk Seç</label>
+        <div id="editSingleColorOptions" class="d-flex gap-2 flex-wrap mb-2"></div>
+        <input type="hidden" name="color" id="editSingleColor" required />
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-primary" type="submit">Güncelle</button>
+      </div>
+    </form>
+  </div>
+</div>
 
-  function setupEditColorSelector(selected = "") {
-    const container = document.getElementById("editColorOptions");
-    const input = document.getElementById("editSelectedColor");
-    container.innerHTML = "";
+<script>
+const token = localStorage.getItem("companyToken");
+const axiosConfig = { headers: { Authorization: "Bearer " + token } };
 
-    colorList.forEach(color => {
-      const btn = document.createElement("button");
-      btn.type = "button";
-      btn.className = "color-circle";
-      btn.style.backgroundColor = color;
+const packageColors = ["#33FF57", "#3357FF", "#FF33D4", "#FF8C00", "#800080"];
+const singleColors = ["#FFD700", "#A52A2A", "#00CED1", "#708090", "#8B4513"];
 
-      if (color === selected) {
-        btn.style.border = "3px solid black";
-        input.value = color;
-      }
+// 🌈 Renk seçici
+function renderColorOptions(containerId, hiddenInputId, colorList, selected = "") {
+  const container = document.getElementById(containerId);
+  const input = document.getElementById(hiddenInputId);
+  container.innerHTML = "";
 
-      btn.addEventListener("click", () => {
-        document.querySelectorAll("#editColorOptions .color-circle").forEach(b => b.style.border = "2px solid #ccc");
-        btn.style.border = "3px solid black";
-        input.value = color;
-      });
+  colorList.forEach(color => {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "color-circle";
+    btn.style.backgroundColor = color;
 
-      container.appendChild(btn);
-    });
-  }
-
-  document.addEventListener("DOMContentLoaded", () => {
-    const colorOptions = document.getElementById("colorOptions");
-    const selectedColor = document.getElementById("selectedColor");
-
-    colorList.forEach(color => {
-      const btn = document.createElement("button");
-      btn.type = "button";
-      btn.className = "color-circle";
-      btn.style.backgroundColor = color;
-
-      btn.addEventListener("click", () => {
-        document.querySelectorAll(".color-circle").forEach(b => b.style.border = "2px solid #ccc");
-        btn.style.border = "3px solid black";
-        selectedColor.value = color;
-      });
-
-      colorOptions.appendChild(btn);
-    });
-  });
-
-  async function loadServices() {
-    const res = await axios.get("http://localhost:5001/api/services", axiosConfig);
-    list.innerHTML = "";
-    res.data.forEach(s => {
-      const item = document.createElement("li");
-      item.className = "list-group-item d-flex justify-content-between align-items-center";
-      item.innerHTML = `
-        <span>${s.name}</span>
-        <div>
-          <button class="btn btn-sm btn-primary me-2" onclick='editService(${JSON.stringify(s)})'>Düzenle</button>
-          <button class="btn btn-sm btn-danger" onclick='deleteService(${s.id})'>Sil</button>
-        </div>
-      `;
-      list.appendChild(item);
-    });
-  }
-
-  createForm.addEventListener("submit", async e => {
-    e.preventDefault();
-    const data = Object.fromEntries(new FormData(createForm));
-    await axios.post("http://localhost:5001/api/services", data, axiosConfig);
-    createForm.reset();
-    bootstrap.Modal.getInstance(document.getElementById("createModal")).hide();
-    loadServices();
-  });
-
-  function editService(service) {
-    editForm.id.value = service.id;
-    editForm.name.value = service.name;
-    setupEditColorSelector(service.color || "#33FF57");
-    bootstrap.Modal.getOrCreateInstance(document.getElementById("editModal")).show();
-  }
-
-  editForm.addEventListener("submit", async e => {
-    e.preventDefault();
-    const data = Object.fromEntries(new FormData(editForm));
-    await axios.put(`http://localhost:5001/api/services/${data.id}`, data, axiosConfig);
-    bootstrap.Modal.getInstance(document.getElementById("editModal")).hide();
-    loadServices();
-  });
-
-  async function deleteService(id) {
-    if (confirm("Bu hizmet silinsin mi?")) {
-      await axios.delete(`http://localhost:5001/api/services/${id}`, axiosConfig);
-      loadServices();
+    if (color === selected) {
+      btn.classList.add("selected");
+      input.value = color;
     }
+
+    btn.onclick = () => {
+      container.querySelectorAll(".color-circle").forEach(b => b.classList.remove("selected"));
+      btn.classList.add("selected");
+      input.value = color;
+    };
+
+    container.appendChild(btn);
+  });
+
+  if (!selected && colorList.length > 0) {
+    input.value = colorList[0];
+    container.querySelector(".color-circle").classList.add("selected");
   }
+}
 
-  loadServices();
+// 📦 Paketli Hizmetleri Yükle
+async function loadPackageServices() {
+  const res = await axios.get("http://localhost:5001/api/services", axiosConfig);
+  const list = document.getElementById("packageServiceList");
+  list.innerHTML = "";
+  if (res.data.length === 0) {
+  list.innerHTML = `<div class="text-muted text-center py-3">Henüz paket eklenmedi</div>`;
+}
+res.data.sort((a, b) => a.name.localeCompare(b.name));
+
+
+  res.data.forEach(s => {
+    const li = document.createElement("li");
+    li.className = "list-group-item d-flex justify-content-between align-items-center";
+li.innerHTML = `
+  <span><span class="badge me-2" style="background:${s.color}">&#9679;</span> ${s.name}</span>
+  <div>
+    <button class="btn btn-sm btn-primary me-2" onclick='editPackage(${JSON.stringify(s)})'>Düzenle</button>
+    <button class="btn btn-sm btn-danger" onclick="deletePackageService(${s.id})">Sil</button>
+  </div>
+`;
+
+    list.appendChild(li);
+  });
+}
+
+// 🕐 Tek Seferlik Hizmetleri Yükle
+async function loadSingleServices() {
+  const res = await axios.get("http://localhost:5001/api/single-services", axiosConfig);
+  const list = document.getElementById("singleServiceList");
+  list.innerHTML = "";
+  if (res.data.length === 0) {
+  list.innerHTML = `<div class="text-muted text-center py-3">Henüz hizmet eklenmedi</div>`;
+}
+res.data.sort((a, b) => a.name.localeCompare(b.name));
+
+
+  res.data.forEach(s => {
+    const li = document.createElement("li");
+    li.className = "list-group-item d-flex justify-content-between align-items-center";
+li.innerHTML = `
+  <span><span class="badge me-2" style="background:${s.color}">&#9679;</span>
+    ${s.name} • ${s.duration} dk • ${s.price.toFixed(2)} ₺</span>
+  <div>
+    <button class="btn btn-sm btn-primary me-2" onclick='editSingle(${JSON.stringify(s)})'>Düzenle</button>
+    <button class="btn btn-sm btn-danger" onclick="deleteSingleService(${s.id})">Sil</button>
+  </div>
+`;
+
+    list.appendChild(li);
+  });
+}
+
+// 📤 Paketli Hizmet Ekleme
+document.getElementById("createPackageForm").addEventListener("submit", async e => {
+  e.preventDefault();
+  const data = Object.fromEntries(new FormData(e.target));
+  await axios.post("http://localhost:5001/api/services", data, axiosConfig);
+  e.target.reset();
+  bootstrap.Modal.getInstance(document.getElementById("createPackageModal")).hide();
+  loadPackageServices();
+});
+
+// 📤 Tek Seferlik Hizmet Ekleme
+document.getElementById("createSingleForm").addEventListener("submit", async e => {
+  e.preventDefault();
+  const data = Object.fromEntries(new FormData(e.target));
+  data.price = parseFloat(data.price);
+  data.duration = parseInt(data.duration);
+  await axios.post("http://localhost:5001/api/single-services", data, axiosConfig);
+  e.target.reset();
+  bootstrap.Modal.getInstance(document.getElementById("createSingleModal")).hide();
+  loadSingleServices();
+});
+
+//düzenlenin şeyleri
+document.getElementById("editPackageForm").addEventListener("submit", async e => {
+  e.preventDefault();
+  const data = Object.fromEntries(new FormData(e.target).entries());
+  await axios.put(`http://localhost:5001/api/services/${data.id}`, data, axiosConfig);
+  bootstrap.Modal.getInstance(document.getElementById("editPackageModal")).hide();
+  loadPackageServices();
+});
+
+document.getElementById("editSingleForm").addEventListener("submit", async e => {
+  e.preventDefault();
+  const data = Object.fromEntries(new FormData(e.target).entries());
+  data.price = parseFloat(data.price);
+  data.duration = parseInt(data.duration);
+  await axios.put(`http://localhost:5001/api/single-services/${data.id}`, data, axiosConfig);
+  bootstrap.Modal.getInstance(document.getElementById("editSingleModal")).hide();
+  loadSingleServices();
+});
+
+
+//düzenle fonksiyonları
+function editPackage(service) {
+  const form = document.getElementById("editPackageForm");
+  form.id.value = service.id;
+  form.name.value = service.name;
+  renderColorOptions("editPackageColorOptions", "editPackageColor", packageColors, service.color);
+  bootstrap.Modal.getOrCreateInstance(document.getElementById("editPackageModal")).show();
+}
+
+function editSingle(service) {
+  const form = document.getElementById("editSingleForm");
+  form.id.value = service.id;
+  form.name.value = service.name;
+  form.price.value = service.price;
+  form.duration.value = service.duration;
+  renderColorOptions("editSingleColorOptions", "editSingleColor", singleColors, service.color);
+  bootstrap.Modal.getOrCreateInstance(document.getElementById("editSingleModal")).show();
+}
+
+
+// 🗑️ Silme Fonksiyonları
+async function deletePackageService(id) {
+  if (confirm("Bu paketi silmek istiyor musunuz?")) {
+    await axios.delete(`http://localhost:5001/api/services/${id}`, axiosConfig);
+    loadPackageServices();
+  }
+}
+
+async function deleteSingleService(id) {
+  if (confirm("Bu hizmeti silmek istiyor musunuz?")) {
+    await axios.delete(`http://localhost:5001/api/single-services/${id}`, axiosConfig);
+    loadSingleServices();
+  }
+}
+
+// 📦 Sayfa Yüklenince
+document.addEventListener("DOMContentLoaded", () => {
+  renderColorOptions("packageColorOptions", "selectedPackageColor", packageColors);
+  renderColorOptions("singleColorOptions", "selectedSingleColor", singleColors);
+  loadPackageServices();
+  loadSingleServices();
+});
+const height = Math.min(window.innerHeight * 0.4, 500);
+document.querySelectorAll('.scroll-container').forEach(el => {
+  el.style.maxHeight = height + "px";
+});
 </script>
-
 </body>
 </html>

@@ -20,8 +20,13 @@
   <div class="container py-4">
     <h3 class="mb-3">Müşteri Yönetimi</h3>
     <button class="btn btn-success mb-3" data-bs-toggle="modal" data-bs-target="#createModal">+ Müşteri Ekle</button>
+        <input type="text" id="searchInput" class="form-control mb-3" placeholder="Müşteri Ara..." />
+
+    
     <ul id="customerList" class="list-group"></ul>
+    
   </div>
+  
 
   <!-- Yeni Müşteri Modal -->
   <div class="modal fade" id="createModal" tabindex="-1">
@@ -156,7 +161,8 @@
     const list = document.getElementById("customerList");
     const createForm = document.getElementById("customerForm");
     const updateForm = document.getElementById("updateForm");
-
+const searchInput = document.getElementById("searchInput");
+let allCustomers = [];
     const companyToken = localStorage.getItem("companyToken");
     const axiosConfig = {
       headers: {
@@ -179,27 +185,88 @@
       }
     });
 
-    async function loadCustomers() {
-      try {
-        const res = await axios.get("http://localhost:5001/api/customers", axiosConfig);
-        list.innerHTML = "";
-        res.data.forEach((c) => {
-          const item = document.createElement("li");
-          item.className = "list-group-item d-flex justify-content-between align-items-center";
-          item.innerHTML = `
-            <a href="customer-details.html?id=${c.id}" class="text-dark text-decoration-none">${c.name} • ${c.email}</a>
-            <div>
-              <button class="btn btn-sm btn-primary me-2" onclick='editCustomer(${JSON.stringify(c)})'>Düzenle</button>
-              <button class="btn btn-sm btn-danger" onclick='deleteCustomer(${c.id})'>Sil</button>
-            </div>
-          `;
-          list.appendChild(item);
-        });
-      } catch (err) {
-        alert("Müşteri listesi alınamadı.");
-        console.error(err);
-      }
-    }
+async function loadCustomers() {
+  try {
+    const res = await axios.get("http://localhost:5001/api/customers", axiosConfig);
+    allCustomers = res.data; 
+    list.innerHTML = "";
+    res.data.forEach((c) => {
+      const item = document.createElement("li");
+      item.className = "list-group-item d-flex justify-content-between align-items-center";
+      item.innerHTML = `
+        <span class="text-dark">${c.name} • ${c.email}</span>
+        <div>
+          <button class="btn btn-sm btn-info me-2" onclick='goToPaymentDetails(${c.id})'>Detay</button>
+          <button class="btn btn-sm btn-primary me-2" onclick='editCustomer(${JSON.stringify(c)})'>Düzenle</button>
+          <button class="btn btn-sm btn-danger" onclick='deleteCustomer(${c.id})'>Sil</button>
+        </div>
+      `;
+      list.appendChild(item);
+    });
+  } catch (err) {
+    alert("Müşteri listesi alınamadı.");
+    console.error(err);
+  }
+}
+function renderCustomerList(customers) {
+  list.innerHTML = "";
+  customers.forEach((c) => {
+    const item = document.createElement("li");
+    item.className = "list-group-item d-flex justify-content-between align-items-center";
+    item.innerHTML = `
+      <span class="text-dark">${c.name} • ${c.email}</span>
+      <div>
+        <button class="btn btn-sm btn-info me-2" onclick='goToPaymentDetails(${c.id})'>Detay</button>
+        <button class="btn btn-sm btn-primary me-2" onclick='editCustomer(${JSON.stringify(c)})'>Düzenle</button>
+        <button class="btn btn-sm btn-danger" onclick='deleteCustomer(${c.id})'>Sil</button>
+      </div>
+    `;
+    list.appendChild(item);
+  });
+
+  if (customers.length === 0) {
+    list.innerHTML = `<li class="list-group-item text-center text-muted">Hiçbir müşteri bulunamadı.</li>`;
+  }
+}
+searchInput.addEventListener("input", () => {
+  const value = searchInput.value.trim().toLowerCase();
+
+  if (value === "") {
+    searchInput.setCustomValidity(""); // uyarıyı temizle
+    renderCustomerList(allCustomers);
+    return;
+  }
+
+  if (value.length < 3) {
+    renderCustomerList(allCustomers);
+
+    // 🟠 Geçici uyarı balonu
+    searchInput.setCustomValidity("Lütfen en az 3 karakter girin.");
+    searchInput.reportValidity();
+
+    // 2 saniye sonra otomatik olarak uyarıyı temizle
+    setTimeout(() => {
+      searchInput.setCustomValidity("");
+    }, 2000);
+
+    return;
+  }
+
+  // ✅ 3 karakter ve üzeri → filtrele
+  searchInput.setCustomValidity("");
+  const filtered = allCustomers.filter(c =>
+    c.name.toLowerCase().includes(value) || (c.email || "").toLowerCase().includes(value)
+  );
+  renderCustomerList(filtered);
+});
+
+
+
+function goToPaymentDetails(customerId) {
+  window.location.href = `payment-details.html?id=${customerId}`;
+}
+
+
 
 function editCustomer(customer) {
   updateForm.name.value = customer.name;
