@@ -47,6 +47,9 @@ Payment.belongsTo(User, { foreignKey: 'UserId' });
 Sale.hasMany(Payment, { foreignKey: 'SaleId', onDelete: 'CASCADE' });
 Payment.belongsTo(Sale, { foreignKey: 'SaleId' });
 
+Customer.hasMany(Payment, { foreignKey: 'CustomerId' });
+Payment.belongsTo(Customer, { foreignKey: 'CustomerId' });
+
 Product.hasMany(Payment, {
   foreignKey: 'ProductId',
   onDelete: 'SET NULL',
@@ -79,6 +82,7 @@ SaleProduct.belongsTo(Sale, { foreignKey: 'SaleId' });
 SaleProduct.belongsTo(Product, { foreignKey: 'ProductId' });
 SaleProduct.belongsTo(User);
 SaleProduct.belongsTo(Customer, { foreignKey: 'CustomerId' });
+
 
 // ✅ Çoklu ürün satışı bağlantısı
 Sale.belongsToMany(Product, { through: SaleProduct });
@@ -115,6 +119,7 @@ WorkingHours.belongsTo(Company);
 
 Company.hasMany(CashRegister);
 CashRegister.belongsTo(Company);
+
 
 Company.hasMany(SaleProduct);
 SaleProduct.belongsTo(Company); // eğer CompanyId eklediysen buraya da bağladım

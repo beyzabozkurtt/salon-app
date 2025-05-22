@@ -97,6 +97,7 @@ async create(req, res) {
         SaleId,
         ProductId,
         SaleProductId: newItem.id,
+        CustomerId,
         installmentNo: 1,
         amount: totalAmount,
         dueDate: now,

@@ -130,7 +130,7 @@ async function loadAppointment() {
     await loadUsers(data.UserId);
     await loadCustomerPackages(data.CustomerId);
     await loadSessionHistory(data.CustomerId);
-    await loadPaymentInfo(data.SaleId);
+    await loadPaymentInfo(data.CustomerId);
 
 
   } catch (err) {
@@ -253,32 +253,35 @@ async function loadSessionHistory(customerId) {
 }
 
 
-async function loadPaymentInfo(saleId) {
+async function loadPaymentInfo(customerId) {
   try {
-    const res = await axios.get(`http://localhost:5001/api/payments/by-sale/${saleId}`, config);
+    const res = await axios.get(`http://localhost:5001/api/payments/by-customer/${customerId}`, config);
     const list = document.getElementById("paymentList");
     list.innerHTML = "";
 
     if (res.data.length === 0) {
-      list.innerHTML = `<li class="list-group-item text-muted">Ödeme planı bulunamadı.</li>`;
+      list.innerHTML = `<tr><td colspan="2" class="text-muted">Ödeme planı bulunamadı.</td></tr>`;
       return;
     }
+res.data
+  .filter(payment => payment.status === 'bekliyor' || payment.status === 'gecikmiş')
+  .forEach(payment => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${parseFloat(payment.amount).toFixed(2)}₺</td>
+      <td>${new Date(payment.dueDate).toLocaleDateString("tr-TR")}</td>
+      <td>
+        <span class="badge bg-${payment.status === 'gecikmiş' ? 'danger' : 'warning'}">${payment.status}</span>
+      </td>
+    `;
+    list.appendChild(tr);
+  });
 
-    res.data.forEach(payment => {
-      const li = document.createElement("li");
-      li.className = "list-group-item d-flex justify-content-between align-items-center";
-      li.innerHTML = `
-        <div>
-          ${parseFloat(payment.amount).toFixed(2)} TL • ${new Date(payment.dueDate).toLocaleDateString("tr-TR")}
-        </div>
-        <button class="btn btn-success btn-sm">+ Öde</button>
-      `;
-      list.appendChild(li);
-    });
   } catch (err) {
     console.error("Ödeme bilgileri getirilemedi:", err);
   }
 }
+
 
 loadAppointment();
 </script>

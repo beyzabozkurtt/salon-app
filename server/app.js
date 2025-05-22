@@ -13,7 +13,7 @@ const PORT = process.env.PORT || 5001;
 // 🛡️ Middleware'ler
 app.use(cors({
   origin: '*',
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
 }));
 app.use(bodyParser.json());
 
@@ -38,7 +38,7 @@ app.get('/', (req, res) => res.send('💡 Salon API çalışıyor!'));
 sequelize.authenticate()
   .then(() => {
     console.log('✅ Veritabanına başarıyla bağlanıldı.');
-    return sequelize.sync({ alter: true }); 
+    return sequelize.sync(); 
   })
   .then(() => {
     console.log("✅ Veritabanı senkronize edildi.");

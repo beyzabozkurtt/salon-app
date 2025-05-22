@@ -25,6 +25,26 @@ module.exports = {
       res.status(500).json({ error: 'Müşteri listesi alınamadı.' });
     }
   },
+  async getByCustomerId(req, res) {
+  try {
+    const payments = await Payment.findAll({
+      where: {
+        CustomerId: req.params.customerId,
+        CompanyId: req.company.companyId
+      },
+      include: [
+        { model: Product },
+        { model: Sale, include: [{ model: Service }] },
+        { model: SaleProduct, include: [{ model: Product }] }
+      ]
+    });
+    res.json(payments);
+  } catch (err) {
+    console.error("getByCustomerId hatası:", err);
+    res.status(500).json({ error: "Müşteriye ait ödemeler alınamadı." });
+  }
+},
+
 
   async getPaymentsByCustomer(req, res) {
     const customerId = parseInt(req.params.id);
