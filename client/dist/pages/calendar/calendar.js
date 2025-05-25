@@ -1,28 +1,16 @@
+import { loadPopup } from '../../utils/popupLoader.js';
 let calendar;
 let flatpickrInstance;
 
 
-document.addEventListener('DOMContentLoaded', function () {
+document.addEventListener('DOMContentLoaded',async function () {
   const calendarEl = document.getElementById('calendar');
   const dateInput = document.getElementById("datePicker");
   //add-appointment modal
- fetch("../modals/add-appointment.html")
-    .then(res => res.text())
-    .then(html => {
-      document.body.insertAdjacentHTML("beforeend", html);
-
-      const openBtn = document.getElementById("openAppointmentModal");
-
-      if (openBtn) {
-        openBtn.addEventListener("click", () => {
-          const modalEl = document.getElementById("appointmentModal");
-          const modal = new bootstrap.Modal(modalEl);
-          modal.show();
-        });
-      } else {
-        console.error("openAppointmentModal butonu bulunamadı.");
-      }
-    });
+ // 🔥 Modüler popup yükleme
+  await loadPopup("add-appointment")
+  
+  
   // FullCalendar başlat
   calendar = new FullCalendar.Calendar(calendarEl, {
     initialView: 'timeGridDay',

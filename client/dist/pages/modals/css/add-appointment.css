@@ -38,14 +38,14 @@
 /* Form inputları */
 .modal-body .form-control,
 .modal-body .form-select {
-  font-size: 0.875rem;
+  font-size: 13px;
   padding: 0.4rem 0.75rem;
   border-radius: 6px;
 }
 
 /* Checkbox ve switch'ler */
 .modal-body .form-check-label {
-  font-size: 0.8rem;
+  font-size: 13px;
   color: #495057;
 }
 
@@ -65,7 +65,7 @@
 
 /* Butonlar */
 .modal-body .btn {
-  font-size: 0.85rem;
+  font-size: 14px;
   padding: 0.4rem 0.9rem;
   border-radius: 5px;
 }
@@ -80,3 +80,48 @@
 body.modal-open {
   overflow: hidden !important;
 }
+/*calendar*/
+/* Flatpickr calendar boyutunu küçült */
+.flatpickr-calendar {
+  font-size: 12px !important; /* Takvim yazılarını küçültür */
+  transform: scale(0.83);     /* Takvimin tamamını küçültür */
+  transform-origin: top left; /* Sol üstten küçülsün */
+  width: fit-content !important;
+  min-width: unset !important;
+}
+
+/* Giriş alanlarının içindeki yazıları da küçültelim */
+.flatpickr-input {
+  font-size: 13px !important;
+  padding: 4px 8px;
+}
+/* Flatpickr saat kutusunu küçült */
+.flatpickr-time {
+  max-width: 150px !important;
+  width: 150px !important;
+  margin: 0 auto;
+  padding: 4px 6px !important;
+  justify-content: center;
+  gap: 4px;
+}
+
+/* Saat ve dakika inputları */
+.flatpickr-time input {
+  width: 48px !important;
+  padding: 0px 0px !important;
+  font-size: 14px !important;
+  text-align: center;
+}
+
+/* Ayraç (:) arası */
+.flatpickr-time .flatpickr-time-separator {
+  font-size: 16px !important;
+  margin: 0 4px !important;
+}
+.switchContainer {
+  display: flex;
+  gap: 0.5rem;
+  margin-left: 12px;
+  margin-top: -10px;
+}
+
