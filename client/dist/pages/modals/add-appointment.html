@@ -24,64 +24,109 @@
               <div class="row g-2 mb-3">
             <!-- Müşteri -->
             <div class="col-md-4">
-              <input type="text" class="form-control" placeholder="Müşteri">
-            </div>
+  <div class="position-relative">
+    <input type="text" class="form-control pe-5" placeholder="Müşteri" />
+    <i class="bi bi-person position-absolute top-50 end-0 translate-middle-y me-2 text-muted pointer"></i>
+  </div>
+</div>
 
             <!-- Tarih -->
             <div class="col-md-4">
-              <input type="text" id="appointmentDate" class="form-control" placeholder="Tarih seçiniz" readonly>
+             <div class="position-relative">
+              <input type="text" id="appointmentDate" class="form-control pe-5" placeholder="Tarih seçiniz" readonly />
+              <i class="bi bi-calendar3 position-absolute top-50 end-0 translate-middle-y me-2 text-muted pointer"></i>
             </div>
-
-            <!-- Başlangıç saati -->
-            <div class="col-md-2">
-              <input type="text" id="startTime" class="form-control" placeholder="Başlangıç" readonly>
             </div>
+<div class="col-md-2">
+  <div class="position-relative">
+    <input type="text" id="startTime" class="form-control time-input pe-5" placeholder="Başlangıç" readonly />
+    <i class="bi bi-clock position-absolute top-50 end-0 translate-middle-y me-2 text-muted pointer"></i>
+  </div>
+</div>
 
-            <!-- Bitiş saati -->
-            <div class="col-md-2">
-              <input type="text" id="endTime" class="form-control" placeholder="Bitiş" readonly>
-            </div>
-          </div>
+<div class="col-md-2">
+  <div class="position-relative">
+    <input type="text" id="endTime" class="form-control time-input pe-5" placeholder="Bitiş" readonly />
+    <i class="bi bi-clock position-absolute top-50 end-0 translate-middle-y me-2 text-muted pointer"></i>
+  </div>
+</div>
 
-              <div class="mb-3">
-                <input type="text" class="form-control" placeholder="Notlar">
-              </div>
+             <div class="mb-3 position-relative">
+  <input type="text" class="form-control pe-5" placeholder="Notlar" />
+  <i class="bi bi-pencil position-absolute top-50 end-0 translate-middle-y me-2 text-muted pointer"></i>
+</div>
 
-              <div class="form-check form-switch mb-3">
-                <input class="form-check-input" type="checkbox" id="repeatSwitch">
-                <label class="form-check-label" for="repeatSwitch">Tekrarlayan</label>
-              </div>
+<div class="row g-2 mb-3 align-items-center switchContainer">
+  <div class="col-md-4 offset-md-0">
+    <div class="form-check form-switch d-flex align-items-center gap-2 ">
+      <input class="form-check-input fs-5" type="checkbox" id="repeatSwitch" />
+      <label class="form-check-label" for="repeatSwitch">Tekrarlayan</label>
+    </div>
+  </div>
+</div>
 
-              <div class="row g-2 mb-3">
-                <div class="col-md-6">
-                  <select class="form-select" disabled>
-                    <option selected>Tekrar sıklığı</option>
-                    <option>Haftalık</option>
-                    <option>İki haftada bir</option>
-                  </select>
-                </div>
-                <div class="col-md-6">
-                  <select class="form-select" disabled>
-                    <option selected>Tekrar sayısı</option>
-                    <option>1</option>
-                    <option>2</option>
-                    <!-- vs. -->
-                  </select>
-                </div>
-              </div>
+             <div class="row g-2 mb-3" id="repeatFields" style="display: none;">
+  <div class="col-md-6">
+    <select class="form-select">
+      <option selected>Tekrar sıklığı</option>
+      <option>Haftalık</option>
+      <option>İki haftada bir</option>
+    </select>
+  </div>
+  <div class="col-md-6">
+    <select class="form-select">
+      <option selected>Tekrar sayısı</option>
+      <option>1</option>
+      <option>2</option>
+    </select>
+  </div>
+</div>
 
-              <h5 class="mt-3">Hizmetler</h5>
-              <div class="row g-2 mb-2">
-                <div class="col-md-6">
-                  <select class="form-select">
-                    <option>beyza</option>
-                  </select>
-                </div>
-                <div class="col-md-6">
-                  <input type="text" class="form-control" placeholder="Açıklama">
-                </div>
-              </div>
-              <button class="btn btn-link p-0">+ Bir hizmet daha ekle</button>
+             <!-- Paketler Alanı -->
+<div id="paketAlan" style="display: none;">
+  <h5 class="mt-2">Paketler</h5>
+  <div class="row g-2 mb-2">
+    <div class="col-md-6">
+      <select class="form-select">
+        <option>Paket</option>
+        <option>lazer</option>
+        <option>epilasyon</option>
+      </select>
+    </div>
+    <div class="col-md-6">
+      <input type="text" class="form-control" placeholder="Personel">
+    </div>
+  </div>
+</div>
+<!-- HİZMET LİSTESİ -->
+<div id="hizmetListesi" class="mt-2"></div>
+<!-- GİRİŞ FORMU -->
+<div id="hizmetFormAlani">
+  <h5 class="mt-2">Hizmetler</h5>
+  <div class="row g-2 mb-2">
+    <div class="col-md-6">
+      <select class="form-select" id="hizmetSelect">
+        <option selected hidden>Hizmet</option>
+        <option>Masaj</option>
+        <option>Saç Kesimi</option>
+      </select>
+    </div>
+    <div class="col-md-6">
+      <input type="text" class="form-control" id="personelInput" placeholder="Personel">
+    </div>
+  </div>
+  <div class="row g-2 mb-2">
+    <div class="col-md-6">
+      <input type="text" class="form-control" id="fiyatInput" placeholder="Fiyat">
+    </div>
+    <div class="col-md-6">
+      <input type="text" class="form-control" placeholder="Promosyon gir">
+    </div>
+  </div>
+  <!-- Ekle Butonu -->
+<button id="hizmetEkleBtn" type="button" class="btn btn-link p-0 mt-2 d-block mx-auto text-center" style="font-size: 13px;">+ Bir hizmet daha ekle</button>
+</div>
+
 
               <div class="text-end mt-3">
                 <button class="btn btn-success">Randevuyu oluştur</button>
@@ -89,54 +134,7 @@
             </form>
           </div>
 
-          <!-- Saat Kapatma Sekmesi -->
-          <div class="tab-pane fade" id="block-time" role="tabpanel">
-            <form>
-              <div class="row g-2 mb-3">
-                <div class="col-md-6">
-                  <select class="form-select">
-                    <option selected>Çalışan seç</option>
-                  </select>
-                </div>
-                <div class="col-md-6">
-                  <input type="text" class="form-control" value="12 Mayıs 2025" readonly>
-                </div>
-              </div>
-
-              <div class="form-check form-switch mb-3">
-                <input class="form-check-input" type="checkbox" id="allDaySwitch">
-                <label class="form-check-label" for="allDaySwitch">Tüm gün</label>
-              </div>
-
-              <div class="row g-2 mb-3">
-                <div class="col-md-3">
-                  <select class="form-select"><option>Saat</option></select>
-                </div>
-                <div class="col-md-3">
-                  <select class="form-select"><option>Dakika</option></select>
-                </div>
-                <div class="col-md-3">
-                  <select class="form-select"><option>Saat</option></select>
-                </div>
-                <div class="col-md-3">
-                  <select class="form-select"><option>Dakika</option></select>
-                </div>
-              </div>
-
-              <div class="form-check form-switch mb-3">
-                <input class="form-check-input" type="checkbox" id="repeatBlockSwitch">
-                <label class="form-check-label" for="repeatBlockSwitch">Tekrarlayan</label>
-              </div>
-
-              <div class="mb-3">
-                <input type="text" class="form-control" placeholder="Notlar">
-              </div>
-
-              <div class="text-end">
-                <button class="btn btn-success">Saatleri kapat</button>
-              </div>
-            </form>
-          </div>
+       
         </div>
       </div>
     </div>
