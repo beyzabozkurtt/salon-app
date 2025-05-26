@@ -6,6 +6,19 @@ const authMiddleware = require('../middleware/authMiddleware'); // 🔐 token ko
 // ✅ Tüm hizmetleri getir
 router.get('/', authMiddleware, singleServiceController.getAll);
 
+router.get('/', authMiddleware, async (req, res) => {
+  try {
+    const services = await SingleService.findAll({
+      where: { CompanyId: req.company.companyId }
+    });
+    res.json(services);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Hizmetler alınamadı" });
+  }
+});
+
+
 // ✅ Yeni hizmet oluştur
 router.post('/', authMiddleware, singleServiceController.create);
 

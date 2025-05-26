@@ -3,6 +3,7 @@ export function init() {
   flatpickr("#appointmentDate", {
     dateFormat: "d.m.Y",
     locale: "tr",
+    defaultDate: new Date(),
   });
 
   flatpickr("#startTime", {
@@ -22,20 +23,23 @@ export function init() {
     defaultDate: "12:30",
     position: "below"
   });
-const tabButtons = document.querySelectorAll("#appointmentTabs .nav-link");
-    const tabPanes = document.querySelectorAll(".tab-pane");
 
-   tabButtons.forEach(btn => {
-  btn.addEventListener('click', () => {
-    const targetId = btn.getAttribute('data-tab-target');
+  // Sekmeler
+  const tabButtons = document.querySelectorAll("#appointmentTabs .nav-link");
+  const tabPanes = document.querySelectorAll(".tab-pane");
 
-    tabButtons.forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
+  tabButtons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const targetId = btn.getAttribute('data-tab-target');
 
-    tabPanes.forEach(p => p.classList.remove('active'));
-    document.getElementById(targetId)?.classList.add('active');
+      tabButtons.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+
+      tabPanes.forEach(p => p.classList.remove('active'));
+      document.getElementById(targetId)?.classList.add('active');
+    });
   });
-});
+
   // Modal Açma
   const openBtn = document.getElementById("openAppointmentModal");
   if (openBtn) {
@@ -46,7 +50,7 @@ const tabButtons = document.querySelectorAll("#appointmentTabs .nav-link");
     });
   }
 
-  // Repeat Switch Alanlarını Yönet
+  // Repeat Alanlarını Yönet
   const repeatSwitch = document.getElementById("repeatSwitch");
   const repeatFields = document.getElementById("repeatFields");
   const paketAlan = document.getElementById("paketAlan");
@@ -120,7 +124,41 @@ const tabButtons = document.querySelectorAll("#appointmentTabs .nav-link");
       document.getElementById("fiyatInput").value = "";
     });
   }
-
 }
 
+// 🌟 DIŞA AKTAR: calendar.js içinden erişmek için
+export async function doldurTekSeferlikHizmetler() {
+  const token = localStorage.getItem("companyToken");
+  if (!token) {
+    console.error("❌ Token yok!");
+    return;
+  }
+
+  const axiosConfig = {
+    headers: { Authorization: "Bearer " + token }
+  };
+
+  try {
+    const res = await axios.get("http://localhost:5001/api/single-services", axiosConfig);
+    console.log("🛠️ Gelen hizmetler:", res.data);
+
+    const hizmetSelect = document.getElementById("hizmetSelect");
+    if (!hizmetSelect) {
+      console.error("❌ hizmetSelect DOM’da bulunamadı!");
+      return;
+    }
+
+    hizmetSelect.innerHTML = '<option selected hidden>Hizmet</option>';
+    res.data.forEach(service => {
+      const opt = document.createElement("option");
+      opt.value = service.id;
+      opt.textContent = service.name;
+      hizmetSelect.appendChild(opt);
+    });
+
+    console.log("✅ Hizmetler eklendi!");
+  } catch (err) {
+    console.error("❌ API çağrısı başarısız:", err);
+  }
+}
 

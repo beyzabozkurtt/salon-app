@@ -24,7 +24,10 @@
             <!-- Müşteri -->
             <div class="col-md-4">
   <div class="position-relative">
-    <input type="text" class="form-control pe-5" placeholder="Müşteri" />
+ <input type="text" id="customerInput" class="form-control" placeholder="Müşteri" autocomplete="off" />
+ <input type="hidden" id="customerIdHidden" />
+<datalist id="customerSuggestions"></datalist>
+
     <i class="bi bi-person position-absolute top-50 end-0 translate-middle-y me-2 text-muted pointer"></i>
   </div>
 </div>
@@ -104,11 +107,10 @@
   <h5 class="mt-2">Hizmetler</h5>
   <div class="row g-2 mb-2">
     <div class="col-md-6">
-      <select class="form-select" id="hizmetSelect">
-        <option selected hidden>Hizmet</option>
-        <option>Masaj</option>
-        <option>Saç Kesimi</option>
-      </select>
+<select class="form-select" id="hizmetSelect">
+  <option selected hidden>Hizmet</option>
+</select>
+
     </div>
     <div class="col-md-6">
       <input type="text" class="form-control" id="personelInput" placeholder="Personel">

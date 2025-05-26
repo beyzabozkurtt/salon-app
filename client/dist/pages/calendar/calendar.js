@@ -1,15 +1,71 @@
 import { loadPopup } from '../../utils/popupLoader.js';
+import { doldurTekSeferlikHizmetler } from "../modals/js/add-appointment.js";
+
 let calendar;
 let flatpickrInstance;
+let customerCache = [];
 
-document.addEventListener('DOMContentLoaded',async function () {
+document.addEventListener('DOMContentLoaded', async function () {
   const calendarEl = document.getElementById('calendar');
   const dateInput = document.getElementById("datePicker");
-  //add-appointment modal
-  await loadPopup("add-appointment")
-  
-  
-  // FullCalendar başlat
+
+  await loadPopup("add-appointment"); // Modal yüklensin
+
+  // ✅ Modal açılınca hizmetleri çek
+  const openBtn = document.getElementById("openAppointmentModal");
+  if (openBtn) {
+    openBtn.addEventListener("click", async () => {
+      await doldurTekSeferlikHizmetler(); // DOM artık hazır!
+      const modalEl = document.getElementById("appointmentModal");
+      const modal = new bootstrap.Modal(modalEl);
+      modal.show();
+    });
+  }
+
+  // ... (kalan calendar kodlarını aynen koruyabilirsin)
+
+
+
+
+  // Awesomplete için müşteri autocomplete
+  const customerInput = document.getElementById("customerInput");
+  const awesomplete = new Awesomplete(customerInput, {
+    minChars: 3,
+    maxItems: 10,
+    autoFirst: true
+  });
+
+  if (customerInput) {
+    customerInput.addEventListener("input", async function () {
+      const val = this.value.trim();
+      if (val.length < 3) return;
+
+      const token = localStorage.getItem("companyToken");
+      const axiosConfig = {
+        headers: { Authorization: "Bearer " + token }
+      };
+
+      try {
+        const res = await axios.get(`http://localhost:5001/api/customers?search=${encodeURIComponent(val)}`, axiosConfig);
+        const customers = res.data;
+        customerCache = customers;
+
+        awesomplete.list = customers.map(c => c.name);
+      } catch (err) {
+        console.error("Müşteri önerileri alınamadı:", err);
+      }
+    });
+
+    customerInput.addEventListener("change", function () {
+      const val = this.value.trim();
+      const selected = customerCache.find(c => c.name === val);
+      const customerIdInput = document.getElementById("customerIdHidden");
+      if (customerIdInput) {
+        customerIdInput.value = selected ? selected.id : "";
+      }
+    });
+  }
+
   calendar = new FullCalendar.Calendar(calendarEl, {
     initialView: 'timeGridDay',
     height: "auto",
@@ -21,123 +77,122 @@ document.addEventListener('DOMContentLoaded',async function () {
     locale: 'tr',
     slotDuration: '00:30:00',
     selectable: true,
-    events: [],
     slotLabelFormat: {
       hour: '2-digit',
       minute: '2-digit',
       hour12: false
     },
-    firstDay: 1,
+    events: async function (fetchInfo, successCallback, failureCallback) {
+      try {
+        const token = localStorage.getItem("companyToken");
+        const res = await fetch('http://localhost:5001/api/appointments', {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
+        const data = await res.json();
+
+        const events = data.map(app => ({
+          id: app.id,
+          title: `${app.Customer?.name || "Müşteri"} - ${app.Service?.name || "Hizmet"}`,
+          start: app.date,
+          end: app.endDate,
+          backgroundColor: getColorByStatus(app.status),
+          borderColor: getColorByStatus(app.status),
+          extendedProps: {
+            status: app.status,
+            notes: app.notes,
+            service: app.Service?.name,
+            customer: app.Customer?.name,
+            personel: app.User?.name
+          }
+        }));
+
+        successCallback(events);
+      } catch (err) {
+        console.error("Randevular yüklenemedi:", err);
+        failureCallback(err);
+      }
+    },
     dateClick: function(info) {
-  const selectedDate = info.date;
+      const selectedDate = info.date;
+      const currentView = calendar.view.type;
+      if (currentView === 'dayGridMonth' || currentView === 'timeGridWeek') {
+        calendar.changeView('timeGridDay', selectedDate);
+        return;
+      }
 
-  // Eğer ay veya hafta görünümündeysek, gün görünümüne geç
-  const currentView = calendar.view.type;
-  if (currentView === 'dayGridMonth' || currentView === 'timeGridWeek') {
-    calendar.changeView('timeGridDay', selectedDate);
-    return; // Bu durumda sadece görünüm değişsin, modal açılmasın
-  }
+      if (flatpickrInstance) {
+        flatpickrInstance.setDate(selectedDate, true);
+      }
 
-  // Gün görünümündeysek modalı göster
-  if (flatpickrInstance) {
-    flatpickrInstance.setDate(selectedDate, true);
-  }
+      const startTimeInput = document.getElementById("startTime");
+      const endTimeInput = document.getElementById("endTime");
 
-  const startTimeInput = document.getElementById("startTime");
-  const endTimeInput = document.getElementById("endTime");
+      const hours = selectedDate.getHours().toString().padStart(2, '0');
+      const minutes = selectedDate.getMinutes().toString().padStart(2, '0');
 
-  const hours = selectedDate.getHours().toString().padStart(2, '0');
-  const minutes = selectedDate.getMinutes().toString().padStart(2, '0');
+      const startTime = `${hours}:${minutes}`;
+      const endDate = new Date(selectedDate.getTime() + 30 * 60000);
+      const endTime = `${endDate.getHours().toString().padStart(2, '0')}:${endDate.getMinutes().toString().padStart(2, '0')}`;
 
-  const startTime = `${hours}:${minutes}`;
-  const endDate = new Date(selectedDate.getTime() + 30 * 60000);
-  const endTime = `${endDate.getHours().toString().padStart(2, '0')}:${endDate.getMinutes().toString().padStart(2, '0')}`;
+      startTimeInput.value = startTime;
+      endTimeInput.value = endTime;
 
-  startTimeInput.value = startTime;
-  endTimeInput.value = endTime;
+      const modalEl = document.getElementById("appointmentModal");
+      const modal = new bootstrap.Modal(modalEl);
+      modal.show();
+    },
+    dayHeaderContent: function(arg) {
+      const currentView = calendar.view.type;
 
-  const modalEl = document.getElementById("appointmentModal");
-  const modal = new bootstrap.Modal(modalEl);
-  modal.show();
-},
-dayHeaderContent: function(arg) {
-  const currentView = calendar.view.type;
+      if (currentView === 'dayGridMonth') {
+        const gun = new Intl.DateTimeFormat('tr-TR', { weekday: 'long' }).format(arg.date);
+        return {
+          html: `<div style="text-align: center;font-weight: 600; font-size:14px;">${gun.charAt(0).toUpperCase() + gun.slice(1)}</div>`
+        };
+      }
 
-  if (currentView === 'dayGridMonth') {
-    // 🔥 Sadece gün adı (Pazartesi, Salı...) yaz
-    const gun = new Intl.DateTimeFormat('tr-TR', {
-      weekday: 'long'
-    }).format(arg.date);
+      if (currentView === 'timeGridWeek') {
+        const tarih = new Intl.DateTimeFormat('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric' }).format(arg.date);
+        const gun = new Intl.DateTimeFormat('tr-TR', { weekday: 'long' }).format(arg.date);
+        return {
+          html: `<div style="display: flex; flex-direction: column; text-align: center; line-height: 1.2;">
+            <span style="font-weight: 600; font-size:14px;">${tarih}</span>
+            <span style="font-weight: 400;font-size:14px;">${gun.charAt(0).toUpperCase() + gun.slice(1)}</span>
+          </div>`
+        };
+      }
 
-    return {
-      html: `<div style="text-align: center;font-weight: 600; font-size:14px;">${gun.charAt(0).toUpperCase() + gun.slice(1)}</div>`
-    };
-  }
-
-  if (currentView === 'timeGridWeek') {
-    const tarih = new Intl.DateTimeFormat('tr-TR', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric'
-    }).format(arg.date);
-
-    const gun = new Intl.DateTimeFormat('tr-TR', {
-      weekday: 'long'
-    }).format(arg.date);
-
-    return {
-      html: `
-        <div style="display: flex; flex-direction: column; text-align: center; line-height: 1.2;">
-          <span style="font-weight: 600; font-size:14px;">${tarih}</span>
-          <span style="font-weight: 400;font-size:14px;">${gun.charAt(0).toUpperCase() + gun.slice(1)}</span>
-        </div>
-      `
-    };
-  }
-
-  // Gün görünümü
-  const tarih = new Intl.DateTimeFormat('tr-TR', {
-    day: '2-digit',
-    month: 'long',
-    year: 'numeric'
-  }).format(arg.date);
-
-  const gun = new Intl.DateTimeFormat('tr-TR', {
-    weekday: 'long'
-  }).format(arg.date);
-
-  return {
-    html: `<div>${tarih} / ${gun.charAt(0).toUpperCase() + gun.slice(1)}</div>`
-  };
-},
-
+      const tarih = new Intl.DateTimeFormat('tr-TR', { day: '2-digit', month: 'long', year: 'numeric' }).format(arg.date);
+      const gun = new Intl.DateTimeFormat('tr-TR', { weekday: 'long' }).format(arg.date);
+      return {
+        html: `<div>${tarih} / ${gun.charAt(0).toUpperCase() + gun.slice(1)}</div>`
+      };
+    },
     datesSet: function () {
       const selectedDate = calendar.getDate();
       if (flatpickrInstance) {
         flatpickrInstance.setDate(selectedDate, false);
       }
       updateCustomHeader(selectedDate);
-        // 🔥 Sadece ay görünümünde Mayıs 2025 başlığı göster
-  const viewType = calendar.view.type;
-  const header = document.getElementById("monthHeader");
+      const viewType = calendar.view.type;
+      const header = document.getElementById("monthHeader");
 
- if (header) {
-  if (viewType === "dayGridMonth") {
-    const ay = new Intl.DateTimeFormat('tr-TR', { month: 'long' }).format(selectedDate);
-    const yil = new Intl.DateTimeFormat('tr-TR', { year: 'numeric' }).format(selectedDate);
-
-    header.innerHTML = `${ay.charAt(0).toUpperCase() + ay.slice(1)}, ${yil}`;
-  } else {
-    header.innerHTML = ""; // Diğer görünümlerde gizle
-  }
-}
+      if (header) {
+        if (viewType === "dayGridMonth") {
+          const ay = new Intl.DateTimeFormat('tr-TR', { month: 'long' }).format(selectedDate);
+          const yil = new Intl.DateTimeFormat('tr-TR', { year: 'numeric' }).format(selectedDate);
+          header.innerHTML = `${ay.charAt(0).toUpperCase() + ay.slice(1)}, ${yil}`;
+        } else {
+          header.innerHTML = "";
+        }
+      }
     }
   });
 
   calendar.render();
-  
 
-  // Flatpickr başlat (calendar render edildikten sonra)
   flatpickrInstance = flatpickr(dateInput, {
     dateFormat: "d.m.Y",
     defaultDate: new Date(),
@@ -149,22 +204,18 @@ dayHeaderContent: function(arg) {
     }
   });
 
-  // Geri (←) butonu
   document.getElementById("prevDateBtn").addEventListener("click", () => {
     calendar.prev();
   });
 
-  // İleri (→) butonu
   document.getElementById("nextDateBtn").addEventListener("click", () => {
     calendar.next();
   });
 
-  // Bugün butonu
   document.getElementById("goToday").addEventListener("click", () => {
     calendar.today();
   });
 
-  // Görünüm dropdown (Gün / Hafta / Ay)
   document.querySelectorAll('.dropdown-item[data-view]').forEach(item => {
     item.addEventListener('click', function () {
       const view = this.getAttribute('data-view');
@@ -173,7 +224,6 @@ dayHeaderContent: function(arg) {
     });
   });
 
-  // Takvim ikonuna tıklama
   const calendarIcon = document.querySelector(".bi-calendar3");
   if (calendarIcon) {
     calendarIcon.addEventListener("click", () => {
@@ -182,11 +232,19 @@ dayHeaderContent: function(arg) {
   }
 });
 
-// Tarih başlığını güncelle
 function updateCustomHeader(date) {
   const headerEl = document.getElementById("customHeader");
   if (!headerEl) return;
   const options = { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' };
   const formatted = new Intl.DateTimeFormat('tr-TR', options).format(date);
   headerEl.textContent = formatted.charAt(0).toUpperCase() + formatted.slice(1);
+}
+
+function getColorByStatus(status) {
+  switch (status) {
+    case 'bekliyor': return '#0d6efd';
+    case 'tamamlandı': return '#198754';
+    case 'iptal': return '#dc3545';
+    default: return '#6c757d';
+  }
 }

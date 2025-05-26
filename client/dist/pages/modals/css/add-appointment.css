@@ -6,6 +6,36 @@
   font-size: 0.875rem; /* Küçük font */
   margin-bottom:15rem;
 }
+/* Öneri kutusunun arka planı */
+.awesomplete ul {
+  background: #fff;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  padding: 0;
+  margin-top: 4px;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+}
+
+/* Öneri item'ları */
+.awesomplete li {
+  padding: 8px 12px;
+  cursor: pointer;
+  font-size: 14px;
+  color: #292127;
+}
+
+/* Üzerine gelince */
+.awesomplete li:hover {
+  background-color: #f2f2f2;
+}
+
+/* Seçili olan öneri (yeşil olan buydu) */
+.awesomplete li[aria-selected="true"] {
+  background-color: #f8f9fa; /* Açık gri */
+  color: #000;
+}
+
+
 
 /* Modal dikey ortalama */
 .modal-dialog-centered {
