@@ -124,4 +124,9 @@ body.modal-open {
   margin-left: 12px;
   margin-top: -10px;
 }
-
+.tab-pane {
+  display: none;
+}
+.tab-pane.active {
+  display: block;
+}
