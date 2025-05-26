@@ -9,6 +9,9 @@
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/dayjs/dayjs.min.js"></script>
+    
+  <!-- Flatpickr -->
+  <link href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" rel="stylesheet" />
 
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="title" content="AdminLTE v4 | Dashboard" />
@@ -86,7 +89,7 @@
                 <i class="bi bi-plus-square"></i>
               </a>
               <div class="dropdown-menu dropdown-menu-lg dropdown-menu-end">
-                <a href="#" class="dropdown-item">
+                <a href="#" class="dropdown-item" id="openAppointmentModal">
                   <i class="bi bi-calendar me-2"></i> Yeni Randevu
                 </a>
                 <div class="dropdown-divider"></div>
@@ -390,7 +393,12 @@
     </div>
         <!-- JS DOSYASINI AYIRDIM -->
     <script src="../../dist/js/index.js"></script>
-
+     <!-- add-appointment modal için -->
+    <script type="module" src="./calendar/calendar.js"></script>
+    
+      <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/tr.js"></script>
+|
     <script
       src="https://cdn.jsdelivr.net/npm/overlayscrollbars@2.10.1/browser/overlayscrollbars.browser.es6.min.js"
       integrity="sha256-dghWARbRe2eLlIJ56wNB+b760ywulqK3DzZYEpsg2fQ="
