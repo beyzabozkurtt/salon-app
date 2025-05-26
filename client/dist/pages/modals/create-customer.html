@@ -1,0 +1,55 @@
+<!-- modals/createCustomer.html -->
+<div class="modal fade" id="createModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <form id="customerForm" class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Yeni Müşteri</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+
+      <div class="modal-body">
+        <input type="text" class="form-control mb-2" name="name" placeholder="Ad soyad" required />
+
+        <div class="row g-2 align-items-center mb-2">
+          <div class="col-4">
+            <select id="countryCode" class="form-select" required>
+              <option value="+90" selected>+90</option>
+              <option value="+49">+49</option>
+              <option value="+1">+1</option>
+              <option value="+44">+44</option>
+            </select>
+          </div>
+
+          <div class="col-8">
+            <input id="phoneNumber" type="text" class="form-control" placeholder="Telefon numarası" required />
+          </div>
+        </div>
+
+        <input type="email" class="form-control mb-2" name="email" placeholder="E-posta adresi" />
+        <input type="date" class="form-control mb-2" name="birthDate" placeholder="Doğum tarihi" />
+
+        <select name="gender" class="form-select mb-2">
+          <option value="" disabled selected>Cinsiyet</option>
+          <option value="Kadın">Kadın</option>
+          <option value="Erkek">Erkek</option>
+          <option value="Belirtmek istemiyor">Belirtmek istemiyor</option>
+        </select>
+
+        <select name="reference" class="form-select mb-2" required>
+          <option disabled selected>Referans türünü seçin</option>
+          <option value="Tabela satışı">Tabela satışı</option>
+          <option value="Müşteri referansı">Müşteri referansı</option>
+          <option value="Anket satışı">Anket satışı</option>
+          <option value="Web satışı">Web satışı</option>
+          <option value="Diğer">Diğer</option>
+        </select>
+
+        <textarea class="form-control mb-2" name="notes" placeholder="Notlar" rows="2"></textarea>
+      </div>
+
+      <div class="modal-footer">
+        <button type="submit" class="btn btn-primary w-100">Kaydet</button>
+      </div>
+    </form>
+  </div>
+</div>
