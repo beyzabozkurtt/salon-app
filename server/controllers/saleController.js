@@ -122,20 +122,31 @@ module.exports = {
     }
   },
 
-  async delete(req, res) {
-    try {
-      await Sale.destroy({
-        where: {
-          id: req.params.id,
-          CompanyId: req.company.companyId
-        }
-      });
-      res.json({ message: 'Satış silindi' });
-    } catch (err) {
-      console.error(err);
-      res.status(500).json({ error: 'Silme hatası' });
-    }
-  },
+async delete(req, res) {
+  try {
+    // ÖNCE ilgili ödemeleri sil
+    await Payment.destroy({
+      where: {
+        SaleId: req.params.id,
+        CompanyId: req.company.companyId
+      }
+    });
+
+    // SONRA satış kaydını sil
+    await Sale.destroy({
+      where: {
+        id: req.params.id,
+        CompanyId: req.company.companyId
+      }
+    });
+
+    res.json({ message: 'Satış ve ödemeler başarıyla silindi' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Silme hatası' });
+  }
+},
+
     async getByCustomer(req, res) {
     try {
       const customerId = req.params.id;

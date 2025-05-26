@@ -44,8 +44,14 @@ Sale.belongsTo(Service);
 User.hasMany(Payment, { foreignKey: 'UserId' });
 Payment.belongsTo(User, { foreignKey: 'UserId' });
 
-Sale.hasMany(Payment, { foreignKey: 'SaleId', onDelete: 'CASCADE' });
+Sale.hasMany(Payment, {
+  foreignKey: 'SaleId',
+  onDelete: 'CASCADE',
+  hooks: true
+});
 Payment.belongsTo(Sale, { foreignKey: 'SaleId' });
+
+
 
 Customer.hasMany(Payment, { foreignKey: 'CustomerId' });
 Payment.belongsTo(Customer, { foreignKey: 'CustomerId' });

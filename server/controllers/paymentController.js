@@ -172,59 +172,71 @@ module.exports = {
     }
   },
 
-  async getCashTracking(req, res) {
-    try {
-      let payments = await Payment.findAll({
-        where: { CompanyId: req.company.companyId },
-        include: [
-          { model: User, attributes: ['id', 'name'] },
-          {
-            model: Sale,
-            include: [
-              { model: Customer, attributes: ['id', 'name', 'phone'] },
-              { model: Service, attributes: ['id', 'name'] }
-            ]
-          },
-          {
-            model: Product,
-            include: [
-              {
-                model: SaleProduct,
-                include: [{ model: Customer, attributes: ['id', 'name', 'phone'] }]
-              }
-            ]
-          }
-        ],
-        order: [['paymentDate', 'DESC']]
-      });
-
-      payments = payments.map(p => {
-        if (!p.Sale && p.Product?.SaleProducts?.length > 0) {
-          const sp = p.Product.SaleProducts[0];
-          p.dataValues.FallbackCustomer = sp.Customer || null;
+async getCashTracking(req, res) {
+  try {
+    let payments = await Payment.findAll({
+      where: { CompanyId: req.company.companyId },
+      include: [
+        { model: User, attributes: ['id', 'name'] },
+        {
+          model: Sale,
+          include: [
+            { model: Customer, attributes: ['id', 'name', 'phone'] },
+            { model: Service, attributes: ['id', 'name'] }
+          ]
+        },
+        {
+          model: Product,
+          include: [
+            {
+              model: SaleProduct,
+              include: [{ model: Customer, attributes: ['id', 'name', 'phone'] }]
+            }
+          ]
         }
+      ],
+      order: [['paymentDate', 'DESC']]
+    });
 
-        return {
-          id: p.id,
-          amount: p.amount,
-          installmentNo: p.installmentNo,
-          paymentType: p.paymentType,
-          paymentDate: p.paymentDate,
-          dueDate: p.dueDate,
-          status: p.status,
-          User: p.User,
-          Product: p.Product,
-          Sale: p.Sale,
-          FallbackCustomer: p.dataValues.FallbackCustomer || null
-        };
-      });
+    const now = new Date();
 
-      res.json(payments);
-    } catch (error) {
-      console.error("❌ getCashTracking hatası:", error);
-      res.status(500).json({ error: 'Kasa takibi verileri alınamadı.' });
+    // 🔄 Gecikmiş olanları DB'de kalıcı olarak güncelle
+    for (const p of payments) {
+      if (p.status === "bekliyor" && new Date(p.dueDate) < now) {
+        p.status = "gecikmiş";
+        await p.save(); // 🔒 DB'de güncelleme
+      }
     }
-  },
+
+    // 🔁 mapping sonrası geri dönüş
+    payments = payments.map(p => {
+      if (!p.Sale && p.Product?.SaleProducts?.length > 0) {
+        const sp = p.Product.SaleProducts[0];
+        p.dataValues.FallbackCustomer = sp.Customer || null;
+      }
+
+      return {
+        id: p.id,
+        amount: p.amount,
+        installmentNo: p.installmentNo,
+        paymentType: p.paymentType,
+        paymentDate: p.paymentDate,
+        dueDate: p.dueDate,
+        status: p.status,
+        User: p.User,
+        Product: p.Product,
+        Sale: p.Sale,
+        FallbackCustomer: p.dataValues.FallbackCustomer || null
+      };
+    });
+
+    res.json(payments);
+  } catch (error) {
+    console.error("❌ getCashTracking hatası:", error);
+    res.status(500).json({ error: 'Kasa takibi verileri alınamadı.' });
+  }
+},
+
   async getBySale(req, res) {
   try {
     const payments = await Payment.findAll({

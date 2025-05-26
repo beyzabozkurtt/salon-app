@@ -13,7 +13,7 @@ module.exports = (sequelize, DataTypes) => {
       allowNull: false
     },
     status: {
-      type: DataTypes.ENUM('bekliyor', 'ödendi'),
+      type: DataTypes.ENUM('bekliyor', 'ödendi','gecikmiş'),
       defaultValue: 'bekliyor'
     },
     ProductId: {
