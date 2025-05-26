@@ -1,4 +1,3 @@
-
 <!-- Randevu Oluşturma Modalı -->
 <div class="modal fade " id="appointmentModal" tabindex="-1" aria-labelledby="appointmentModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-lg modal-dialog-centered">
@@ -8,18 +7,18 @@
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Kapat"></button>
       </div>
       <div class="modal-body modal-scrollable">
-        <ul class="nav nav-tabs mb-3" id="appointmentTabs" role="tablist">
-          <li class="nav-item" role="presentation">
-            <button class="nav-link active" id="appointment-tab" data-bs-toggle="tab" data-bs-target="#appointment" type="button" role="tab">Randevu</button>
-          </li>
-          <li class="nav-item" role="presentation">
-            <button class="nav-link" id="block-tab" data-bs-toggle="tab" data-bs-target="#block-time" type="button" role="tab">Saat kapatma</button>
-          </li>
-        </ul>
+<ul class="nav nav-tabs" id="appointmentTabs" role="tablist">
+  <li class="nav-item" role="presentation">
+    <button class="nav-link active" data-tab-target="appointment">Randevu</button>
+  </li>
+  <li class="nav-item" role="presentation">
+    <button class="nav-link" data-tab-target="block-time">Saat kapatma</button>
+  </li>
+</ul>
 
-        <div class="tab-content">
+        <div class="tab-content"style="margin-top: 20px;">
           <!-- Randevu Sekmesi -->
-          <div class="tab-pane fade show active" id="appointment" role="tabpanel">
+          <div class="tab-pane active" id="appointment">
             <form>
               <div class="row g-2 mb-3">
             <!-- Müşteri -->
@@ -133,7 +132,54 @@
               </div>
             </form>
           </div>
+   <!-- Saat Kapatma Sekmesi -->
+          <div class="tab-pane" id="block-time">
+            <form>
+              <div class="row g-2 mb-3">
+                <div class="col-md-6">
+                  <select class="form-select">
+                    <option selected>Çalışan seç</option>
+                  </select>
+                </div>
+                <div class="col-md-6">
+                  <input type="text" class="form-control" value="12 Mayıs 2025" readonly>
+                </div>
+              </div>
 
+              <div class="form-check form-switch mb-3">
+                <input class="form-check-input" type="checkbox" id="allDaySwitch">
+                <label class="form-check-label" for="allDaySwitch">Tüm gün</label>
+              </div>
+
+              <div class="row g-2 mb-3">
+                <div class="col-md-3">
+                  <select class="form-select"><option>Saat</option></select>
+                </div>
+                <div class="col-md-3">
+                  <select class="form-select"><option>Dakika</option></select>
+                </div>
+                <div class="col-md-3">
+                  <select class="form-select"><option>Saat</option></select>
+                </div>
+                <div class="col-md-3">
+                  <select class="form-select"><option>Dakika</option></select>
+                </div>
+              </div>
+
+              <div class="form-check form-switch mb-3">
+                <input class="form-check-input" type="checkbox" id="repeatBlockSwitch">
+                <label class="form-check-label" for="repeatBlockSwitch">Tekrarlayan</label>
+              </div>
+
+              <div class="mb-3">
+                <input type="text" class="form-control" placeholder="Notlar">
+              </div>
+
+              <div class="text-end">
+                <button class="btn btn-success">Saatleri kapat</button>
+              </div>
+            </form>
+          </div>
        
         </div>
       </div>

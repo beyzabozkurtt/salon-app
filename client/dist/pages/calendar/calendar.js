@@ -2,12 +2,10 @@ import { loadPopup } from '../../utils/popupLoader.js';
 let calendar;
 let flatpickrInstance;
 
-
 document.addEventListener('DOMContentLoaded',async function () {
   const calendarEl = document.getElementById('calendar');
   const dateInput = document.getElementById("datePicker");
   //add-appointment modal
- // 🔥 Modüler popup yükleme
   await loadPopup("add-appointment")
   
   
@@ -30,6 +28,38 @@ document.addEventListener('DOMContentLoaded',async function () {
       hour12: false
     },
     firstDay: 1,
+    dateClick: function(info) {
+  const selectedDate = info.date;
+
+  // Eğer ay veya hafta görünümündeysek, gün görünümüne geç
+  const currentView = calendar.view.type;
+  if (currentView === 'dayGridMonth' || currentView === 'timeGridWeek') {
+    calendar.changeView('timeGridDay', selectedDate);
+    return; // Bu durumda sadece görünüm değişsin, modal açılmasın
+  }
+
+  // Gün görünümündeysek modalı göster
+  if (flatpickrInstance) {
+    flatpickrInstance.setDate(selectedDate, true);
+  }
+
+  const startTimeInput = document.getElementById("startTime");
+  const endTimeInput = document.getElementById("endTime");
+
+  const hours = selectedDate.getHours().toString().padStart(2, '0');
+  const minutes = selectedDate.getMinutes().toString().padStart(2, '0');
+
+  const startTime = `${hours}:${minutes}`;
+  const endDate = new Date(selectedDate.getTime() + 30 * 60000);
+  const endTime = `${endDate.getHours().toString().padStart(2, '0')}:${endDate.getMinutes().toString().padStart(2, '0')}`;
+
+  startTimeInput.value = startTime;
+  endTimeInput.value = endTime;
+
+  const modalEl = document.getElementById("appointmentModal");
+  const modal = new bootstrap.Modal(modalEl);
+  modal.show();
+},
 dayHeaderContent: function(arg) {
   const currentView = calendar.view.type;
 

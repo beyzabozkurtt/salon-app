@@ -22,7 +22,20 @@ export function init() {
     defaultDate: "12:30",
     position: "below"
   });
+const tabButtons = document.querySelectorAll("#appointmentTabs .nav-link");
+    const tabPanes = document.querySelectorAll(".tab-pane");
 
+   tabButtons.forEach(btn => {
+  btn.addEventListener('click', () => {
+    const targetId = btn.getAttribute('data-tab-target');
+
+    tabButtons.forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+
+    tabPanes.forEach(p => p.classList.remove('active'));
+    document.getElementById(targetId)?.classList.add('active');
+  });
+});
   // Modal Açma
   const openBtn = document.getElementById("openAppointmentModal");
   if (openBtn) {
@@ -107,4 +120,7 @@ export function init() {
       document.getElementById("fiyatInput").value = "";
     });
   }
+
 }
+
+
