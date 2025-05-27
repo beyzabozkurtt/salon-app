@@ -1,23 +1,7 @@
 // customers.js
-import { loadPopup } from "../../utils/popupLoader.js";
+import { loadPopup } from "../../../utils/popupLoader.js";
 let currentPage = 1;
 const itemsPerPage = 10;
-//sidebar
-   document.querySelectorAll('.sidebar-link').forEach(link => {
-  link.addEventListener('click', (e) => {
-    e.preventDefault();
-    const section = link.getAttribute('data-section');
-
-    // Aktif linki güncelle
-    document.querySelectorAll('.sidebar-link').forEach(l => l.classList.remove('active'));
-    link.classList.add('active');
-
-    // Diğer content-section'ları gizle, ilgili olanı göster
-    document.querySelectorAll('.content-section').forEach(sec => sec.classList.add('d-none'));
-    const target = document.getElementById('section-' + section);
-    if (target) target.classList.remove('d-none');
-  });
-});
 
 
 let allCustomers = [];
@@ -81,7 +65,7 @@ function renderCustomerList(customers) {
       <td>${banned}</td>
       <td class="text-nowrap">
         <button class="btn btn-sm btn-light border me-1" onclick='editCustomer(${JSON.stringify(c)})' title="Düzenle">
-          <i class="bi bi-pencil-square text-primary"></i>
+          <i class="bi bi-search text-primary"></i>
         </button>
         <button class="btn btn-sm btn-light border" onclick='deleteCustomer(${c.id})' title="Sil">
           <i class="bi bi-trash text-danger"></i>
@@ -101,13 +85,14 @@ function renderCustomerList(customers) {
 }
 function renderPagination(totalItems) {
   const paginationContainer = document.getElementById("paginationContainer");
-  if (!paginationContainer) return;
+  const paginationInfo = document.getElementById("paginationInfo");
+  if (!paginationContainer || !paginationInfo) return;
 
   const totalPages = Math.ceil(totalItems / itemsPerPage);
   const currentStart = (currentPage - 1) * itemsPerPage + 1;
   const currentEnd = Math.min(currentPage * itemsPerPage, totalItems);
 
-  // Sayfa numarası kutuları
+  // Sayfa numaraları
   let buttonsHtml = `<nav><ul class="pagination pagination-sm mb-0">`;
 
   // Sol ok
@@ -119,11 +104,10 @@ function renderPagination(totalItems) {
     </li>
   `;
 
-  // Sayfa numaraları (en fazla 9 göster)
+  // Sayfa numaraları (maks. 9 göster)
   const maxButtons = 9;
   let startPage = Math.max(currentPage - 4, 1);
   let endPage = Math.min(startPage + maxButtons - 1, totalPages);
-
   if (endPage - startPage < maxButtons - 1) {
     startPage = Math.max(endPage - maxButtons + 1, 1);
   }
@@ -144,23 +128,16 @@ function renderPagination(totalItems) {
       </button>
     </li>
   `;
-
   buttonsHtml += `</ul></nav>`;
 
-  // Bilgi metni
-  const infoHtml = `
-    <div class="small text-muted ms-2">
-      Gösterilen: <b>${currentStart} - ${currentEnd}</b> / ${totalItems} (${totalPages} sayfa)
-    </div>
-  `;
+  paginationContainer.innerHTML = buttonsHtml;
 
-  paginationContainer.innerHTML = `
-    <div class="d-flex justify-content-between align-items-center flex-wrap w-100">
-      <div>${buttonsHtml}</div>
-      <div class="ms-auto">${infoHtml}</div>
-    </div>
+  // Dinamik bilgi yazdır
+  paginationInfo.innerHTML = `
+    Gösterilen: <strong>${currentStart} - ${currentEnd}</strong> / ${totalItems} (${totalPages} sayfa)
   `;
 }
+
 
 
 function handleSearch() {
@@ -175,7 +152,7 @@ function handleSearch() {
   renderCustomerList(filtered);
 }
 
-window.editCustomer = function (customer) {
+/*window.editCustomer = function (customer) {
   const updateForm = document.getElementById("updateForm");
   updateForm.name.value = customer.name;
   updateForm.email.value = customer.email;
@@ -186,6 +163,12 @@ window.editCustomer = function (customer) {
   updateForm.notes.value = customer.notes || "";
   updateForm.id.value = customer.id;
   new bootstrap.Modal(document.getElementById("updateModal")).show();
+};*/
+
+window.editCustomer = function (customer) {
+  if (customer?.id) {
+    window.location.href = `customer-details.html?id=${customer.id}`;
+  }
 };
 
 window.deleteCustomer = async function (id) {
