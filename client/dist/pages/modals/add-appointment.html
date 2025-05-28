@@ -1,4 +1,5 @@
 <!-- Randevu Oluşturma Modalı -->
+ 
 <div class="modal fade " id="appointmentModal" tabindex="-1" aria-labelledby="appointmentModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-lg modal-dialog-centered">
     <div class="modal-content">
@@ -95,9 +96,9 @@
         <option>epilasyon</option>
       </select>
     </div>
-    <div class="col-md-6">
-      <input type="text" class="form-control" placeholder="Personel">
-    </div>
+<select id="paketPersonelInput" class="form-select">
+  <option selected hidden>Personel</option>
+</select>
   </div>
 </div>
 <!-- HİZMET LİSTESİ -->
@@ -112,9 +113,9 @@
 </select>
 
     </div>
-    <div class="col-md-6">
-      <input type="text" class="form-control" id="personelInput" placeholder="Personel">
-    </div>
+<select id="hizmetPersonelInput" class="form-select">
+  <option selected hidden>Personel</option>
+</select>
   </div>
   <div class="row g-2 mb-2">
     <div class="col-md-6">

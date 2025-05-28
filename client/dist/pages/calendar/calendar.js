@@ -1,70 +1,34 @@
 import { loadPopup } from '../../utils/popupLoader.js';
-import { doldurTekSeferlikHizmetler } from "../modals/js/add-appointment.js";
 
 let calendar;
 let flatpickrInstance;
-let customerCache = [];
+
+// 🌟 Her yerden modalı açan tek fonksiyon
+document.addEventListener("click", async function (e) {
+  const btn = e.target.closest("#openAppointmentModal");
+  if (!btn) return;
+
+  let modalEl = document.getElementById("appointmentModal");
+  if (!modalEl) {
+    await loadPopup("add-appointment");
+    modalEl = document.getElementById("appointmentModal");
+  }
+
+  const modal = new bootstrap.Modal(modalEl);
+  modal.show();
+
+ setTimeout(() => {
+  window.init?.();
+}, 50); 
+});
 
 document.addEventListener('DOMContentLoaded', async function () {
   const calendarEl = document.getElementById('calendar');
   const dateInput = document.getElementById("datePicker");
 
-  await loadPopup("add-appointment"); // Modal yüklensin
+  if (!calendarEl) return;
 
-  // ✅ Modal açılınca hizmetleri çek
-  const openBtn = document.getElementById("openAppointmentModal");
-  if (openBtn) {
-    openBtn.addEventListener("click", async () => {
-      await doldurTekSeferlikHizmetler(); // DOM artık hazır!
-      const modalEl = document.getElementById("appointmentModal");
-      const modal = new bootstrap.Modal(modalEl);
-      modal.show();
-    });
-  }
-
-  // ... (kalan calendar kodlarını aynen koruyabilirsin)
-
-
-
-
-  // Awesomplete için müşteri autocomplete
-  const customerInput = document.getElementById("customerInput");
-  const awesomplete = new Awesomplete(customerInput, {
-    minChars: 3,
-    maxItems: 10,
-    autoFirst: true
-  });
-
-  if (customerInput) {
-    customerInput.addEventListener("input", async function () {
-      const val = this.value.trim();
-      if (val.length < 3) return;
-
-      const token = localStorage.getItem("companyToken");
-      const axiosConfig = {
-        headers: { Authorization: "Bearer " + token }
-      };
-
-      try {
-        const res = await axios.get(`http://localhost:5001/api/customers?search=${encodeURIComponent(val)}`, axiosConfig);
-        const customers = res.data;
-        customerCache = customers;
-
-        awesomplete.list = customers.map(c => c.name);
-      } catch (err) {
-        console.error("Müşteri önerileri alınamadı:", err);
-      }
-    });
-
-    customerInput.addEventListener("change", function () {
-      const val = this.value.trim();
-      const selected = customerCache.find(c => c.name === val);
-      const customerIdInput = document.getElementById("customerIdHidden");
-      if (customerIdInput) {
-        customerIdInput.value = selected ? selected.id : "";
-      }
-    });
-  }
+  await loadPopup("add-appointment"); // Modal önceden yüklensin
 
   calendar = new FullCalendar.Calendar(calendarEl, {
     initialView: 'timeGridDay',
@@ -86,9 +50,7 @@ document.addEventListener('DOMContentLoaded', async function () {
       try {
         const token = localStorage.getItem("companyToken");
         const res = await fetch('http://localhost:5001/api/appointments', {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
+          headers: { Authorization: `Bearer ${token}` }
         });
         const data = await res.json();
 
@@ -142,32 +104,15 @@ document.addEventListener('DOMContentLoaded', async function () {
       const modalEl = document.getElementById("appointmentModal");
       const modal = new bootstrap.Modal(modalEl);
       modal.show();
+
+      window.init?.(); // 👉 Modal içi işlemleri tetikle
     },
     dayHeaderContent: function(arg) {
       const currentView = calendar.view.type;
-
-      if (currentView === 'dayGridMonth') {
-        const gun = new Intl.DateTimeFormat('tr-TR', { weekday: 'long' }).format(arg.date);
-        return {
-          html: `<div style="text-align: center;font-weight: 600; font-size:14px;">${gun.charAt(0).toUpperCase() + gun.slice(1)}</div>`
-        };
-      }
-
-      if (currentView === 'timeGridWeek') {
-        const tarih = new Intl.DateTimeFormat('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric' }).format(arg.date);
-        const gun = new Intl.DateTimeFormat('tr-TR', { weekday: 'long' }).format(arg.date);
-        return {
-          html: `<div style="display: flex; flex-direction: column; text-align: center; line-height: 1.2;">
-            <span style="font-weight: 600; font-size:14px;">${tarih}</span>
-            <span style="font-weight: 400;font-size:14px;">${gun.charAt(0).toUpperCase() + gun.slice(1)}</span>
-          </div>`
-        };
-      }
-
-      const tarih = new Intl.DateTimeFormat('tr-TR', { day: '2-digit', month: 'long', year: 'numeric' }).format(arg.date);
+      const tarih = new Intl.DateTimeFormat('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric' }).format(arg.date);
       const gun = new Intl.DateTimeFormat('tr-TR', { weekday: 'long' }).format(arg.date);
       return {
-        html: `<div>${tarih} / ${gun.charAt(0).toUpperCase() + gun.slice(1)}</div>`
+        html: `<div style="text-align: center;font-weight: 600; font-size:14px;">${tarih} / ${gun.charAt(0).toUpperCase() + gun.slice(1)}</div>`
       };
     },
     datesSet: function () {
@@ -204,15 +149,15 @@ document.addEventListener('DOMContentLoaded', async function () {
     }
   });
 
-  document.getElementById("prevDateBtn").addEventListener("click", () => {
+  document.getElementById("prevDateBtn")?.addEventListener("click", () => {
     calendar.prev();
   });
 
-  document.getElementById("nextDateBtn").addEventListener("click", () => {
+  document.getElementById("nextDateBtn")?.addEventListener("click", () => {
     calendar.next();
   });
 
-  document.getElementById("goToday").addEventListener("click", () => {
+  document.getElementById("goToday")?.addEventListener("click", () => {
     calendar.today();
   });
 
@@ -224,12 +169,9 @@ document.addEventListener('DOMContentLoaded', async function () {
     });
   });
 
-  const calendarIcon = document.querySelector(".bi-calendar3");
-  if (calendarIcon) {
-    calendarIcon.addEventListener("click", () => {
-      dateInput.focus();
-    });
-  }
+  document.querySelector(".bi-calendar3")?.addEventListener("click", () => {
+    dateInput.focus();
+  });
 });
 
 function updateCustomHeader(date) {

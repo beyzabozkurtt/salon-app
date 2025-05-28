@@ -3,6 +3,7 @@ const router = express.Router();
 const paymentController = require('../controllers/paymentController');
 const authMiddleware = require('../middleware/authMiddleware'); // 🔐
 
+router.post('/', authMiddleware, paymentController.create);
 router.get('/customers', authMiddleware, paymentController.getPaidCustomers);
 router.get('/by-customer/:id', authMiddleware, paymentController.getPaymentsByCustomer);
 router.get('/all', authMiddleware, paymentController.getAllPayments);
@@ -10,6 +11,8 @@ router.post('/pay/:id', authMiddleware, paymentController.makePayment); // 💰 
 router.get('/cash-tracking', authMiddleware, paymentController.getCashTracking);
 router.get('/by-sale/:saleId', authMiddleware, paymentController.getBySale);
 router.get('/by-customer/:customerId', authMiddleware, paymentController.getByCustomerId);
+
+
 
 
 

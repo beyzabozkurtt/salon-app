@@ -14,8 +14,27 @@ const Payment = require('./Payment')(sequelize, DataTypes);
 const WorkingHours = require('./WorkingHours')(sequelize, DataTypes);
 const Company = require('./Company')(sequelize, DataTypes);
 const SingleService = require('./SingleService')(sequelize, DataTypes);
+const SaleSingleService = require('./SaleSingleService')(sequelize, DataTypes);
+
+
 
 // 🔗 İlişkiler
+// 🔗 SaleSingleService ilişkileri
+Customer.hasMany(SaleSingleService, { foreignKey: 'CustomerId' });
+SaleSingleService.belongsTo(Customer, { foreignKey: 'CustomerId' });
+
+User.hasMany(SaleSingleService, { foreignKey: 'UserId' });
+SaleSingleService.belongsTo(User, { foreignKey: 'UserId' });
+
+Company.hasMany(SaleSingleService, { foreignKey: 'CompanyId' });
+SaleSingleService.belongsTo(Company, { foreignKey: 'CompanyId' });
+
+SingleService.hasMany(SaleSingleService, { foreignKey: 'SingleServiceId' });
+SaleSingleService.belongsTo(SingleService, { foreignKey: 'SingleServiceId' });
+
+Appointment.hasOne(SaleSingleService, { foreignKey: 'AppointmentId' });
+SaleSingleService.belongsTo(Appointment, { foreignKey: 'AppointmentId' });
+
 User.hasMany(Appointment);
 Appointment.belongsTo(User);
 
@@ -143,6 +162,7 @@ module.exports = {
   CashRegister,
   Payment,
   WorkingHours,
+  SaleSingleService,
   Company,
   SingleService
 };

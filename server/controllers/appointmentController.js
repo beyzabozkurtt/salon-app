@@ -1,8 +1,7 @@
-const { Appointment, Customer, User, Service, Sale } = require('../models');
+const { Appointment, Customer, User, Service, Sale, SaleSingleService, Payment } = require('../models');
 const { Op } = require('sequelize');
 
 module.exports = {
-  // ✅ Tüm randevuları getir (şirkete göre filtreli)
   async getAll(req, res) {
     try {
       const data = await Appointment.findAll({
@@ -10,46 +9,88 @@ module.exports = {
         include: [Customer, User, Service],
         order: [['date', 'ASC']]
       });
-
       res.json(data);
     } catch (err) {
       console.error(err);
       res.status(500).json({ error: 'Listeleme hatası' });
     }
+
   },
 
-  // ✅ Yeni randevu oluştur (sessionNumber hesaplanarak)
   async create(req, res) {
+        console.log("🧪 Appointment create verisi:", req.body);
+
     try {
       const CompanyId = req.company.companyId;
-      const { CustomerId, ServiceId, SaleId } = req.body;
-
-      const where = {
+      const {
         CustomerId,
-        ServiceId,
+        ServiceId,        // opsiyonel (paketli hizmetler için)
+        SingleServiceId,  // opsiyonel (tek seferlik hizmetler için)
+        UserId,
+        date,
+        endDate,
+        price,
+        notes
+      } = req.body;
+
+      // Seans numarası sadece paketli hizmetlerde hesaplanır
+      let sessionNumber = 1;
+
+      if (ServiceId) {
+        const existingCount = await Appointment.count({
+          where: {
+            CustomerId,
+            ServiceId,
+            CompanyId,
+            status: { [Op.ne]: 'iptal' }
+          }
+        });
+        sessionNumber = existingCount + 1;
+      }
+
+      // SaleSingleService kaydı
+      const sale = await SaleSingleService.create({
+        CustomerId,
         CompanyId,
-        status: { [Op.ne]: 'iptal' }
-      };
-
-      if (SaleId) where.SaleId = SaleId;
-
-      const count = await Appointment.count({ where });
-
-      const appointment = await Appointment.create({
-        ...req.body,
-        CompanyId,
-        status: req.body.status || 'bekliyor',
-        sessionNumber: count + 1
+        UserId,
+        ServiceId: ServiceId || null,
+        SingleServiceId: SingleServiceId || null,
+        price: price
       });
 
-      res.json(appointment);
+      // Appointment kaydı
+      const appointment = await Appointment.create({
+        CustomerId,
+        CompanyId,
+        UserId,
+        ServiceId: ServiceId || null,
+        date,
+        endDate,
+        price,
+        status: "bekliyor",
+        sessionNumber,
+        notes,
+        SaleSingleServiceId: sale.id
+      });
+
+      // Payment kaydı
+      await Payment.create({
+        CustomerId,
+        CompanyId,
+        amount: price,
+        status: "bekliyor",
+        dueDate: date,
+        SaleSingleServiceId: sale.id
+      });
+
+      return res.status(201).json(appointment);
+
     } catch (err) {
-      console.error(err);
-      res.status(500).json({ error: 'Kayıt hatası' });
+      console.error("❌ Randevu oluşturma hatası:", err);
+      return res.status(500).json({ error: "Randevu oluşturulamadı." });
     }
   },
 
-  // ✅ Randevu güncelle (sessionNumber güncellenmesin)
   async update(req, res) {
     try {
       const { sessionNumber, ...safeData } = req.body;
@@ -75,7 +116,6 @@ module.exports = {
     }
   },
 
-  // ✅ Randevu sil
   async delete(req, res) {
     try {
       const deleted = await Appointment.destroy({
@@ -96,76 +136,69 @@ module.exports = {
     }
   },
 
-  // ✅ Belirli randevuyu getir (paket adı + süre + personel)
-async getOne(req, res) {
-  try {
-    const appointment = await Appointment.findOne({
-      where: {
-        id: req.params.id,
-        CompanyId: req.company.companyId
-      },
-      include: [Customer, User, Service],
-    });
+  async getOne(req, res) {
+    try {
+      const appointment = await Appointment.findOne({
+        where: {
+          id: req.params.id,
+          CompanyId: req.company.companyId
+        },
+        include: [Customer, User, Service],
+      });
 
-    if (!appointment) {
-      return res.status(404).json({ error: 'Randevu bulunamadı' });
+      if (!appointment) {
+        return res.status(404).json({ error: 'Randevu bulunamadı' });
+      }
+
+      const serviceName = appointment.Service?.name || '-';
+      const start = new Date(appointment.date);
+      const end = new Date(appointment.endDate);
+      const duration = Math.floor((end - start) / (1000 * 60));
+
+      res.json({
+        ...appointment.toJSON(),
+        serviceName,
+        duration
+      });
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ error: 'Detay çekme hatası' });
     }
+  },
 
-    // ✅ Service adı doğrudan çekiliyor
-    const serviceName = appointment.Service?.name || '-';
+  async getPackageUsage(req, res) {
+    try {
+      const companyId = req.company.companyId;
+      const customerId = req.params.id;
 
-    // ✅ Süre hesaplama
-    const start = new Date(appointment.date);
-    const end = new Date(appointment.endDate);
-    const duration = Math.floor((end - start) / (1000 * 60)); // dakika
+      const allAppointments = await Appointment.findAll({
+        where: {
+          CustomerId: customerId,
+          CompanyId: companyId,
+          status: { [Op.ne]: 'iptal' }
+        },
+        include: ['Service'],
+        order: [['date', 'ASC']]
+      });
 
-    res.json({
-      ...appointment.toJSON(),
-      serviceName,
-      duration
-    });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Detay çekme hatası' });
+      const enriched = allAppointments.map((app, _, arr) => {
+        const matching = arr.filter(a =>
+          a.ServiceId === app.ServiceId &&
+          a.SaleId === app.SaleId
+        ).sort((a, b) => new Date(a.date) - new Date(b.date));
+
+        const sessionNumber = matching.findIndex(a => a.id === app.id) + 1;
+
+        return {
+          ...app.toJSON(),
+          sessionNumber
+        };
+      });
+
+      res.json(enriched);
+    } catch (err) {
+      console.error("Paket kullanımı hatası:", err);
+      res.status(500).json({ error: "Paket kullanımları alınamadı." });
+    }
   }
-},
-async getPackageUsage(req, res) {
-  try {
-    const companyId = req.company.companyId;
-    const customerId = req.params.id;
-
-    const allAppointments = await Appointment.findAll({
-      where: {
-        CustomerId: customerId,
-        CompanyId: companyId,
-        status: { [Op.ne]: 'iptal' }
-      },
-      include: ['Service'],
-      order: [['date', 'ASC']]
-    });
-
-    const enriched = allAppointments.map((app, _, arr) => {
-      // Aynı müşteri, servis ve saleId eşleşmesine sahip olanları bul
-      const matching = arr.filter(a =>
-        a.ServiceId === app.ServiceId &&
-        a.SaleId === app.SaleId
-      ).sort((a, b) => new Date(a.date) - new Date(b.date));
-
-      const sessionNumber = matching.findIndex(a => a.id === app.id) + 1;
-
-      return {
-        ...app.toJSON(),
-        sessionNumber
-      };
-    });
-
-    res.json(enriched);
-  } catch (err) {
-    console.error("Paket kullanımı hatası:", err);
-    res.status(500).json({ error: "Paket kullanımları alınamadı." });
-  }
-}
-
-
-
 };

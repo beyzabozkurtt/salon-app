@@ -253,6 +253,36 @@ async getCashTracking(req, res) {
     console.error("Ödeme getirme hatası:", err);
     res.status(500).json({ error: "Ödeme bilgileri alınamadı." });
   }
+},
+async create(req, res) {
+  try {
+    const {
+      amount,
+      status = "bekliyor",
+      dueDate,
+      SaleSingleServiceId,
+      CustomerId
+    } = req.body;
+
+    const CompanyId = req.company.companyId;
+    const UserId = req.company.userId || null; // Eğer token'dan gelmiyorsa null geçilir
+
+    const newPayment = await Payment.create({
+      amount,
+      status,
+      dueDate: new Date(dueDate),
+      SaleSingleServiceId,
+      CustomerId,
+      CompanyId,
+      UserId
+    });
+
+    res.status(201).json(newPayment);
+  } catch (err) {
+    console.error("❌ Payment oluşturma hatası:", err);
+    res.status(500).json({ error: "Ödeme oluşturulamadı." });
+  }
 }
+
 
 };

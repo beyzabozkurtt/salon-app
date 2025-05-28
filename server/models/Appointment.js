@@ -24,20 +24,18 @@ module.exports = (sequelize, DataTypes) => {
       allowNull: true
     },
     SaleId: {
-  type: DataTypes.INTEGER,
-  allowNull: true
-},
+      type: DataTypes.INTEGER,
+      allowNull: true
+    },
     sessionNumber: {
-  type: DataTypes.INTEGER,
-  allowNull: false,
-  defaultValue: 1
-},
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 1
+    },
     CompanyId: {
-  type: DataTypes.INTEGER,
-  allowNull: false
-},
-
-    
+      type: DataTypes.INTEGER,
+      allowNull: false
+    }
   });
 
   return Appointment;
