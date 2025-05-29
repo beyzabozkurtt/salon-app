@@ -3,7 +3,6 @@ const { Op } = require("sequelize");
 
 exports.create = async (req, res) => {
   try {
-    console.log("📥 Gelen veri:", req.body);
     const { CustomerId, SingleServiceId, UserId, date, endDate, price, notes } = req.body;
     const CompanyId = req.company.companyId;
 
@@ -38,6 +37,10 @@ exports.create = async (req, res) => {
       SaleSingleServiceId: sale.id
     });
 
+    // 🔁 3.5: Sale kaydına AppointmentId'yi bağla
+    sale.AppointmentId = appointment.id;
+    await sale.save(); // Güncellemeyi kaydet
+
     // 4. Payment oluştur
     await Payment.create({
       amount: price,
@@ -60,6 +63,7 @@ exports.create = async (req, res) => {
     res.status(500).json({ message: "İşlem sırasında bir hata oluştu." });
   }
 };
+
 
 exports.getAll = async (req, res) => {
   try {

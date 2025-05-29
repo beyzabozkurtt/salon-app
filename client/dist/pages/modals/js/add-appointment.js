@@ -1,3 +1,4 @@
+let isListenerBound = false;
 export function init() {
   setupCustomerAutocomplete();
   doldurTekSeferlikHizmetler();
@@ -5,6 +6,7 @@ export function init() {
   initFlatpickrs();
   setupTabs();
   setupHizmetEkle();
+
 
   // Hizmet seçilince fiyatı otomatik doldur
   const hizmetSelect = document.getElementById("hizmetSelect");
@@ -19,88 +21,11 @@ export function init() {
       }
     });
   }
-  const submitBtn = document.querySelector("#appointmentModal button.btn-success");
+ const submitBtn = document.querySelector("#appointmentModal button.btn-success");
 
-if (submitBtn) {
-  submitBtn.addEventListener("click", async (e) => {
-    e.preventDefault();
-
-    // Alanlar
-    const customerId = document.getElementById("customerIdHidden")?.value;
-    const serviceId = document.getElementById("hizmetSelect")?.value;
-    const userId = document.getElementById("hizmetPersonelInput")?.value;
-    console.log("👉 Seçilen personel ID:", userId);
-
-    const price = document.getElementById("fiyatInput")?.value;
-    const date = document.getElementById("appointmentDate")?.value;
-    const startTime = document.getElementById("startTime")?.value;
-    const endTime = document.getElementById("endTime")?.value;
-
-    // 🔍 Eksik kontrolü
-    if (!customerId) return alert("Lütfen bir müşteri seçin.");
-    if (!serviceId) return alert("Lütfen bir hizmet seçin.");
-    if (!userId) return alert("Lütfen bir personel seçin.");
-    if (!price || isNaN(price)) return alert("Geçerli bir fiyat girin.");
-    if (!date || !startTime || !endTime) return alert("Lütfen tarih ve saat bilgilerini girin.");
-
-    const startISO = new Date(`${date.split(".").reverse().join("-")}T${startTime}`).toISOString();
-    const endISO = new Date(`${date.split(".").reverse().join("-")}T${endTime}`).toISOString();
-
-    const token = localStorage.getItem("companyToken");
-    const config = {
-      headers: {
-        Authorization: "Bearer " + token
-      }
-    };
-
-    try {
-      // 1. Appointment kaydı
-      const appointmentRes = await axios.post("http://localhost:5001/api/appointments", {
-        CustomerId: customerId,
-        UserId: userId,
-        SingleServiceId: serviceId,
-        date: startISO,
-        endDate: endISO,
-        status: "bekliyor",
-        price: parseFloat(price),
-        notes: ""
-      }, config);
-
-      const appointmentId = appointmentRes.data.id;
-
-      // 2. SalesingleService kaydı
-        const saleRes = await axios.post("http://localhost:5001/api/salesingleservices", {
-          AppointmentId: appointmentId,
-          SingleServiceId: serviceId,
-          price: parseFloat(price),
-          CustomerId: customerId,
-          UserId: userId,
-            date: startISO,            // 🔴 BUNLARI EKLE
-  endDate: endISO 
-          
-        }, config);
-
-
-      const saleId = saleRes.data.id;
-
-      // 3. Payment kaydı
-      await axios.post("http://localhost:5001/api/payments", {
-        amount: parseFloat(price),
-        status: "bekliyor",
-        dueDate: startISO,
-        saleSingleServiceId: saleId,
-        customerId: customerId
-      }, config);
-
-      alert("✅ Randevu başarıyla oluşturuldu!");
-      bootstrap.Modal.getInstance(document.getElementById("appointmentModal"))?.hide();
-      window.location.reload();
-
-    } catch (err) {
-      console.error("❌ Oluşturma hatası:", err);
-      alert("Bir hata oluştu. Lütfen tekrar deneyin.");
-    }
-  });
+if (submitBtn && !isListenerBound) {
+  submitBtn.addEventListener("click", handleAppointmentCreate);
+  isListenerBound = true;
 }
 
 }
@@ -145,6 +70,64 @@ function setupTabs() {
     });
   });
 }
+
+// 1. Önce fonksiyonu dışarı tanımlıyoruz:
+async function handleAppointmentCreate(e) {
+  
+
+  e.preventDefault();
+
+  const customerId = document.getElementById("customerIdHidden")?.value;
+  const serviceId = document.getElementById("hizmetSelect")?.value;
+  const userId = document.getElementById("hizmetPersonelInput")?.value;
+ 
+
+  const price = document.getElementById("fiyatInput")?.value;
+  const date = document.getElementById("appointmentDate")?.value;
+  const startTime = document.getElementById("startTime")?.value;
+  const endTime = document.getElementById("endTime")?.value;
+  const notes = document.getElementById("notesInput")?.value || "";
+
+
+  if (!customerId) return alert("Lütfen bir müşteri seçin.");
+  if (!serviceId) return alert("Lütfen bir hizmet seçin.");
+  if (!userId) return alert("Lütfen bir personel seçin.");
+  if (!price || isNaN(price)) return alert("Geçerli bir fiyat girin.");
+  if (!date || !startTime || !endTime) return alert("Lütfen tarih ve saat bilgilerini girin.");
+
+  const startISO = new Date(`${date.split(".").reverse().join("-")}T${startTime}`).toISOString();
+  const endISO = new Date(`${date.split(".").reverse().join("-")}T${endTime}`).toISOString();
+
+  const token = localStorage.getItem("companyToken");
+  const config = {
+    headers: {
+      Authorization: "Bearer " + token
+    }
+  };
+
+  try {
+    // ✅ Tek çağrı ile: Satış + Randevu + Ödeme işlemi backend'de otomatik gerçekleşiyor
+    const saleRes = await axios.post("http://localhost:5001/api/salesingleservices", {
+      SingleServiceId: serviceId,
+      price: parseFloat(price),
+      CustomerId: customerId,
+      UserId: userId,
+      date: startISO,
+      endDate: endISO,
+      notes: notes // not gerekiyorsa doldur
+    }, config);
+
+    alert("✅ Randevu başarıyla oluşturuldu!");
+    bootstrap.Modal.getInstance(document.getElementById("appointmentModal"))?.hide();
+    window.location.reload();
+
+  } catch (err) {
+    console.error("❌ Oluşturma hatası:", err);
+    alert("Bir hata oluştu. Lütfen tekrar deneyin.");
+  }
+}
+
+
 
 function setupHizmetEkle() {
   const hizmetEkleBtn = document.getElementById("hizmetEkleBtn");

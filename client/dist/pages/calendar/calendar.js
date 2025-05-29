@@ -3,6 +3,9 @@ import { loadPopup } from '../../utils/popupLoader.js';
 let calendar;
 let flatpickrInstance;
 
+// 🧠 FLAG: init bir defadan fazla çağrılmasın diye kontrol
+let isInitCalled = false;
+
 // 🌟 Her yerden modalı açan tek fonksiyon
 document.addEventListener("click", async function (e) {
   const btn = e.target.closest("#openAppointmentModal");
@@ -17,9 +20,13 @@ document.addEventListener("click", async function (e) {
   const modal = new bootstrap.Modal(modalEl);
   modal.show();
 
- setTimeout(() => {
-  window.init?.();
-}, 50); 
+  // ✅ Sadece ilk seferde init çalıştır
+if (!modalEl.dataset.inited) {
+  setTimeout(() => {
+    window.init?.();
+    modalEl.dataset.inited = "true";
+  }, 50);
+}
 });
 
 document.addEventListener('DOMContentLoaded', async function () {
@@ -105,7 +112,13 @@ document.addEventListener('DOMContentLoaded', async function () {
       const modal = new bootstrap.Modal(modalEl);
       modal.show();
 
-      window.init?.(); // 👉 Modal içi işlemleri tetikle
+      // ✅ Sadece ilk seferde init çalıştır
+if (!modalEl.dataset.inited) {
+  setTimeout(() => {
+    window.init?.();
+    modalEl.dataset.inited = "true";
+  }, 50);
+}
     },
     dayHeaderContent: function(arg) {
       const currentView = calendar.view.type;
