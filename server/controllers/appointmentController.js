@@ -2,23 +2,35 @@ const { Appointment, Customer, User, Service, Sale, SaleSingleService, Payment }
 const { Op } = require('sequelize');
 
 module.exports = {
-  async getAll(req, res) {
-    try {
-      const data = await Appointment.findAll({
-        where: { CompanyId: req.company.companyId },
-        include: [Customer, User, Service],
-        order: [['date', 'ASC']]
-      });
-      res.json(data);
-    } catch (err) {
-      console.error(err);
-      res.status(500).json({ error: 'Listeleme hatası' });
-    }
+async getAll(req, res) {
+  try {
+    const { Appointment, Customer, User, Service, SingleService } = require('../models');
 
-  },
+    const data = await Appointment.findAll({
+      where: { CompanyId: req.company.companyId },
+      include: [
+        Customer,
+        User,
+        Service,
+        {
+          model: SingleService,
+          as: 'SingleService',
+          attributes: ['id', 'name', 'color']
+        }
+      ],
+      order: [['date', 'ASC']]
+    });
+
+    res.json(data);
+  } catch (err) {
+    console.error("📛 Appointment getAll hatası:", err);
+    res.status(500).json({ error: 'Listeleme hatası' });
+  }
+},
+
 
   async create(req, res) {
-        console.log("🧪 Appointment create verisi:", req.body);
+      
 
     try {
       const CompanyId = req.company.companyId;
@@ -64,6 +76,7 @@ module.exports = {
         CompanyId,
         UserId,
         ServiceId: ServiceId || null,
+        SingleServiceId: SingleServiceId || null,
         date,
         endDate,
         price,

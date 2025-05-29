@@ -30,7 +30,11 @@ module.exports = (sequelize, DataTypes) => {
     SaleSingleServiceId: {
       type: DataTypes.INTEGER,
       allowNull: true
-},
+    },
+    SingleServiceId: {
+      type: DataTypes.INTEGER,
+      allowNull: true
+    },
     sessionNumber: {
       type: DataTypes.INTEGER,
       allowNull: false,
@@ -41,6 +45,14 @@ module.exports = (sequelize, DataTypes) => {
       allowNull: false
     }
   });
+
+  // 🔗 İLİŞKİ TANIMI
+  Appointment.associate = (models) => {
+    Appointment.belongsTo(models.SingleService, {
+      foreignKey: 'SingleServiceId',
+      as: 'SingleService'
+    });
+  };
 
   return Appointment;
 };

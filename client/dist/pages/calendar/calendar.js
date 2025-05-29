@@ -63,11 +63,11 @@ document.addEventListener('DOMContentLoaded', async function () {
 
         const events = data.map(app => ({
           id: app.id,
-          title: `${app.Customer?.name || "Müşteri"} - ${app.Service?.name || "Hizmet"}`,
+          title: `${app.Customer?.name || "Müşteri"} - ${app.SingleService?.name || app.Service?.name || "Hizmet"}`,
           start: app.date,
           end: app.endDate,
-          backgroundColor: getColorByStatus(app.status),
-          borderColor: getColorByStatus(app.status),
+          backgroundColor: app.SingleService?.color || getColorByStatus(app.status),
+          borderColor: app.SingleService?.color || getColorByStatus(app.status),
           extendedProps: {
             status: app.status,
             notes: app.notes,

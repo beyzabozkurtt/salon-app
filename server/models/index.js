@@ -41,6 +41,9 @@ Appointment.belongsTo(User);
 Sale.hasMany(Appointment);
 Appointment.belongsTo(Sale);
 
+SingleService.hasMany(Appointment);
+Appointment.belongsTo(SingleService);
+
 
 Customer.hasMany(Appointment);
 Appointment.belongsTo(Customer);

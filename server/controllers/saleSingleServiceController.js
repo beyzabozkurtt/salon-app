@@ -28,6 +28,7 @@ exports.create = async (req, res) => {
     const appointment = await Appointment.create({
       CustomerId,
       UserId,
+      SingleServiceId: SingleServiceId || null,
       date,
       endDate,
       status: "bekliyor",
