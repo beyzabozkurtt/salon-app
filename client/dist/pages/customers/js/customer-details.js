@@ -754,7 +754,6 @@ window.changePaymentPage = function (page) {
   renderPaymentPagination(allPayments.length);
 };
 //borclar
-//borclar
 let allDebts = [];
 let currentDebtPage = 1;
 const debtsPerPage = 10;
@@ -794,9 +793,7 @@ async function loadCustomerDebts(customerId, customer) {
               <th>Tutar</th>
               <th>Vade</th>
               <th>Durum</th>
-              <th>Ödeme Tarihi</th>
-              <th>Ödeme Tipi</th>
-              <th>Kullanıcı</th>
+              <th>İşlem</th>
             </tr>
           </thead>
           <tbody></tbody>
@@ -843,18 +840,32 @@ function renderDebtList(debts) {
     const vade = new Date(p.dueDate).toLocaleDateString("tr-TR");
     const odemeTarihi = p.paymentDate ? new Date(p.paymentDate).toLocaleDateString("tr-TR") : "-";
     const statusBadge = p.status === "gecikmiş" ? "danger" : "warning";
+
     tbody.innerHTML += `
       <tr>
         <td class="text-center">${p.installmentNo || "-"}</td>
-        <td class="text-end">${parseFloat(p.amount).toFixed(2)} ₺</td>
-        <td class="text-nowrap">${vade}</td>
+        <td class="text-center">${parseFloat(p.amount).toFixed(2)} ₺</td>
+        <td class="text-center">${vade}</td>
         <td class="text-center"><span class="badge bg-${statusBadge}">${p.status}</span></td>
-        <td class="text-nowrap">${odemeTarihi}</td>
-        <td class="text-center">${p.paymentType || "-"}</td>
-        <td class="text-center">${p.User?.name || "-"}</td>
+        <td class="text-center">
+          <button class="btn btn-sm btn-outline-success ms-2 pay-btn" data-id="${customerId}">
+            Ödeme Yap
+          </button>
+        </td>
       </tr>`;
   });
+
+  // Butonlara listener ekle
+  setTimeout(() => {
+    document.querySelectorAll(".pay-btn").forEach(btn => {
+      btn.addEventListener("click", e => {
+        const customerId = e.target.dataset.id;
+        window.location.href = `payment-details.html?id=${customerId}`;
+      });
+    });
+  }, 0);
 }
+
 
 function renderDebtPagination(totalItems) {
   const container = document.getElementById("debtPagination");
