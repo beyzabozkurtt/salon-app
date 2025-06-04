@@ -7,6 +7,17 @@
   box-sizing: border-box;
   background-color: transparent;
 }
+body {
+  background-color: transparent !important;
+}
+
+.container {
+  background-color: transparent !important;
+}
+
+.content-section {
+  background-color: transparent !important;
+}
 
 /* Sidebar */
 #sidebar {
@@ -113,3 +124,15 @@
 body.modal-open {
   overflow: hidden !important;
 }
+.card-header h5 {
+  font-size: 17px;
+}
+
+.card-header .bi-person {
+  font-size: 24px;
+}
+
+.card-header .rounded-circle {
+  background-color: #f8f9fa;
+}
+
