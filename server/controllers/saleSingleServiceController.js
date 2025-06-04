@@ -6,6 +6,20 @@ exports.create = async (req, res) => {
     const { CustomerId, SingleServiceId, UserId, date, endDate, price, notes } = req.body;
     const CompanyId = req.company.companyId;
 
+    // ⏰ Geçmiş saat kontrolü
+    const appointmentDate = new Date(date);
+    const now = new Date();
+
+    if (!date || isNaN(appointmentDate)) {
+      return res.status(400).json({ error: "Geçerli bir tarih girilmedi." });
+    }
+
+    
+
+    if (appointmentDate.getTime() <= now.getTime()) {
+      return res.status(400).json({ error: "Geçmiş bir saate randevu oluşturulamaz." });
+    }
+
     // 1. SaleSingleService oluştur
     const sale = await SaleSingleService.create({
       CustomerId,
@@ -15,14 +29,7 @@ exports.create = async (req, res) => {
       CompanyId
     });
 
-    // 2. sessionNumber hesapla
-    const count = await Appointment.count({
-      where: {
-        CustomerId,
-        CompanyId,
-        status: { [Op.ne]: "iptal" }
-      }
-    });
+
 
     // 3. Appointment oluştur
     const appointment = await Appointment.create({
@@ -33,14 +40,14 @@ exports.create = async (req, res) => {
       endDate,
       status: "bekliyor",
       notes,
-      sessionNumber: count + 1,
+      sessionNumber:1,
       CompanyId,
       SaleSingleServiceId: sale.id
     });
 
-    // 🔁 3.5: Sale kaydına AppointmentId'yi bağla
+    // 3.5: Sale kaydına AppointmentId'yi bağla
     sale.AppointmentId = appointment.id;
-    await sale.save(); // Güncellemeyi kaydet
+    await sale.save();
 
     // 4. Payment oluştur
     await Payment.create({
@@ -64,7 +71,6 @@ exports.create = async (req, res) => {
     res.status(500).json({ message: "İşlem sırasında bir hata oluştu." });
   }
 };
-
 
 exports.getAll = async (req, res) => {
   try {

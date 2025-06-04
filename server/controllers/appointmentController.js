@@ -29,80 +29,98 @@ async getAll(req, res) {
 },
 
 
-  async create(req, res) {
-      
+async create(req, res) {
+  try {
+    const CompanyId = req.company.companyId;
 
-    try {
-      const CompanyId = req.company.companyId;
-      const {
-        CustomerId,
-        ServiceId,        // opsiyonel (paketli hizmetler için)
-        SingleServiceId,  // opsiyonel (tek seferlik hizmetler için)
-        UserId,
-        date,
-        endDate,
-        price,
-        notes
-      } = req.body;
+    const {
+      CustomerId,
+      ServiceId,        // opsiyonel (paketli hizmetler için)
+      SingleServiceId,  // opsiyonel (tek seferlik hizmetler için)
+      UserId,
+      date,             // ISO formatlı: "2025-06-04T08:00:00"
+      endDate,
+      price,
+      notes,
+    } = req.body;
 
-      // Seans numarası sadece paketli hizmetlerde hesaplanır
-      let sessionNumber = 1;
-
-      if (ServiceId) {
-        const existingCount = await Appointment.count({
-          where: {
-            CustomerId,
-            ServiceId,
-            CompanyId,
-            status: { [Op.ne]: 'iptal' }
-          }
-        });
-        sessionNumber = existingCount + 1;
-      }
-
-      // SaleSingleService kaydı
-      const sale = await SaleSingleService.create({
-        CustomerId,
-        CompanyId,
-        UserId,
-        ServiceId: ServiceId || null,
-        SingleServiceId: SingleServiceId || null,
-        price: price
-      });
-
-      // Appointment kaydı
-      const appointment = await Appointment.create({
-        CustomerId,
-        CompanyId,
-        UserId,
-        ServiceId: ServiceId || null,
-        SingleServiceId: SingleServiceId || null,
-        date,
-        endDate,
-        price,
-        status: "bekliyor",
-        sessionNumber,
-        notes,
-        SaleSingleServiceId: sale.id
-      });
-
-      // Payment kaydı
-      await Payment.create({
-        CustomerId,
-        CompanyId,
-        amount: price,
-        status: "bekliyor",
-        dueDate: date,
-        SaleSingleServiceId: sale.id
-      });
-
-      return res.status(201).json(appointment);
-
-    } catch (err) {
-      console.error("❌ Randevu oluşturma hatası:", err);
-      return res.status(500).json({ error: "Randevu oluşturulamadı." });
+    // ⏰ Geçmiş tarih ve saat kontrolü
+    if (!date || isNaN(new Date(date))) {
+      return res.status(400).json({ error: "Geçerli bir tarih girilmedi." });
     }
-  },
+
+    const startDateTime = new Date(date);
+    const now = new Date();
+
+    console.log("📅 Randevu zamanı:", startDateTime.toISOString());
+    console.log("🕒 Şu an:", now.toISOString());
+
+    if (startDateTime.getTime() <= now.getTime()) {
+      return res.status(400).json({ error: "Geçmiş bir saate randevu oluşturulamaz." });
+    }
+
+    // 🔢 Seans numarası sadece paketli hizmetlerde hesaplanır
+// 🔢 Seans numarası sadece paketli hizmetlerde hesaplanır
+let sessionNumber = 1;
+if (ServiceId && !SingleServiceId) {
+  const existingCount = await Appointment.count({
+    where: {
+      CustomerId,
+      ServiceId,
+      CompanyId,
+      status: { [Op.ne]: 'iptal' }
+    }
+  });
+  sessionNumber = existingCount + 1;
+}
+
+
+    // 💾 SaleSingleService kaydı
+    const sale = await SaleSingleService.create({
+      CustomerId,
+      CompanyId,
+      UserId,
+      ServiceId: ServiceId || null,
+      SingleServiceId: SingleServiceId || null,
+      price: price
+    });
+
+    // 💾 Appointment kaydı
+    const appointment = await Appointment.create({
+      CustomerId,
+      CompanyId,
+      UserId,
+      ServiceId: ServiceId || null,
+      SingleServiceId: SingleServiceId || null,
+      date,
+      endDate,
+      price,
+      status: "bekliyor",
+      sessionNumber,
+      notes,
+      SaleSingleServiceId: sale.id
+    });
+
+    // 💾 Payment kaydı
+    await Payment.create({
+      CustomerId,
+      CompanyId,
+      amount: price,
+      status: "bekliyor",
+      dueDate: date,
+      SaleSingleServiceId: sale.id
+    });
+
+    return res.status(201).json(appointment);
+
+  } catch (err) {
+    console.error("❌ Randevu oluşturma hatası:", err);
+    return res.status(500).json({ error: "Randevu oluşturulamadı." });
+  }
+},
+
+
+
 
   async update(req, res) {
     try {
@@ -204,7 +222,10 @@ async getAll(req, res) {
         a.SaleId === app.SaleId
       ).sort((a, b) => new Date(a.date) - new Date(b.date));
 
-      const sessionNumber = matching.findIndex(a => a.id === app.id) + 1;
+      const sessionNumber = app.ServiceId
+  ? matching.findIndex(a => a.id === app.id) + 1
+  : 1;
+
 
       return {
         ...app.toJSON(),

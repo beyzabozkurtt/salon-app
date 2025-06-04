@@ -166,9 +166,10 @@ async function handleAppointmentCreate(e) {
     window.location.reload();
 
   } catch (err) {
-    console.error("❌ Oluşturma hatası:", err);
-    alert("Bir hata oluştu. Lütfen tekrar deneyin.");
-  }
+  console.error("❌ Oluşturma hatası:", err.response?.data || err.message || err);
+  alert("❌ Oluşturma hatası: " + (err.response?.data?.error || err.message || "Sunucu hatası"));
+}
+
 }
 
 
