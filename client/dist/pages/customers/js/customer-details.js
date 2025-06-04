@@ -28,6 +28,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   try {
     const res = await axios.get(`http://localhost:5001/api/customers/${customerId}`, axiosConfig);
     const customer = res.data;
+    await loadCustomerAppointments(customerId);
+
 
     const bilgiContainer = document.querySelector("#section-bilgileri");
     if (!bilgiContainer) return;
@@ -150,5 +152,101 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 });
 
+//müşteri randevularını yükle
+async function loadCustomerAppointments(customerId) {
+  try {
+    const res = await axios.get(`http://localhost:5001/api/appointments/by-customer/${customerId}/package-usage`, axiosConfig);
+    const appointments = res.data;
 
+    const randevuContainer = document.querySelector("#section-randevular");
+    if (!randevuContainer) return;
+
+    // Eğer müşteri adı gerekiyorsa üstte yazdır (tek sefer çekilmişti zaten)
+    const customerRes = await axios.get(`http://localhost:5001/api/customers/${customerId}`, axiosConfig);
+    const customer = customerRes.data;
+
+    let html = `
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <div class="d-flex align-items-center gap-3">
+          <div class="rounded-circle bg-white border d-flex justify-content-center align-items-center" style="width: 42px; height: 42px;">
+            <span class="fw-bold text-uppercase">${customer.name?.charAt(0) || "?"}</span>
+          </div>
+          <h5 class="mb-0">${customer.name}</h5>
+        </div>
+        <div class="d-flex gap-2">
+          <button class="btn btn-outline-secondary btn-sm" id="refreshAppointments">Yenile</button>
+          <button class="btn btn-outline-secondary btn-sm" id="filterAppointments">Filtrele</button>
+          <input type="text" id="searchAppointments" class="form-control form-control-sm" placeholder="Ara..." style="max-width: 180px;" />
+        </div>
+      </div>`;
+
+    if (!appointments.length) {
+      html += "<div class='alert alert-warning'>Bu müşteriye ait randevu bulunmamaktadır.</div>";
+      randevuContainer.innerHTML = html;
+      return;
+    }
+
+    html += `
+      <div class="table-responsive">
+        <table class="table table-bordered table-hover align-middle shadow-sm" id="appointmentTable">
+          <thead class="table-light text-center">
+            <tr>
+              <th>Tarih</th>
+              <th>Hizmet</th>
+              <th>Personel</th>
+              <th>Not</th>
+              <th>Durum</th>
+              <th>Seans</th>
+            </tr>
+          </thead>
+          <tbody>`;
+
+    appointments.forEach(app => {
+      const tarih = new Date(app.date).toLocaleString("tr-TR");
+      const hizmet = app.Service?.name || app.SingleService?.name || "-";
+      const personel = app.User?.name || "-";
+      const not = app.notes?.trim() || "-";
+      const durumRenk =
+        app.status === "tamamlandı" ? "text-success" :
+        app.status === "iptal" ? "text-danger" : "text-warning";
+
+      html += `
+        <tr>
+          <td class="text-nowrap">${tarih}</td>
+          <td>${hizmet}</td>
+          <td>${personel}</td>
+          <td>${not}</td>
+          <td class="${durumRenk} fw-semibold">${app.status}</td>
+          <td class="text-center">${app.sessionNumber || "-"}</td>
+        </tr>`;
+    });
+
+    html += `</tbody></table></div>`;
+    randevuContainer.innerHTML = html;
+
+    // Arama işlemi
+    document.getElementById("searchAppointments").addEventListener("input", function () {
+      const query = this.value.toLowerCase();
+      const rows = document.querySelectorAll("#appointmentTable tbody tr");
+      rows.forEach(row => {
+        const text = row.innerText.toLowerCase();
+        row.style.display = text.includes(query) ? "" : "none";
+      });
+    });
+
+    // Yenileme
+    document.getElementById("refreshAppointments").addEventListener("click", () => {
+      loadCustomerAppointments(customerId);
+    });
+
+    // Filtrele (ileride filtre paneli açmak için buraya kod eklenebilir)
+    document.getElementById("filterAppointments").addEventListener("click", () => {
+      alert("Filtreleme özelliği henüz aktif değil 🙈");
+    });
+
+  } catch (err) {
+    console.error("Randevular yüklenirken hata:", err);
+    document.querySelector("#section-randevular").innerHTML = "<div class='alert alert-danger'>Randevular yüklenemedi.</div>";
+  }
+}
 

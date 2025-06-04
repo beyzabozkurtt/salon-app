@@ -180,40 +180,44 @@ async getAll(req, res) {
   },
 
   async getPackageUsage(req, res) {
-    try {
-      const companyId = req.company.companyId;
-      const customerId = req.params.id;
+  try {
+    const companyId = req.company.companyId;
+    const customerId = req.params.id;
 
-      const allAppointments = await Appointment.findAll({
-        where: {
-          CustomerId: customerId,
-          CompanyId: companyId,
-          status: { [Op.ne]: 'iptal' }
-        },
-        include: ['Service'],
-        order: [['date', 'ASC']]
-      });
+    const allAppointments = await Appointment.findAll({
+      where: {
+        CustomerId: customerId,
+        CompanyId: companyId,
+        status: { [Op.ne]: 'iptal' }
+      },
+      include: [
+        { model: Service },
+        { model: require('../models').SingleService, as: 'SingleService' },
+        { model: User }
+      ],
+      order: [['date', 'ASC']]
+    });
 
-      const enriched = allAppointments.map((app, _, arr) => {
-        const matching = arr.filter(a =>
-          a.ServiceId === app.ServiceId &&
-          a.SaleId === app.SaleId
-        ).sort((a, b) => new Date(a.date) - new Date(b.date));
+    const enriched = allAppointments.map((app, _, arr) => {
+      const matching = arr.filter(a =>
+        a.ServiceId === app.ServiceId &&
+        a.SaleId === app.SaleId
+      ).sort((a, b) => new Date(a.date) - new Date(b.date));
 
-        const sessionNumber = matching.findIndex(a => a.id === app.id) + 1;
+      const sessionNumber = matching.findIndex(a => a.id === app.id) + 1;
 
-        return {
-          ...app.toJSON(),
-          sessionNumber
-        };
-      });
+      return {
+        ...app.toJSON(),
+        sessionNumber
+      };
+    });
 
-      res.json(enriched);
-    } catch (err) {
-      console.error("Paket kullanımı hatası:", err);
-      res.status(500).json({ error: "Paket kullanımları alınamadı." });
-    }
-  },
+    res.json(enriched);
+  } catch (err) {
+    console.error("Paket kullanımı hatası:", err);
+    res.status(500).json({ error: "Paket kullanımları alınamadı." });
+  }
+},
 async checkAppointmentOverlaps(req, res) {
   try {
     const CompanyId = req.company.companyId;
