@@ -10,7 +10,7 @@ router.get('/by-customer/:id/package-usage', authMiddleware, appointmentControll
 router.put('/:id', authMiddleware, appointmentController.update);
 router.delete('/:id', authMiddleware, appointmentController.delete);
 
-
-
+// ✅ ÇAKIŞMA KONTROLÜ (Yeni eklenen endpoint)
+router.post('/check-overlaps', authMiddleware, appointmentController.checkAppointmentOverlaps);
 
 module.exports = router;

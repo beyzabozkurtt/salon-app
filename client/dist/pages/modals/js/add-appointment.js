@@ -1,3 +1,6 @@
+const selectedServices = [];
+let isHizmetEkleListenerBound = false;
+
 let isListenerBound = false;
 export function init() {
   setupCustomerAutocomplete();
@@ -73,49 +76,90 @@ function setupTabs() {
 
 // 1. Önce fonksiyonu dışarı tanımlıyoruz:
 async function handleAppointmentCreate(e) {
-  
-
   e.preventDefault();
 
   const customerId = document.getElementById("customerIdHidden")?.value;
-  const serviceId = document.getElementById("hizmetSelect")?.value;
-  const userId = document.getElementById("hizmetPersonelInput")?.value;
- 
-
-  const price = document.getElementById("fiyatInput")?.value;
   const date = document.getElementById("appointmentDate")?.value;
   const startTime = document.getElementById("startTime")?.value;
   const endTime = document.getElementById("endTime")?.value;
   const notes = document.getElementById("notesInput")?.value || "";
 
+  const hizmet = document.getElementById("hizmetSelect")?.value;
+  const personel = document.getElementById("hizmetPersonelInput")?.value;
+  const fiyat = document.getElementById("fiyatInput")?.value;
 
   if (!customerId) return alert("Lütfen bir müşteri seçin.");
-  if (!serviceId) return alert("Lütfen bir hizmet seçin.");
-  if (!userId) return alert("Lütfen bir personel seçin.");
-  if (!price || isNaN(price)) return alert("Geçerli bir fiyat girin.");
   if (!date || !startTime || !endTime) return alert("Lütfen tarih ve saat bilgilerini girin.");
 
   const startISO = new Date(`${date.split(".").reverse().join("-")}T${startTime}`).toISOString();
   const endISO = new Date(`${date.split(".").reverse().join("-")}T${endTime}`).toISOString();
 
   const token = localStorage.getItem("companyToken");
-  const config = {
-    headers: {
-      Authorization: "Bearer " + token
-    }
-  };
+  const config = { headers: { Authorization: "Bearer " + token } };
 
-  try {
-    // ✅ Tek çağrı ile: Satış + Randevu + Ödeme işlemi backend'de otomatik gerçekleşiyor
-    const saleRes = await axios.post("http://localhost:5001/api/salesingleservices", {
-      SingleServiceId: serviceId,
-      price: parseFloat(price),
+  const hizmetListesiBoşMu = !hizmet || !personel || !fiyat;
+
+  // ❗ YENİ: Hem selectedServices'i al hem de son formdaki veriyi ekle
+  const allServices = [...selectedServices];
+
+  if (!hizmetListesiBoşMu) {
+    allServices.push({
+      SingleServiceId: hizmet,
+      UserId: personel,
+      price: fiyat
+    });
+  }
+
+  if (allServices.length === 0) {
+    return alert("Lütfen en az bir hizmet girin.");
+  }
+
+  // ❗ ÇAKIŞMA KONTROLLERİ
+  for (const s of allServices) {
+    const kontrolUrl = `http://localhost:5001/api/appointments/check-overlaps`;
+
+    const kontrolParams = {
       CustomerId: customerId,
-      UserId: userId,
+      UserId: s.UserId,
       date: startISO,
-      endDate: endISO,
-      notes: notes // not gerekiyorsa doldur
-    }, config);
+      endDate: endISO
+    };
+
+    if (s.SingleServiceId) kontrolParams.SingleServiceId = s.SingleServiceId;
+    if (s.ServiceId) kontrolParams.ServiceId = s.ServiceId;
+
+    try {
+      const kontrol = await axios.post(kontrolUrl, kontrolParams, config);
+      const result = kontrol.data;
+
+      if (result.customerOverlap) {
+        return alert("❌ Bu müşteri bu saat aralığında aynı hizmetten zaten randevu almış.");
+      }
+
+      if (result.personelOverlap) {
+        return alert("❌ Seçilen personelin bu saat aralığında başka bir randevusu var.");
+      }
+
+    } catch (err) {
+      console.error("❌ Randevu çakışma kontrolü hatası:", err);
+      alert("Randevu çakışma kontrolü sırasında bir hata oluştu.");
+      return;
+    }
+  }
+
+  // 🔄 KAYIT İŞLEMİ
+  try {
+    for (const s of allServices) {
+      await axios.post("http://localhost:5001/api/salesingleservices", {
+        SingleServiceId: s.SingleServiceId,
+        price: parseFloat(s.price),
+        CustomerId: customerId,
+        UserId: s.UserId,
+        date: startISO,
+        endDate: endISO,
+        notes
+      }, config);
+    }
 
     alert("✅ Randevu başarıyla oluşturuldu!");
     bootstrap.Modal.getInstance(document.getElementById("appointmentModal"))?.hide();
@@ -129,18 +173,32 @@ async function handleAppointmentCreate(e) {
 
 
 
+
 function setupHizmetEkle() {
   const hizmetEkleBtn = document.getElementById("hizmetEkleBtn");
   const hizmetListesi = document.getElementById("hizmetListesi");
 
-  if (hizmetEkleBtn && hizmetListesi) {
+  if (hizmetEkleBtn && hizmetListesi && !isHizmetEkleListenerBound) {
+    isHizmetEkleListenerBound = true;
+
     hizmetEkleBtn.addEventListener("click", () => {
       const hizmet = document.getElementById("hizmetSelect").value;
       const personel = document.getElementById("hizmetPersonelInput").value;
       const fiyat = document.getElementById("fiyatInput").value;
 
-      if (!hizmet || !personel || !fiyat) return;
+      // Eğer boşsa ekleme yapma!
+      if (!hizmet || !personel || !fiyat) {
+        return alert("Lütfen hizmet, personel ve fiyat alanlarını doldurun.");
+      }
 
+      // Dizide tut
+      selectedServices.push({
+        SingleServiceId: hizmet,
+        UserId: personel,
+        price: fiyat
+      });
+
+      // Kart yapısı
       const card = document.createElement("div");
       card.className = "d-flex justify-content-between align-items-center border p-2 rounded mb-2";
 
@@ -154,6 +212,7 @@ function setupHizmetEkle() {
       const btnGroup = document.createElement("div");
       btnGroup.className = "d-flex gap-2";
 
+      // ✏️ DÜZENLE
       const editBtn = document.createElement("button");
       editBtn.className = "btn btn-sm btn-outline-secondary";
       editBtn.innerHTML = '<i class="bi bi-pencil"></i>';
@@ -161,13 +220,21 @@ function setupHizmetEkle() {
         document.getElementById("hizmetSelect").value = hizmet;
         document.getElementById("hizmetPersonelInput").value = personel;
         document.getElementById("fiyatInput").value = fiyat;
+
+        const index = Array.from(hizmetListesi.children).indexOf(card);
+        selectedServices.splice(index, 1);
         card.remove();
       });
 
+      // 🗑️ SİL
       const deleteBtn = document.createElement("button");
       deleteBtn.className = "btn btn-sm btn-outline-danger";
       deleteBtn.innerHTML = '<i class="bi bi-trash"></i>';
-      deleteBtn.addEventListener("click", () => card.remove());
+      deleteBtn.addEventListener("click", () => {
+        const index = Array.from(hizmetListesi.children).indexOf(card);
+        selectedServices.splice(index, 1);
+        card.remove();
+      });
 
       btnGroup.appendChild(editBtn);
       btnGroup.appendChild(deleteBtn);
@@ -176,12 +243,15 @@ function setupHizmetEkle() {
 
       hizmetListesi.appendChild(card);
 
+      // Formu temizle
       document.getElementById("hizmetSelect").value = "";
       document.getElementById("hizmetPersonelInput").value = "";
       document.getElementById("fiyatInput").value = "";
     });
   }
 }
+
+
 export async function doldurPersoneller() {
   const token = localStorage.getItem("companyToken");
   const axiosConfig = { headers: { Authorization: "Bearer " + token } };

@@ -213,5 +213,73 @@ async getAll(req, res) {
       console.error("Paket kullanımı hatası:", err);
       res.status(500).json({ error: "Paket kullanımları alınamadı." });
     }
+  },
+async checkAppointmentOverlaps(req, res) {
+  try {
+    const CompanyId = req.company.companyId;
+    const {
+      CustomerId,
+      UserId,
+      ServiceId,
+      SingleServiceId,
+      date,
+      endDate
+    } = req.body;
+
+    if (!CustomerId || !UserId || !date || !endDate) {
+      return res.status(400).json({ error: "Eksik parametreler gönderildi." });
+    }
+
+    let customerOverlap = null;
+
+    // ✅ Tek Seferlik hizmet kontrolü
+    if (SingleServiceId) {
+      customerOverlap = await Appointment.findOne({
+        where: {
+          CompanyId,
+          CustomerId,
+          SingleServiceId,
+          status: { [Op.ne]: "iptal" },
+          date: { [Op.lt]: endDate },
+          endDate: { [Op.gt]: date }
+        }
+      });
+    }
+
+    // ✅ Eğer tek seferlikte bulunamadıysa paket hizmet kontrolü yap
+    if (!customerOverlap && typeof ServiceId !== "undefined" && ServiceId !== null) {
+      customerOverlap = await Appointment.findOne({
+        where: {
+          CompanyId,
+          CustomerId,
+          ServiceId,
+          status: { [Op.ne]: "iptal" },
+          date: { [Op.lt]: endDate },
+          endDate: { [Op.gt]: date }
+        }
+      });
+    }
+
+    // ✅ Personel çakışması
+    const personelOverlap = await Appointment.findOne({
+      where: {
+        CompanyId,
+        UserId,
+        status: { [Op.ne]: "iptal" },
+        date: { [Op.lt]: endDate },
+        endDate: { [Op.gt]: date }
+      }
+    });
+
+    return res.json({
+      customerOverlap: !!customerOverlap,
+      personelOverlap: !!personelOverlap
+    });
+
+  } catch (err) {
+    console.error("❌ Çakışma kontrol hatası:", err.message, err.stack);
+    return res.status(500).json({ error: "Çakışma kontrolü sırasında bir hata oluştu." });
   }
+}
+
 };
