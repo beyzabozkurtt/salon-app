@@ -1,5 +1,6 @@
 const { Customer, Sale, Service, Appointment } = require('../models');
 const { validationResult } = require('express-validator');
+const { Op } = require('sequelize'); 
 
 // ✅ Tüm müşterileri listele (şirkete özel)
 exports.getAll = async (req, res) => {
@@ -91,26 +92,55 @@ exports.delete = async (req, res) => {
     res.status(500).json({ error: 'Silme hatası' });
   }
 };
-
-// ✅ Müşteri paketleri
+// ✅ Müşteri paketleri (Service ilişkisi garantili şekilde)
 exports.getCustomerPackages = async (req, res) => {
   try {
     const customerId = req.params.id;
+    const companyId = req.company.companyId;
 
+    console.log("👉 Paket sorgusu başlatıldı. Müşteri ID:", customerId, "Şirket ID:", companyId);
+
+    // 1. Müşteri gerçekten bu şirkete mi ait?
+    const customer = await Customer.findOne({
+      where: {
+        id: customerId,
+        CompanyId: companyId
+      }
+    });
+
+    if (!customer) {
+      console.warn("⛔ Yetkisiz erişim ya da müşteri yok:", customerId);
+      return res.status(404).json({ error: "Müşteri bulunamadı veya yetkisiz erişim." });
+    }
+
+    // 2. Paket satışlarını çek (Service ile birlikte)
     const sales = await Sale.findAll({
-      where: { CustomerId: customerId },
-      include: ['Service'],
+      where: {
+        CustomerId: customerId,
+        CompanyId: companyId,
+        ServiceId: { [Op.ne]: null } // sadece ServiceId olanlar
+      },
+      include: [{
+        model: Service,
+        required: true // hizmet mutlaka olsun
+      }]
     });
 
     const uniqueServices = new Map();
 
     for (const sale of sales) {
       const s = sale.Service;
-      const existing = uniqueServices.get(s.id);
 
-      if (!existing) {
+      if (!s) {
+        console.warn("❗ Service bilgisi boş geldi! Sale ID:", sale.id);
+        continue;
+      }
+
+      // aynı hizmet birden fazla kez satılmışsa sadece bir tanesini al
+      if (!uniqueServices.has(s.id)) {
         uniqueServices.set(s.id, {
-          id: s.id,
+          saleId: sale.id,
+          serviceId: s.id,
           name: s.name,
           color: s.color,
           session: sale.session
@@ -118,12 +148,17 @@ exports.getCustomerPackages = async (req, res) => {
       }
     }
 
-    res.json(Array.from(uniqueServices.values()));
+    const response = Array.from(uniqueServices.values());
+
+    console.log("✅ Paketler bulundu:", response.length);
+    res.json(response);
+
   } catch (err) {
-    console.error(err);
+    console.error("❌ Paket çekme hatası:", err);
     res.status(500).json({ error: 'Paketler getirilemedi' });
   }
 };
+
 
 // ✅ Seans detaylı müşteri hizmetleri
 exports.getDetailsWithSessions = async (req, res) => {

@@ -326,6 +326,9 @@ function setupCustomerAutocomplete() {
     const list = JSON.parse(customerInput.dataset.customerList || "[]");
     const selected = list.find(c => c.name === customerInput.value.trim());
     customerIdInput.value = selected?.id || "";
+      if (selected?.id) {
+    doldurMusteriPaketleri(selected.id);
+  }
   });
 }
 
@@ -361,6 +364,43 @@ export async function doldurTekSeferlikHizmetler() {
     console.error("❌ API çağrısı başarısız:", err);
   }
 }
+export async function doldurMusteriPaketleri(customerId) {
+  const paketSelect = document.getElementById("paketSelect");
+  if (!paketSelect) return;
+
+  // Temizle
+  paketSelect.innerHTML = `<option value="" selected hidden>Paket</option>`;
+
+  if (!customerId) return;
+
+  const token = localStorage.getItem("companyToken");
+  const config = { headers: { Authorization: "Bearer " + token } };
+
+  try {
+    const res = await axios.get(`http://localhost:5001/api/customers/${customerId}/packages`, config);
+
+res.data.forEach(paket => {
+  const opt = document.createElement("option");
+  opt.value = paket.id;
+
+  const serviceName = paket?.Service?.name || "Hizmet Yok";
+  const session = paket.session || "-";
+
+  opt.textContent = `${serviceName} | ${session} seans`;
+
+  if (paket?.Service?.id) {
+    opt.value = paket.saleId; // randevuda bu ID'yi gönder
+opt.dataset.serviceid = paket.serviceId;
+opt.textContent = `${paket.name} | ${paket.session} seans`;
+  }
+
+  paketSelect.appendChild(opt);
+});
+  } catch (err) {
+    console.error("❌ Paketler alınamadı:", err);
+  }
+}
+
 // Repeat Alanlarını Yönet
   const repeatSwitch = document.getElementById("repeatSwitch");
   const repeatFields = document.getElementById("repeatFields");
