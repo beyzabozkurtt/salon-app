@@ -35,6 +35,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     await loadCustomerAppointments(customerId);
     await loadCustomerSales(customerId, customer);
     await loadCustomerPackageSales(customerId, customer);
+    await loadCustomerPayments(customerId, customer);
+    await loadCustomerDebts(customerId, customer);
 
 
 
@@ -608,4 +610,298 @@ window.changePackageSalePage = function (page) {
   currentPackageSalePage = page;
   renderPackageSaleList(allPackageSales);
   renderPackageSalePagination(allPackageSales.length);
+};
+//ödemeler 
+// Ödeme Sekmesi İçin Global Değişkenler
+let allPayments = [];
+let currentPaymentPage = 1;
+const paymentsPerPage = 10;
+
+async function loadCustomerPayments(customerId, customer) {
+  try {
+    const res = await axios.get(`http://localhost:5001/api/payments/by-customer/${customerId}`, axiosConfig);
+    allPayments = res.data.filter(p => p.status === "ödendi");
+
+
+    const container = document.querySelector("#section-odemeler");
+    if (!container) return;
+
+    let html = `
+      <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+        <div class="d-flex align-items-center gap-3">
+          <div class="rounded-circle bg-white border d-flex justify-content-center align-items-center" style="width: 42px; height: 42px;">
+            <span class="fw-bold text-uppercase">${customer.name?.charAt(0) || "?"}</span>
+          </div>
+          <h5 class="mb-0">${customer.name}</h5>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+          <div class="input-group" style="max-width: 250px;">
+            <span class="input-group-text"><i class="bi bi-search text-muted"></i></span>
+            <input type="text" id="searchPayments" class="form-control" placeholder="Ödeme ara..." />
+          </div>
+          <button class="btn btn-outline-secondary btn-sm" id="refreshPayments" title="Yenile">
+            <i class="bi bi-arrow-clockwise"></i>
+          </button>
+        </div>
+      </div>
+
+      <div class="table-responsive">
+        <table class="table table-bordered table-hover align-middle shadow-sm" id="paymentTable">
+          <thead class="table-light text-center">
+            <tr>
+              <th>Taksit No</th>
+              <th>Tutar</th>
+              <th>Vade</th>
+              <th>Durum</th>
+              <th>Ödeme Tarihi</th>
+              <th>Ödeme Tipi</th>
+              <th>Kullanıcı</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <div id="paymentPagination" class="mt-3"></div>
+      <div id="paymentInfo" class="text-muted text-center small mt-1"></div>
+    `;
+
+    container.innerHTML = html;
+
+    renderPaymentList(allPayments);
+    renderPaymentPagination(allPayments.length);
+
+    document.getElementById("refreshPayments").addEventListener("click", () => {
+      loadCustomerPayments(customerId, customer);
+    });
+
+    document.getElementById("searchPayments").addEventListener("input", function () {
+      const query = this.value.toLowerCase();
+      const filtered = allPayments.filter(p =>
+        (p.paymentType || "").toLowerCase().includes(query) ||
+        (p.User?.name || "").toLowerCase().includes(query)
+      );
+      renderPaymentList(filtered);
+      renderPaymentPagination(filtered.length);
+    });
+
+  } catch (err) {
+    console.error("Ödemeler yüklenirken hata:", err);
+    document.querySelector("#section-odemeler").innerHTML = `<div class='alert alert-danger'>Ödemeler yüklenemedi.</div>`;
+  }
+}
+
+function renderPaymentList(payments) {
+  const tbody = document.querySelector("#paymentTable tbody");
+  tbody.innerHTML = "";
+
+  const startIndex = (currentPaymentPage - 1) * paymentsPerPage;
+  const paginated = payments.slice(startIndex, startIndex + paymentsPerPage);
+
+  paginated.forEach(p => {
+    const vade = new Date(p.dueDate).toLocaleDateString("tr-TR");
+    const odemeTarihi = p.paymentDate ? new Date(p.paymentDate).toLocaleDateString("tr-TR") : "-";
+    const statusBadge = p.status === "ödendi" ? "success" : p.status === "gecikmiş" ? "danger" : "warning";
+    tbody.innerHTML += `
+      <tr>
+        <td class="text-center">${p.installmentNo || "-"}</td>
+        <td class="text-end">${parseFloat(p.amount).toFixed(2)} ₺</td>
+        <td class="text-nowrap">${vade}</td>
+        <td class="text-center"><span class="badge bg-${statusBadge}">${p.status}</span></td>
+        <td class="text-nowrap">${odemeTarihi}</td>
+        <td class="text-center">${p.paymentType || "-"}</td>
+        <td class="text-center">${p.User?.name || "-"}</td>
+      </tr>
+    `;
+  });
+}
+
+function renderPaymentPagination(totalItems) {
+  const container = document.getElementById("paymentPagination");
+  const infoContainer = document.getElementById("paymentInfo");
+  if (!container || !infoContainer) return;
+
+  const totalPages = Math.ceil(totalItems / paymentsPerPage);
+  let html = `<nav><ul class="pagination pagination-sm justify-content-center mb-0">`;
+
+  html += `
+    <li class="page-item ${currentPaymentPage === 1 ? "disabled" : ""}">
+      <button class="page-link" onclick="changePaymentPage(${currentPaymentPage - 1})">&laquo;</button>
+    </li>`;
+
+  for (let i = 1; i <= totalPages; i++) {
+    html += `
+      <li class="page-item ${i === currentPaymentPage ? "active" : ""}">
+        <button class="page-link" onclick="changePaymentPage(${i})">${i}</button>
+      </li>`;
+  }
+
+  html += `
+    <li class="page-item ${currentPaymentPage === totalPages ? "disabled" : ""}">
+      <button class="page-link" onclick="changePaymentPage(${currentPaymentPage + 1})">&raquo;</button>
+    </li>
+  </ul></nav>`;
+
+  container.innerHTML = html;
+
+  const start = (currentPaymentPage - 1) * paymentsPerPage + 1;
+  const end = Math.min(currentPaymentPage * paymentsPerPage, totalItems);
+  infoContainer.innerText = `Gösterilen: ${start} - ${end} / ${totalItems} kayıt (${totalPages} sayfa)`;
+}
+
+window.changePaymentPage = function (page) {
+  currentPaymentPage = page;
+  renderPaymentList(allPayments);
+  renderPaymentPagination(allPayments.length);
+};
+//borclar
+let allDebts = [];
+let currentDebtPage = 1;
+const debtsPerPage = 10;
+
+async function loadCustomerDebts(customerId, customer) {
+  try {
+    const res = await axios.get(`http://localhost:5001/api/payments/by-customer/${customerId}`, axiosConfig);
+    allDebts = res.data.filter(p => p.status === "bekliyor" || p.status === "gecikmiş");
+
+    const container = document.querySelector("#section-borclar");
+    if (!container) return;
+
+    let html = `
+      <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+        <div class="d-flex align-items-center gap-3">
+          <div class="rounded-circle bg-white border d-flex justify-content-center align-items-center" style="width: 42px; height: 42px;">
+            <span class="fw-bold text-uppercase">${customer.name?.charAt(0) || "?"}</span>
+          </div>
+          <h5 class="mb-0">${customer.name}</h5>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+          <div class="input-group" style="max-width: 250px;">
+            <span class="input-group-text"><i class="bi bi-search text-muted"></i></span>
+            <input type="text" id="searchDebts" class="form-control" placeholder="Borç ara..." />
+          </div>
+          <button class="btn btn-outline-secondary btn-sm" id="refreshDebts" title="Yenile">
+            <i class="bi bi-arrow-clockwise"></i>
+          </button>
+        </div>
+      </div>
+
+      <div class="table-responsive">
+        <table class="table table-bordered table-hover align-middle shadow-sm" id="debtTable">
+          <thead class="table-light text-center">
+            <tr>
+              <th>Taksit No</th>
+              <th>Tutar</th>
+              <th>Vade</th>
+              <th>Durum</th>
+              <th>İşlem</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+
+      <div id="debtPagination" class="mt-3"></div>
+      <div id="debtInfo" class="text-muted text-center small mt-1"></div>
+    `;
+
+    container.innerHTML = html;
+
+    renderDebtList(allDebts);
+    renderDebtPagination(allDebts.length);
+
+    document.getElementById("refreshDebts").addEventListener("click", () => {
+      loadCustomerDebts(customerId, customer);
+    });
+
+    document.getElementById("searchDebts").addEventListener("input", function () {
+      const query = this.value.toLowerCase();
+      const filtered = allDebts.filter(p =>
+        (p.description || "").toLowerCase().includes(query) ||
+        (p.User?.name || "").toLowerCase().includes(query)
+      );
+      renderDebtList(filtered);
+      renderDebtPagination(filtered.length);
+    });
+
+  } catch (err) {
+    console.error("Borçlar yüklenirken hata:", err);
+    container.innerHTML = "<div class='alert alert-danger'>Borçlar yüklenemedi.</div>";
+  }
+}
+
+function renderDebtList(debts) {
+  const tbody = document.querySelector("#debtTable tbody");
+  tbody.innerHTML = "";
+
+  const startIndex = (currentDebtPage - 1) * debtsPerPage;
+  const paginated = debts.slice(startIndex, startIndex + debtsPerPage);
+
+  paginated.forEach(p => {
+    const vade = new Date(p.dueDate).toLocaleDateString("tr-TR");
+    const odemeTarihi = p.paymentDate ? new Date(p.paymentDate).toLocaleDateString("tr-TR") : "-";
+    const statusBadge = p.status === "gecikmiş" ? "danger" : "warning";
+
+    tbody.innerHTML += `
+      <tr>
+        <td class="text-center">${p.installmentNo || "-"}</td>
+        <td class="text-center">${parseFloat(p.amount).toFixed(2)} ₺</td>
+        <td class="text-center">${vade}</td>
+        <td class="text-center"><span class="badge bg-${statusBadge}">${p.status}</span></td>
+        <td class="text-center">
+          <button class="btn btn-sm btn-outline-success ms-2 pay-btn" data-id="${customerId}">
+            Ödeme Yap
+          </button>
+        </td>
+      </tr>`;
+  });
+
+  // Butonlara listener ekle
+  setTimeout(() => {
+    document.querySelectorAll(".pay-btn").forEach(btn => {
+      btn.addEventListener("click", e => {
+        const customerId = e.target.dataset.id;
+        window.location.href = `payment-details.html?id=${customerId}`;
+      });
+    });
+  }, 0);
+}
+
+
+function renderDebtPagination(totalItems) {
+  const container = document.getElementById("debtPagination");
+  const infoContainer = document.getElementById("debtInfo");
+  if (!container || !infoContainer) return;
+
+  const totalPages = Math.ceil(totalItems / debtsPerPage);
+  let html = `<nav><ul class="pagination pagination-sm justify-content-center mb-0">`;
+
+  html += `
+    <li class="page-item ${currentDebtPage === 1 ? "disabled" : ""}">
+      <button class="page-link" onclick="changeDebtPage(${currentDebtPage - 1})">&laquo;</button>
+    </li>`;
+
+  for (let i = 1; i <= totalPages; i++) {
+    html += `
+      <li class="page-item ${i === currentDebtPage ? "active" : ""}">
+        <button class="page-link" onclick="changeDebtPage(${i})">${i}</button>
+      </li>`;
+  }
+
+  html += `
+    <li class="page-item ${currentDebtPage === totalPages ? "disabled" : ""}">
+      <button class="page-link" onclick="changeDebtPage(${currentDebtPage + 1})">&raquo;</button>
+    </li>
+  </ul></nav>`;
+
+  container.innerHTML = html;
+
+  const start = (currentDebtPage - 1) * debtsPerPage + 1;
+  const end = Math.min(currentDebtPage * debtsPerPage, totalItems);
+  infoContainer.innerText = `Gösterilen: ${start} - ${end} / ${totalItems} kayıt (${totalPages} sayfa)`;
+}
+
+window.changeDebtPage = function (page) {
+  currentDebtPage = page;
+  renderDebtList(allDebts);
+  renderDebtPagination(allDebts.length);
 };
