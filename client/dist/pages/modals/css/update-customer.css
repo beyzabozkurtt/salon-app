@@ -1,0 +1,81 @@
+.modal-custom-width {
+  max-width: 700px;
+  width: 85%;
+}
+
+/* Flatpickr calendar boyutunu küçült */
+.flatpickr-calendar {
+  font-size: 12px !important; /* Takvim yazılarını küçültür */
+  transform: scale(0.83);     /* Takvimin tamamını küçültür */
+  transform-origin: top left; /* Sol üstten küçülsün */
+  width: fit-content !important;
+  min-width: unset !important;
+}
+
+/* Giriş alanlarının içindeki yazıları da küçültelim */
+.flatpickr-input {
+  font-size: 13px !important;
+  padding: 4px 8px;
+}
+/* Flatpickr saat kutusunu küçült */
+.flatpickr-time {
+  max-width: 150px !important;
+  width: 150px !important;
+  margin: 0 auto;
+  padding: 4px 6px !important;
+  justify-content: center;
+  gap: 4px;
+}
+
+/* Saat ve dakika inputları */
+.flatpickr-time input {
+  width: 48px !important;
+  padding: 0px 0px !important;
+  font-size: 14px !important;
+  text-align: center;
+}
+
+/* Ayraç (:) arası */
+.flatpickr-time .flatpickr-time-separator {
+  font-size: 16px !important;
+  margin: 0 4px !important;
+}
+.modal-content .form-control {
+  padding: 6px 10px;
+  height: 34px;
+}
+.modal-content .form-select {
+  padding: 6px 10px;
+  height: 34px;
+}
+/* Modal başlık */
+.modal-header {
+  background-color: #f1f3f5;
+  border-bottom: 1px solid #dee2e6;
+  padding: 0.75rem 1.25rem;
+  justify-content: center;
+}
+
+.modal-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #343a40;
+}
+.input-icon-wrapper {
+  position: relative;
+}
+
+.input-icon-wrapper input,
+.input-icon-wrapper textarea {
+  padding-right: 32px !important; /* ikon için boşluk */
+}
+
+.input-icon-wrapper .input-icon {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 16px;
+  color: #222222;
+  pointer-events: none;
+}
