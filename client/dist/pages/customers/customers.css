@@ -3,10 +3,20 @@
 * {
   font-family: 'Poppins', sans-serif;
   font-size: 14px;
-  margin: 0;
-  padding: 0;
+
   box-sizing: border-box;
   background-color: transparent;
+}
+body {
+  background-color: transparent !important;
+}
+
+.container {
+  background-color: transparent !important;
+}
+
+.content-section {
+  background-color: transparent !important;
 }
 
 /* Sidebar */
@@ -105,3 +115,24 @@
   padding: 0 0.75rem;
   border-radius: 6px;
 }
+.modal-backdrop.show {
+  background-color: rgb(255, 255, 255) !important;
+}
+.modal {
+  margin-top: -50px;
+}
+body.modal-open {
+  overflow: hidden !important;
+}
+.card-header h5 {
+  font-size: 17px;
+}
+
+.card-header .bi-person {
+  font-size: 24px;
+}
+
+.card-header .rounded-circle {
+  background-color: #f8f9fa;
+}
+

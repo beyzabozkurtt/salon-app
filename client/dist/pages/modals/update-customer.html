@@ -1,6 +1,5 @@
-<!-- modals/updateCustomer.html -->
 <div class="modal fade" id="updateModal" tabindex="-1">
-  <div class="modal-dialog modal-dialog-centered">
+  <div class="modal-dialog modal-custom-width modal-dialog-centered">
     <form id="updateForm" class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title">Müşteri Güncelle</h5>
@@ -10,57 +9,70 @@
       <div class="modal-body">
         <input type="hidden" name="id" />
 
-        <div class="mb-2">
-          <label class="form-label">İsim</label>
-          <input type="text" class="form-control" name="name" required />
+        <div class="row g-2 mb-2">
+          <div class="col-md-4">
+            <div class="input-icon-wrapper">
+              <input type="text" class="form-control" name="name" placeholder="Ad soyad" required />
+              <i class="bi bi-person input-icon"></i>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="input-icon-wrapper">
+              <input type="text" class="form-control" name="birthDate" placeholder="Doğum tarihi" />
+              <i class="bi bi-calendar3 input-icon"></i>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <select name="gender" class="form-select">
+              <option value="" disabled selected>Cinsiyet</option>
+              <option value="Kadın">Kadın</option>
+              <option value="Erkek">Erkek</option>
+              <option value="Belirtmek istemiyor">Belirtmek istemiyor</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="row g-2 mb-2">
+          <div class="col-md-6">
+            <div class="input-icon-wrapper">
+              <input type="text" class="form-control" name="phone" placeholder="Telefon" required />
+              <i class="bi bi-telephone input-icon"></i>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="input-icon-wrapper">
+              <input type="email" class="form-control" name="email" placeholder="E-posta" required />
+              <i class="bi bi-envelope input-icon"></i>
+            </div>
+          </div>
+        </div>
+
+        <div class="row g-2 mb-2">
+          <div class="col-12">
+            <select name="reference" class="form-select">
+              <option value="" disabled selected>Referans türünü seçin</option>
+              <option value="Tabela satışı">Tabela satışı</option>
+              <option value="Müşteri referansı">Müşteri referansı</option>
+              <option value="Anket satışı">Anket satışı</option>
+              <option value="Web satışı">Web satışı</option>
+              <option value="Diğer">Diğer</option>
+            </select>
+          </div>
         </div>
 
         <div class="mb-2">
-          <label class="form-label">E-posta</label>
-          <input type="email" class="form-control" name="email" required />
-        </div>
-
-        <div class="mb-2">
-          <label class="form-label">Telefon</label>
-          <input type="text" class="form-control" name="phone" required />
-        </div>
-
-        <div class="mb-2">
-          <label class="form-label">Doğum Tarihi</label>
-          <input type="date" class="form-control" name="birthDate" />
-        </div>
-
-        <div class="mb-2">
-          <label class="form-label">Cinsiyet</label>
-          <select name="gender" class="form-select">
-            <option value="">Seçiniz</option>
-            <option value="Kadın">Kadın</option>
-            <option value="Erkek">Erkek</option>
-            <option value="Belirtmek istemiyor">Belirtmek istemiyor</option>
-          </select>
-        </div>
-
-        <div class="mb-2">
-          <label class="form-label">Referans</label>
-          <select name="reference" class="form-select">
-            <option value="">Seçiniz</option>
-            <option value="Tabela satışı">Tabela satışı</option>
-            <option value="Müşteri referansı">Müşteri referansı</option>
-            <option value="Anket satışı">Anket satışı</option>
-            <option value="Web satışı">Web satışı</option>
-            <option value="Diğer">Diğer</option>
-          </select>
-        </div>
-
-        <div class="mb-2">
-          <label class="form-label">Notlar</label>
-          <textarea class="form-control" name="notes" rows="2"></textarea>
+          <div class="input-icon-wrapper">
+            <textarea class="form-control" name="notes" placeholder="Notlar" rows="4" style="resize: vertical; min-height: 80px;"></textarea>
+            <i class="bi bi-pencil input-icon"></i>
+          </div>
         </div>
       </div>
 
       <div class="modal-footer">
-        <button type="submit" class="btn btn-primary">Güncelle</button>
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+        <div class="text-end w-100">
+          <button type="submit" class="btn btn-primary">Güncelle</button>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+        </div>
       </div>
     </form>
   </div>

@@ -1,5 +1,6 @@
 // customers.js
 import { loadPopup } from "../../../utils/popupLoader.js";
+
 let currentPage = 1;
 const itemsPerPage = 10;
 
