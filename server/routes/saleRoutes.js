@@ -1,27 +1,17 @@
 const express = require('express');
 const router = express.Router();
 const saleController = require('../controllers/saleController');
-const authMiddleware = require('../middleware/authMiddleware'); // 🛡️ Token doğrulama
+const authMiddleware = require('../middleware/authMiddleware');
 
-// ✅ Satışları getir (şirkete özel)
-router.get('/', authMiddleware, saleController.getAll);
-
-// ✅ Yeni satış oluştur
-router.post('/', authMiddleware, saleController.create);
-
-// ✅ Satış güncelle
-router.put('/:id', authMiddleware, saleController.update);
-
-// ✅ Satış sil
-router.delete('/:id', authMiddleware, saleController.delete);
-
-// ✅ Satış detayları
-router.get('/:id', authMiddleware, saleController.getOne);
-
-// ✅ Satışa ait ödeme durumu
+// 🔥 EN ÜSTTE DAİMA en spesifik olanlar
+router.get('/by-customer/:id', authMiddleware, saleController.getByCustomer);
 router.get('/:id/payments-status', authMiddleware, saleController.getPaymentStatus);
 
-router.get('/by-customer/:id', authMiddleware, saleController.getByCustomer);
-
+// 📌 Daha genel ID route en sona
+router.get('/:id', authMiddleware, saleController.getOne);
+router.get('/', authMiddleware, saleController.getAll);
+router.post('/', authMiddleware, saleController.create);
+router.put('/:id', authMiddleware, saleController.update);
+router.delete('/:id', authMiddleware, saleController.delete);
 
 module.exports = router;

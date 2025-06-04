@@ -33,6 +33,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     const res = await axios.get(`http://localhost:5001/api/customers/${customerId}`, axiosConfig);
     const customer = res.data;
     await loadCustomerAppointments(customerId);
+    await loadCustomerSales(customerId, customer);
+    await loadCustomerPackageSales(customerId, customer);
+
 
 
     const bilgiContainer = document.querySelector("#section-bilgileri");
@@ -177,10 +180,10 @@ async function loadCustomerAppointments(customerId) {
     <h5 class="mb-0">${customer.name}</h5>
   </div>
   <div class="d-flex align-items-center gap-2">
-    <div class="input-group " style="max-width: 230px;">
-  <span class="input-group-text bg-white border-end-0"><i class="bi bi-search text-muted"></i></span>
-  <input type="text" id="searchAppointments" class="form-control border-start-0" placeholder="Randevu ara..." />
-</div>
+        <div class="input-group" style="max-width: 250px;">
+          <span class="input-group-text"><i class="bi bi-search text-muted"></i></span>
+          <input type="text" id="searchAppointments" class="form-control" placeholder="Satış ara..." />
+        </div>
     <button class="btn btn-outline-secondary btn-sm" id="refreshAppointments" title="Yenile">
       <i class="bi bi-arrow-clockwise"></i>
     </button>
@@ -318,4 +321,291 @@ window.changeAppointmentPage = function (page) {
   renderAppointmentPagination(allAppointments.length);
 };
 
+let allSales = [];
+let currentSalePage = 1;
+const salesPerPage = 10;
 
+async function loadCustomerSales(customerId, customer) {
+  try {
+    const res = await axios.get(`http://localhost:5001/api/sale-products`, axiosConfig);
+    allSales = res.data.filter(item => item.CustomerId == customerId);
+
+    const satisContainer = document.querySelector("#section-satislar");
+    if (!satisContainer) return;
+
+    let html = `
+      <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+        <div class="d-flex align-items-center gap-3">
+          <div class="rounded-circle bg-white border d-flex justify-content-center align-items-center" style="width: 42px; height: 42px;">
+            <span class="fw-bold text-uppercase">${customer.name?.charAt(0) || "?"}</span>
+          </div>
+          <h5 class="mb-0">${customer.name}</h5>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+          <div class="input-group" style="max-width: 250px;">
+            <span class="input-group-text"><i class="bi bi-search text-muted"></i></span>
+            <input type="text" id="searchSales" class="form-control" placeholder="Satış ara..." />
+          </div>
+          <button class="btn btn-outline-secondary btn-sm" id="refreshSales" title="Yenile">
+            <i class="bi bi-arrow-clockwise"></i>
+          </button>
+          <button class="btn btn-outline-secondary btn-sm" id="filterSales" title="Filtrele">
+            <i class="bi bi-funnel"></i>
+          </button>
+        </div>
+      </div>
+
+      <div class="table-responsive">
+        <table class="table table-bordered table-hover align-middle shadow-sm" id="saleTable">
+          <thead class="table-light text-center">
+            <tr>
+              <th>Ürün</th>
+              <th>Adet</th>
+              <th>Fiyat</th>
+              <th>Toplam</th>
+              <th>Ödeme</th>
+              <th>Not</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+
+      <div id="salePagination" class="mt-3"></div>
+      <div id="saleInfo" class="text-muted text-center small mt-1"></div>
+    `;
+
+    satisContainer.innerHTML = html;
+
+    renderSaleList(allSales);
+    renderSalePagination(allSales.length);
+
+    document.getElementById("refreshSales").addEventListener("click", () => {
+      loadCustomerSales(customerId, customer); // tekrar müşteri yollanmalı
+    });
+
+    document.getElementById("filterSales").addEventListener("click", () => {
+      alert("Filtre özelliği henüz hazır değil 🧙‍♂️");
+    });
+
+    document.getElementById("searchSales").addEventListener("input", function () {
+      const query = this.value.toLowerCase();
+      const filtered = allSales.filter(s => {
+        return (
+          s.Product?.name?.toLowerCase().includes(query) ||
+          s.notes?.toLowerCase().includes(query) ||
+          s.paymentMethod?.toLowerCase().includes(query)
+        );
+      });
+      renderSaleList(filtered);
+      renderSalePagination(filtered.length);
+    });
+
+  } catch (err) {
+    console.error("Satışlar yüklenirken hata:", err);
+    document.querySelector("#section-satislar").innerHTML = "<div class='alert alert-danger'>Satışlar yüklenemedi.</div>";
+  }
+}
+
+
+function renderSaleList(sales) {
+  const tbody = document.querySelector("#saleTable tbody");
+  tbody.innerHTML = "";
+
+  const startIndex = (currentSalePage - 1) * salesPerPage;
+  const paginated = sales.slice(startIndex, startIndex + salesPerPage);
+
+  paginated.forEach(sale => {
+    const total = (parseFloat(sale.price) * parseInt(sale.quantity)).toFixed(2);
+    tbody.innerHTML += `
+      <tr>
+        <td>${sale.Product?.name || "-"}</td>
+        <td class="text-center">${sale.quantity}</td>
+        <td class="text-end">${parseFloat(sale.price).toFixed(2)} ₺</td>
+        <td class="text-end">${total} ₺</td>
+        <td class="text-center">${sale.paymentMethod || "-"}</td>
+        <td>${sale.notes || "-"}</td>
+      </tr>`;
+  });
+}
+
+function renderSalePagination(totalItems) {
+  const container = document.getElementById("salePagination");
+  const infoContainer = document.getElementById("saleInfo");
+  if (!container || !infoContainer) return;
+
+  const totalPages = Math.ceil(totalItems / salesPerPage);
+  let html = `<nav><ul class="pagination pagination-sm justify-content-center mb-0">`;
+
+  html += `
+    <li class="page-item ${currentSalePage === 1 ? "disabled" : ""}">
+      <button class="page-link" onclick="changeSalePage(${currentSalePage - 1})">&laquo;</button>
+    </li>`;
+
+  for (let i = 1; i <= totalPages; i++) {
+    html += `
+      <li class="page-item ${i === currentSalePage ? "active" : ""}">
+        <button class="page-link" onclick="changeSalePage(${i})">${i}</button>
+      </li>`;
+  }
+
+  html += `
+    <li class="page-item ${currentSalePage === totalPages ? "disabled" : ""}">
+      <button class="page-link" onclick="changeSalePage(${currentSalePage + 1})">&raquo;</button>
+    </li>
+  </ul></nav>`;
+
+  container.innerHTML = html;
+
+  const start = (currentSalePage - 1) * salesPerPage + 1;
+  const end = Math.min(currentSalePage * salesPerPage, totalItems);
+  infoContainer.innerText = `Gösterilen: ${start} - ${end} / ${totalItems} kayıt (${totalPages} sayfa)`;
+}
+
+window.changeSalePage = function (page) {
+  currentSalePage = page;
+  renderSaleList(allSales);
+  renderSalePagination(allSales.length);
+};
+//paket satışlarını yükle
+let allPackageSales = [];
+let currentPackageSalePage = 1;
+const packageSalesPerPage = 10;
+
+async function loadCustomerPackageSales(customerId, customer) {
+  try {
+    const res = await axios.get(`http://localhost:5001/api/sales/by-customer/${customerId}`, axiosConfig);
+    allPackageSales = res.data;
+
+    const container = document.querySelector("#section-paketsatislar");
+    if (!container) return;
+
+    let html = `
+      <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+        <div class="d-flex align-items-center gap-3">
+          <div class="rounded-circle bg-white border d-flex justify-content-center align-items-center" style="width: 42px; height: 42px;">
+            <span class="fw-bold text-uppercase">${customer.name?.charAt(0) || "?"}</span>
+          </div>
+          <h5 class="mb-0">${customer.name}</h5>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+          <div class="input-group" style="max-width: 250px;">
+            <span class="input-group-text"><i class="bi bi-search text-muted"></i></span>
+            <input type="text" id="searchPackageSales" class="form-control" placeholder="Satış ara..." />
+          </div>
+          <button class="btn btn-outline-secondary btn-sm" id="refreshPackageSales" title="Yenile">
+            <i class="bi bi-arrow-clockwise"></i>
+          </button>
+          <button class="btn btn-outline-secondary btn-sm" id="filterPackageSales" title="Filtrele">
+            <i class="bi bi-funnel"></i>
+          </button>
+        </div>
+      </div>
+    `;
+
+    html += `
+      <div class="table-responsive">
+        <table class="table table-bordered table-hover align-middle shadow-sm" id="packageSaleTable">
+          <thead class="table-light text-center">
+            <tr>
+              <th>Hizmet</th>
+              <th>Seans</th>
+              <th>Taksit</th>
+              <th>Fiyat</th>
+              <th>Tarih</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <div id="packageSalePagination" class="mt-3"></div>
+      <div id="packageSaleInfo" class="text-muted text-center small mt-1"></div>
+    `;
+
+    container.innerHTML = html;
+
+    renderPackageSaleList(allPackageSales);
+    renderPackageSalePagination(allPackageSales.length);
+
+    document.getElementById("refreshPackageSales").addEventListener("click", () => {
+      loadCustomerPackageSales(customerId, customer);
+    });
+
+    document.getElementById("filterPackageSales").addEventListener("click", () => {
+      alert("Filtre özelliği henüz aktif değil 🙈");
+    });
+
+    document.getElementById("searchPackageSales").addEventListener("input", function () {
+      const query = this.value.toLowerCase();
+      const filtered = allPackageSales.filter(s =>
+        (s.Service?.name || "").toLowerCase().includes(query)
+      );
+      renderPackageSaleList(filtered);
+      renderPackageSalePagination(filtered.length);
+    });
+
+  } catch (err) {
+    console.error("Paket satışlar yüklenirken hata:", err);
+    document.querySelector("#section-paketsatislar").innerHTML = `<div class='alert alert-danger'>Paket satışlar yüklenemedi.</div>`;
+  }
+}
+
+function renderPackageSaleList(sales) {
+  const tbody = document.querySelector("#packageSaleTable tbody");
+  tbody.innerHTML = "";
+
+  const startIndex = (currentPackageSalePage - 1) * packageSalesPerPage;
+  const paginated = sales.slice(startIndex, startIndex + packageSalesPerPage);
+
+  paginated.forEach(sale => {
+    const tarih = new Date(sale.createdAt).toLocaleDateString("tr-TR");
+    tbody.innerHTML += `
+      <tr>
+        <td>${sale.Service?.name || "-"}</td>
+        <td class="text-center">${sale.session || "-"}</td>
+        <td class="text-center">${sale.installment || "-"}</td>
+        <td class="text-end">${parseFloat(sale.price).toFixed(2)} ₺</td>
+        <td class="text-nowrap">${tarih}</td>
+      </tr>
+    `;
+  });
+}
+
+function renderPackageSalePagination(totalItems) {
+  const container = document.getElementById("packageSalePagination");
+  const infoContainer = document.getElementById("packageSaleInfo");
+  if (!container || !infoContainer) return;
+
+  const totalPages = Math.ceil(totalItems / packageSalesPerPage);
+  let html = `<nav><ul class="pagination pagination-sm justify-content-center mb-0">`;
+
+  html += `
+    <li class="page-item ${currentPackageSalePage === 1 ? "disabled" : ""}">
+      <button class="page-link" onclick="changePackageSalePage(${currentPackageSalePage - 1})">&laquo;</button>
+    </li>`;
+
+  for (let i = 1; i <= totalPages; i++) {
+    html += `
+      <li class="page-item ${i === currentPackageSalePage ? "active" : ""}">
+        <button class="page-link" onclick="changePackageSalePage(${i})">${i}</button>
+      </li>`;
+  }
+
+  html += `
+    <li class="page-item ${currentPackageSalePage === totalPages ? "disabled" : ""}">
+      <button class="page-link" onclick="changePackageSalePage(${currentPackageSalePage + 1})">&raquo;</button>
+    </li>
+  </ul></nav>`;
+
+  container.innerHTML = html;
+
+  const start = (currentPackageSalePage - 1) * packageSalesPerPage + 1;
+  const end = Math.min(currentPackageSalePage * packageSalesPerPage, totalItems);
+  infoContainer.innerText = `Gösterilen: ${start} - ${end} / ${totalItems} kayıt (${totalPages} sayfa)`;
+}
+
+window.changePackageSalePage = function (page) {
+  currentPackageSalePage = page;
+  renderPackageSaleList(allPackageSales);
+  renderPackageSalePagination(allPackageSales.length);
+};
