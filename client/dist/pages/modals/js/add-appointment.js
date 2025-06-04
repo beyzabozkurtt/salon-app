@@ -204,11 +204,17 @@ function setupHizmetEkle() {
       card.className = "d-flex justify-content-between align-items-center border p-2 rounded mb-2";
 
       const info = document.createElement("div");
-      info.innerHTML = `
-        <strong>Hizmet:</strong> ${hizmet} |
-        <strong>Personel:</strong> ${personel} |
-        <strong>Fiyat:</strong> ${fiyat} ₺
-      `;
+const hizmetSelectBox = document.getElementById("hizmetSelect");
+const personelSelectBox = document.getElementById("hizmetPersonelInput");
+
+const hizmetText = hizmetSelectBox.options[hizmetSelectBox.selectedIndex]?.textContent;
+const personelText = personelSelectBox.options[personelSelectBox.selectedIndex]?.textContent;
+
+info.innerHTML = `
+  <strong>Hizmet:</strong> ${hizmetText} |
+  <strong>Personel:</strong> ${personelText} |
+  <strong>Fiyat:</strong> ${fiyat} ₺
+`;
 
       const btnGroup = document.createElement("div");
       btnGroup.className = "d-flex gap-2";
