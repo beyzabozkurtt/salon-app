@@ -1,5 +1,6 @@
 const selectedServices = [];
 let isHizmetEkleListenerBound = false;
+let oncekiCustomerId = null;
 
 let isListenerBound = false;
 export function init() {
@@ -74,22 +75,26 @@ function setupTabs() {
   });
 }
 
-// 1. Önce fonksiyonu dışarı tanımlıyoruz:
 async function handleAppointmentCreate(e) {
   e.preventDefault();
+
+  const tekrarSayisi = parseInt(document.getElementById("tekrarSayisi")?.value || "0");
+  const tekrarSikligi = parseInt(document.getElementById("tekrarSikligi")?.value || "0");
 
   const customerId = document.getElementById("customerIdHidden")?.value;
   const date = document.getElementById("appointmentDate")?.value;
   const startTime = document.getElementById("startTime")?.value;
   const endTime = document.getElementById("endTime")?.value;
   const notes = document.getElementById("notesInput")?.value || "";
-
   const hizmet = document.getElementById("hizmetSelect")?.value;
   const personel = document.getElementById("hizmetPersonelInput")?.value;
   const fiyat = document.getElementById("fiyatInput")?.value;
+  const tekrarlayanMi = document.getElementById("repeatSwitch")?.checked;
+  const paketId = document.getElementById("paketSelect")?.value;
+  const paketPersonelId = document.getElementById("paketPersonelInput")?.value;
 
   if (!customerId) return alert("Lütfen bir müşteri seçin.");
-  if (!date || !startTime || !endTime) return alert("Lütfen tarih ve saat bilgilerini girin.");
+  if (!date || !startTime || !endTime) return alert("Tarih ve saat boş olamaz.");
 
   const startISO = new Date(`${date.split(".").reverse().join("-")}T${startTime}`).toISOString();
   const endISO = new Date(`${date.split(".").reverse().join("-")}T${endTime}`).toISOString();
@@ -97,81 +102,115 @@ async function handleAppointmentCreate(e) {
   const token = localStorage.getItem("companyToken");
   const config = { headers: { Authorization: "Bearer " + token } };
 
-  const hizmetListesiBoşMu = !hizmet || !personel || !fiyat;
+  const allRequestsToCheck = [];
 
-  // ❗ YENİ: Hem selectedServices'i al hem de son formdaki veriyi ekle
-  const allServices = [...selectedServices];
-
-  if (!hizmetListesiBoşMu) {
-    allServices.push({
-      SingleServiceId: hizmet,
-      UserId: personel,
-      price: fiyat
-    });
-  }
-
-  if (allServices.length === 0) {
-    return alert("Lütfen en az bir hizmet girin.");
-  }
-
-  // ❗ ÇAKIŞMA KONTROLLERİ
-  for (const s of allServices) {
-    const kontrolUrl = `http://localhost:5001/api/appointments/check-overlaps`;
-
-    const kontrolParams = {
-      CustomerId: customerId,
-      UserId: s.UserId,
-      date: startISO,
-      endDate: endISO
-    };
-
-    if (s.SingleServiceId) kontrolParams.SingleServiceId = s.SingleServiceId;
-    if (s.ServiceId) kontrolParams.ServiceId = s.ServiceId;
-
+  // 1. Paketli tekrarlar
+  if (tekrarlayanMi && paketId && paketPersonelId) {
     try {
-      const kontrol = await axios.post(kontrolUrl, kontrolParams, config);
-      const result = kontrol.data;
+      const sessionRes = await axios.get(`http://localhost:5001/api/appointments/by-customer/${customerId}/package-usage`, config);
+      const saleAppointments = sessionRes.data.filter(a => a.SaleId === Number(paketId));
+      let sessionNumber = saleAppointments.length + 1;
 
-      if (result.customerOverlap) {
-        return alert("❌ Bu müşteri bu saat aralığında aynı hizmetten zaten randevu almış.");
+      for (let i = 0; i <= tekrarSayisi; i++) {
+        const start = new Date(`${date.split(".").reverse().join("-")}T${startTime}`);
+        const end = new Date(`${date.split(".").reverse().join("-")}T${endTime}`);
+        start.setDate(start.getDate() + i * tekrarSikligi);
+        end.setDate(end.getDate() + i * tekrarSikligi);
+
+        allRequestsToCheck.push({
+          type: "paket",
+          payload: {
+            SaleId: paketId,
+            CustomerId: customerId,
+            UserId: paketPersonelId,
+            date: start.toISOString(),
+            endDate: end.toISOString(),
+            sessionNumber,
+            notes
+          }
+        });
+        sessionNumber++;
       }
-
-      if (result.personelOverlap) {
-        return alert("❌ Seçilen personelin bu saat aralığında başka bir randevusu var.");
-      }
-
     } catch (err) {
-      console.error("❌ Randevu çakışma kontrolü hatası:", err);
-      alert("Randevu çakışma kontrolü sırasında bir hata oluştu.");
-      return;
+      console.error("🔍 Paket seans kontrol hatası:", err);
+      return alert("Paket bilgisi alınırken hata oluştu.");
     }
   }
 
-  // 🔄 KAYIT İŞLEMİ
-  try {
-    for (const s of allServices) {
-      await axios.post("http://localhost:5001/api/salesingleservices", {
-        SingleServiceId: s.SingleServiceId,
-        price: parseFloat(s.price),
+  // 2. Hizmetli (tek seferlik) randevular
+  const allServices = [...selectedServices];
+  if (!tekrarlayanMi && hizmet && personel && fiyat) {
+    allServices.push({ SingleServiceId: hizmet, UserId: personel, price: fiyat });
+  }
+
+  for (const s of allServices) {
+    allRequestsToCheck.push({
+      type: "hizmet",
+      payload: {
         CustomerId: customerId,
         UserId: s.UserId,
+        SingleServiceId: s.SingleServiceId,
+        price: s.price,
         date: startISO,
         endDate: endISO,
         notes
-      }, config);
+      }
+    });
+  }
+
+  if (allRequestsToCheck.length === 0) {
+    return alert("Lütfen en az bir hizmet veya paket seçin.");
+  }
+
+  // 3. Tüm randevular için çakışma kontrolü
+  for (const item of allRequestsToCheck) {
+    const kontrolRes = await axios.post("http://localhost:5001/api/appointments/check-overlaps", {
+      CustomerId: item.payload.CustomerId,
+      UserId: item.payload.UserId,
+      date: item.payload.date,
+      endDate: item.payload.endDate
+    }, config);
+
+    if (kontrolRes.data.personelOverlap) {
+      return alert("❌ En az bir randevu personel ile çakışıyor. Lütfen tarih ve saatleri kontrol edin.");
+    }
+  }
+
+  // 4. Tüm randevuları sırayla kaydet
+  try {
+    for (const item of allRequestsToCheck) {
+      if (item.type === "paket") {
+        await axios.post("http://localhost:5001/api/appointments/from-package", {
+          SaleId: item.payload.SaleId,
+          CustomerId: item.payload.CustomerId,
+          date: item.payload.date,
+          endDate: item.payload.endDate,
+          notes: item.payload.notes
+        }, config);
+      }
+
+      if (item.type === "hizmet") {
+        await axios.post("http://localhost:5001/api/salesingleservices", {
+          SingleServiceId: item.payload.SingleServiceId,
+          price: parseFloat(item.payload.price),
+          CustomerId: item.payload.CustomerId,
+          UserId: item.payload.UserId,
+          date: item.payload.date,
+          endDate: item.payload.endDate,
+          notes: item.payload.notes
+        }, config);
+      }
     }
 
-    alert("✅ Randevu başarıyla oluşturuldu!");
+    alert("✅ Randevular başarıyla oluşturuldu.");
     bootstrap.Modal.getInstance(document.getElementById("appointmentModal"))?.hide();
     window.location.reload();
 
   } catch (err) {
-  console.error("❌ Oluşturma hatası:", err.response?.data || err.message || err);
-  alert("❌ Oluşturma hatası: " + (err.response?.data?.error || err.message || "Sunucu hatası"));
+    console.error("❌ Oluşturma hatası:", err);
+    alert("❌ Randevular oluşturulurken hata oluştu.");
+  }
 }
-
-}
-
 
 
 
@@ -322,14 +361,19 @@ function setupCustomerAutocomplete() {
     }
   });
 
-  customerInput.addEventListener("change", () => {
-    const list = JSON.parse(customerInput.dataset.customerList || "[]");
-    const selected = list.find(c => c.name === customerInput.value.trim());
-    customerIdInput.value = selected?.id || "";
-      if (selected?.id) {
-    doldurMusteriPaketleri(selected.id);
+customerInput.addEventListener("change", () => {
+  const list = JSON.parse(customerInput.dataset.customerList || "[]");
+  const selected = list.find(c => c.name === customerInput.value.trim());
+  const currentId = selected?.id || "";
+
+  customerIdInput.value = currentId;
+
+  if (currentId && currentId !== oncekiCustomerId) {
+    oncekiCustomerId = currentId;
+    doldurMusteriPaketleri(currentId);
   }
-  });
+});
+
 }
 
 export async function doldurTekSeferlikHizmetler() {
@@ -368,38 +412,46 @@ export async function doldurMusteriPaketleri(customerId) {
   const paketSelect = document.getElementById("paketSelect");
   if (!paketSelect) return;
 
-  // Temizle
   paketSelect.innerHTML = `<option value="" selected hidden>Paket</option>`;
-
   if (!customerId) return;
 
   const token = localStorage.getItem("companyToken");
   const config = { headers: { Authorization: "Bearer " + token } };
 
   try {
-    const res = await axios.get(`http://localhost:5001/api/customers/${customerId}/packages`, config);
+    // 1. Tüm satışları al
+    const paketRes = await axios.get(`http://localhost:5001/api/customers/${customerId}/packages`, config);
+    const paketler = paketRes.data;
 
-res.data.forEach(paket => {
-  const opt = document.createElement("option");
-  opt.value = paket.id;
+    // 2. Paket kullanım bilgilerini al
+    const usageRes = await axios.get(`http://localhost:5001/api/appointments/by-customer/${customerId}/package-usage`, config);
+    const kullanilanRandevular = usageRes.data;
 
-  const serviceName = paket?.Service?.name || "Hizmet Yok";
-  const session = paket.session || "-";
+    paketler.forEach(paket => {
+      const totalSeans = paket.session || 0;
+      const kullanilan = kullanilanRandevular.filter(r => r.SaleId === paket.saleId).length;
+      const kalanSeans = totalSeans - kullanilan;
 
-  opt.textContent = `${serviceName} | ${session} seans`;
+      // ❗ Sadece kalan seansı olan paketleri göster
+      if (kalanSeans > 0) {
+        const opt = document.createElement("option");
+        const serviceName = paket?.name || paket?.Service?.name || "Hizmet Adı Eksik";
+        opt.value = paket.saleId;
+        opt.textContent = `${serviceName} | ${kalanSeans} seans kaldı`;
 
-  if (paket?.Service?.id) {
-    opt.value = paket.saleId; // randevuda bu ID'yi gönder
-opt.dataset.serviceid = paket.serviceId;
-opt.textContent = `${paket.name} | ${paket.session} seans`;
-  }
+        if (paket?.serviceId) {
+          opt.dataset.serviceid = paket.serviceId;
+        }
 
-  paketSelect.appendChild(opt);
-});
+        paketSelect.appendChild(opt);
+      }
+    });
   } catch (err) {
     console.error("❌ Paketler alınamadı:", err);
   }
 }
+
+
 
 // Repeat Alanlarını Yönet
   const repeatSwitch = document.getElementById("repeatSwitch");

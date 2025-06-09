@@ -73,6 +73,9 @@ Sale.hasMany(Payment, {
 });
 Payment.belongsTo(Sale, { foreignKey: 'SaleId' });
 
+// ✅ Tekli hizmet ödemeleri için ilişki
+SaleSingleService.hasMany(Payment, { foreignKey: 'SaleSingleServiceId' });
+Payment.belongsTo(SaleSingleService, { foreignKey: 'SaleSingleServiceId' });
 
 
 Customer.hasMany(Payment, { foreignKey: 'CustomerId' });

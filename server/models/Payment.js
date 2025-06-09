@@ -40,6 +40,10 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.INTEGER,
       allowNull: true
     },
+    SaleSingleServiceId: {
+  type: DataTypes.INTEGER,
+  allowNull: true
+},
     CompanyId: {
   type: DataTypes.INTEGER,
   allowNull: false
@@ -52,6 +56,7 @@ module.exports = (sequelize, DataTypes) => {
   Payment.associate = (models) => {
     Payment.belongsTo(models.Sale, { foreignKey: 'SaleId' });
     Payment.belongsTo(models.Product, { foreignKey: 'ProductId' }); // ✅ EKLENDİ
+    Payment.belongsTo(models.SaleSingleService, { foreignKey: 'SaleSingleServiceId' });
   };
 
   return Payment;

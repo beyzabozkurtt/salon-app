@@ -69,19 +69,34 @@
   </div>
 </div>
 
-             <div class="row g-2 mb-3" id="repeatFields" style="display: none;">
+ <div class="row g-2 mb-3" id="repeatFields" style="display: none;">
   <div class="col-md-6">
-    <select class="form-select">
-      <option selected>Tekrar sıklığı</option>
-      <option>Haftalık</option>
-      <option>İki haftada bir</option>
+    <select class="form-select" id="tekrarSikligi">
+      <option selected hidden value="">Tekrar sıklığı</option>
+      <option value="1">Her gün</option>
+      <option value="2">2 günde bir</option>
+      <option value="3">3 günde bir</option>
+      <option value="4">4 günde bir</option>
+      <option value="5">5 günde bir</option>
+      <option value="7">Haftada bir</option>
+      <option value="14">2 haftada bir</option>
+      <option value="21">3 haftada bir</option>
+      <option value="30">Ayda bir</option>
     </select>
   </div>
   <div class="col-md-6">
-    <select class="form-select">
-      <option selected>Tekrar sayısı</option>
-      <option>1</option>
-      <option>2</option>
+    <select class="form-select" id="tekrarSayisi">
+      <option selected hidden value="">Tekrar sayısı</option>
+      <option value="1">1</option>
+      <option value="2">2</option>
+      <option value="3">3</option>
+      <option value="4">4</option>
+      <option value="5">5</option>
+      <option value="6">6</option>
+      <option value="7">7</option>
+      <option value="8">8</option>
+      <option value="9">9</option>
+      <option value="10">10</option>
     </select>
   </div>
 </div>
