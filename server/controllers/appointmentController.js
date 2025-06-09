@@ -11,7 +11,10 @@ async getAll(req, res) {
       include: [
         Customer,
         User,
-        Service,
+        {
+  model: Service,
+  attributes: ['id', 'name', 'color']
+},
         {
           model: SingleService,
           as: 'SingleService',

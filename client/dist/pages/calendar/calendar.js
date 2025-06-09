@@ -66,8 +66,8 @@ document.addEventListener('DOMContentLoaded', async function () {
           title: `${app.Customer?.name || "Müşteri"} - ${app.SingleService?.name || app.Service?.name || "Hizmet"}`,
           start: app.date,
           end: app.endDate,
-          backgroundColor: app.SingleService?.color || getColorByStatus(app.status),
-          borderColor: app.SingleService?.color || getColorByStatus(app.status),
+backgroundColor: app.Service?.color || app.SingleService?.color || getColorByStatus(app.status),
+borderColor: app.Service?.color || app.SingleService?.color || getColorByStatus(app.status),
           extendedProps: {
             status: app.status,
             notes: app.notes,
