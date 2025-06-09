@@ -98,59 +98,35 @@ exports.getCustomerPackages = async (req, res) => {
     const customerId = req.params.id;
     const companyId = req.company.companyId;
 
-    console.log("👉 Paket sorgusu başlatıldı. Müşteri ID:", customerId, "Şirket ID:", companyId);
-
-    // 1. Müşteri gerçekten bu şirkete mi ait?
     const customer = await Customer.findOne({
-      where: {
-        id: customerId,
-        CompanyId: companyId
-      }
+      where: { id: customerId, CompanyId: companyId }
     });
 
     if (!customer) {
-      console.warn("⛔ Yetkisiz erişim ya da müşteri yok:", customerId);
       return res.status(404).json({ error: "Müşteri bulunamadı veya yetkisiz erişim." });
     }
 
-    // 2. Paket satışlarını çek (Service ile birlikte)
     const sales = await Sale.findAll({
       where: {
         CustomerId: customerId,
         CompanyId: companyId,
-        ServiceId: { [Op.ne]: null } // sadece ServiceId olanlar
+        ServiceId: { [Op.ne]: null }
       },
       include: [{
         model: Service,
-        required: true // hizmet mutlaka olsun
+        required: true
       }]
     });
 
-    const uniqueServices = new Map();
+    // ❌ Artık filtreleme yok, her satış ayrı geliyor
+    const response = sales.map(sale => ({
+      saleId: sale.id,
+      serviceId: sale.Service.id,
+      name: sale.Service.name,
+      color: sale.Service.color,
+      session: sale.session
+    }));
 
-    for (const sale of sales) {
-      const s = sale.Service;
-
-      if (!s) {
-        console.warn("❗ Service bilgisi boş geldi! Sale ID:", sale.id);
-        continue;
-      }
-
-      // aynı hizmet birden fazla kez satılmışsa sadece bir tanesini al
-      if (!uniqueServices.has(s.id)) {
-        uniqueServices.set(s.id, {
-          saleId: sale.id,
-          serviceId: s.id,
-          name: s.name,
-          color: s.color,
-          session: sale.session
-        });
-      }
-    }
-
-    const response = Array.from(uniqueServices.values());
-
-    console.log("✅ Paketler bulundu:", response.length);
     res.json(response);
 
   } catch (err) {
@@ -158,6 +134,7 @@ exports.getCustomerPackages = async (req, res) => {
     res.status(500).json({ error: 'Paketler getirilemedi' });
   }
 };
+
 
 
 // ✅ Seans detaylı müşteri hizmetleri

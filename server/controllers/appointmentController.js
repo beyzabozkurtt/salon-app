@@ -239,53 +239,100 @@ if (ServiceId && !SingleServiceId) {
     res.status(500).json({ error: "Paket kullanımları alınamadı." });
   }
 },
+async createFromPackage(req, res) {
+  try {
+    const CompanyId = req.company.companyId;
+    const { SaleId, CustomerId, date, endDate, notes } = req.body;
+
+    if (!SaleId || !CustomerId || !date || !endDate) {
+      return res.status(400).json({ error: "Eksik parametre gönderildi." });
+    }
+
+    const sale = await Sale.findOne({
+      where: { id: SaleId, CustomerId, CompanyId },
+    });
+
+    if (!sale) {
+      return res.status(404).json({ error: "Paket satışı bulunamadı." });
+    }
+
+    const { ServiceId, UserId } = sale;
+
+    if (!ServiceId || !UserId) {
+      return res.status(400).json({ error: "Satışta ServiceId veya UserId eksik." });
+    }
+
+    // 🔍 Personel çakışma kontrolü
+    const conflict = await Appointment.findOne({
+      where: {
+        CompanyId,
+        UserId,
+        status: { [Op.ne]: "iptal" },
+        date: { [Op.lt]: endDate },
+        endDate: { [Op.gt]: date }
+      }
+    });
+
+    if (conflict) {
+      return res.status(409).json({
+        error: "Seçilen personelin bu saat aralığında başka bir randevusu var."
+      });
+    }
+
+    const sessionCount = await Appointment.count({
+      where: {
+        CompanyId,
+        CustomerId,
+        ServiceId,
+        SaleId,
+        status: { [Op.ne]: "iptal" }
+      }
+    });
+
+    const sessionNumber = sessionCount + 1;
+
+    const appointment = await Appointment.create({
+      CustomerId,
+      CompanyId,
+      ServiceId,
+      SaleId,
+      UserId, // Paket satışındaki personel
+      date,
+      endDate,
+      status: "bekliyor",
+      sessionNumber,
+      notes
+    });
+
+    res.status(201).json(appointment);
+
+  } catch (err) {
+    console.error("❌ Paketli randevu oluşturma hatası:", err);
+    res.status(500).json({ error: "Paketli randevu oluşturulamadı." });
+  }
+},
+
 async checkAppointmentOverlaps(req, res) {
   try {
     const CompanyId = req.company.companyId;
-    const {
-      CustomerId,
-      UserId,
-      ServiceId,
-      SingleServiceId,
-      date,
-      endDate
-    } = req.body;
+    const { CustomerId, UserId, date, endDate } = req.body;
 
     if (!CustomerId || !UserId || !date || !endDate) {
       return res.status(400).json({ error: "Eksik parametreler gönderildi." });
     }
 
-    let customerOverlap = null;
+    // ✅ Müşteri çakışma kontrolü
+    const customerOverlap = await Appointment.findOne({
+      where: {
+        CompanyId,
+        CustomerId,
+        status: { [Op.ne]: "iptal" },
+        date: { [Op.lt]: endDate },
+        endDate: { [Op.gt]: date }
+      }
+    });
 
-    // ✅ Tek Seferlik hizmet kontrolü
-    if (SingleServiceId) {
-      customerOverlap = await Appointment.findOne({
-        where: {
-          CompanyId,
-          CustomerId,
-          SingleServiceId,
-          status: { [Op.ne]: "iptal" },
-          date: { [Op.lt]: endDate },
-          endDate: { [Op.gt]: date }
-        }
-      });
-    }
-
-    // ✅ Eğer tek seferlikte bulunamadıysa paket hizmet kontrolü yap
-    if (!customerOverlap && typeof ServiceId !== "undefined" && ServiceId !== null) {
-      customerOverlap = await Appointment.findOne({
-        where: {
-          CompanyId,
-          CustomerId,
-          ServiceId,
-          status: { [Op.ne]: "iptal" },
-          date: { [Op.lt]: endDate },
-          endDate: { [Op.gt]: date }
-        }
-      });
-    }
-
-    // ✅ Personel çakışması
+    // ✅ Personel çakışma kontrolü (hizmet tipi fark etmeksizin)
     const personelOverlap = await Appointment.findOne({
       where: {
         CompanyId,
@@ -306,5 +353,6 @@ async checkAppointmentOverlaps(req, res) {
     return res.status(500).json({ error: "Çakışma kontrolü sırasında bir hata oluştu." });
   }
 }
+
 
 };

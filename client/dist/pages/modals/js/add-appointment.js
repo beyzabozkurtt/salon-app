@@ -1,5 +1,6 @@
 const selectedServices = [];
 let isHizmetEkleListenerBound = false;
+let oncekiCustomerId = null;
 
 let isListenerBound = false;
 export function init() {
@@ -74,9 +75,11 @@ function setupTabs() {
   });
 }
 
-// 1. Önce fonksiyonu dışarı tanımlıyoruz:
 async function handleAppointmentCreate(e) {
   e.preventDefault();
+  const tekrarSayisi = parseInt(document.getElementById("tekrarSayisi")?.value || "0");
+  const tekrarSikligi = parseInt(document.getElementById("tekrarSikligi")?.value || "0");
+
 
   const customerId = document.getElementById("customerIdHidden")?.value;
   const date = document.getElementById("appointmentDate")?.value;
@@ -88,6 +91,9 @@ async function handleAppointmentCreate(e) {
   const personel = document.getElementById("hizmetPersonelInput")?.value;
   const fiyat = document.getElementById("fiyatInput")?.value;
 
+  const tekrarlayanMi = document.getElementById("repeatSwitch")?.checked;
+  const paketId = document.getElementById("paketSelect")?.value;
+
   if (!customerId) return alert("Lütfen bir müşteri seçin.");
   if (!date || !startTime || !endTime) return alert("Lütfen tarih ve saat bilgilerini girin.");
 
@@ -97,12 +103,16 @@ async function handleAppointmentCreate(e) {
   const token = localStorage.getItem("companyToken");
   const config = { headers: { Authorization: "Bearer " + token } };
 
-  const hizmetListesiBoşMu = !hizmet || !personel || !fiyat;
+  // 👉 Paketli randevu ise sadece paket seçimi kontrol edilir
+  if (tekrarlayanMi && !paketId) {
+    return alert("Lütfen bir paket seçin.");
+  }
 
-  // ❗ YENİ: Hem selectedServices'i al hem de son formdaki veriyi ekle
+  // 👉 Tek seferlik hizmetlerde en az bir hizmet eklenmeli
+  const hizmetListesiBoşMu = !hizmet || !personel || !fiyat;
   const allServices = [...selectedServices];
 
-  if (!hizmetListesiBoşMu) {
+  if (!tekrarlayanMi && !hizmetListesiBoşMu) {
     allServices.push({
       SingleServiceId: hizmet,
       UserId: personel,
@@ -110,11 +120,81 @@ async function handleAppointmentCreate(e) {
     });
   }
 
-  if (allServices.length === 0) {
+  if (!tekrarlayanMi && allServices.length === 0) {
     return alert("Lütfen en az bir hizmet girin.");
   }
 
-  // ❗ ÇAKIŞMA KONTROLLERİ
+  // ✅ Paketli randevu kaydı
+// ✅ Paketli randevu kaydı
+// ✅ Paketli randevu kaydı (tekrarlayan ise çoklu oluşturulur)
+if (tekrarlayanMi) {
+  try {
+    // 1. Seans başlangıç numarasını al
+    const sessionRes = await axios.get(`http://localhost:5001/api/appointments/by-customer/${customerId}/package-usage`, config);
+    const saleAppointments = sessionRes.data.filter(a => a.SaleId === Number(paketId));
+      const paketPersonelId = document.getElementById("paketPersonelInput")?.value;
+  if (!paketPersonelId) {
+    return alert("Lütfen bir personel seçin.");}
+    let sessionNumber = saleAppointments.length + 1;
+
+    // 2. Tüm tarihleri oluştur
+    const allRandevular = [];
+    for (let i = 0; i <= tekrarSayisi; i++) {
+      const start = new Date(`${date.split(".").reverse().join("-")}T${startTime}`);
+      const end = new Date(`${date.split(".").reverse().join("-")}T${endTime}`);
+      start.setDate(start.getDate() + i * tekrarSikligi);
+      end.setDate(end.getDate() + i * tekrarSikligi);
+
+      allRandevular.push({
+        date: start.toISOString(),
+        endDate: end.toISOString(),
+        sessionNumber: sessionNumber++
+      });
+    }
+
+    // 3. Önce tüm tarihleri çakışma kontrolünden geçir
+    for (let r of allRandevular) {
+      const kontrolRes = await axios.post("http://localhost:5001/api/appointments/check-overlaps", {
+        CustomerId: customerId,
+        UserId: paketPersonelId,
+        date: r.date,
+        endDate: r.endDate
+      }, config);
+
+      const kontrol = kontrolRes.data;
+
+      if (kontrol.personelOverlap) {
+        return alert("❌ Seçilen personelin bazı tarihlerde çakışan randevusu var. Lütfen uygun tarihleri kontrol edin.");
+      }
+    }
+
+    // 4. Hiç çakışma yoksa tüm kayıtları gönder
+    const requests = allRandevular.map(r =>
+      axios.post("http://localhost:5001/api/appointments/from-package", {
+        SaleId: paketId,
+        CustomerId: customerId,
+        date: r.date,
+        endDate: r.endDate,
+        notes
+      }, config)
+    );
+
+    await Promise.all(requests);
+
+    alert("✅ Paketli tüm randevular başarıyla oluşturuldu!");
+    bootstrap.Modal.getInstance(document.getElementById("appointmentModal"))?.hide();
+    window.location.reload();
+
+  } catch (err) {
+    console.error("❌ Tekrarlayan paketli oluşturma hatası:", err.response?.data || err.message || err);
+    alert("❌ Oluşturma hatası: " + (err.response?.data?.error || err.message || "Sunucu hatası"));
+    return;
+  }
+}
+
+
+
+  // ✅ Tek seferlik hizmetler: çakışma kontrolü ve kayıt
   for (const s of allServices) {
     const kontrolUrl = `http://localhost:5001/api/appointments/check-overlaps`;
 
@@ -147,7 +227,6 @@ async function handleAppointmentCreate(e) {
     }
   }
 
-  // 🔄 KAYIT İŞLEMİ
   try {
     for (const s of allServices) {
       await axios.post("http://localhost:5001/api/salesingleservices", {
@@ -166,10 +245,9 @@ async function handleAppointmentCreate(e) {
     window.location.reload();
 
   } catch (err) {
-  console.error("❌ Oluşturma hatası:", err.response?.data || err.message || err);
-  alert("❌ Oluşturma hatası: " + (err.response?.data?.error || err.message || "Sunucu hatası"));
-}
-
+    console.error("❌ Oluşturma hatası:", err.response?.data || err.message || err);
+    alert("❌ Oluşturma hatası: " + (err.response?.data?.error || err.message || "Sunucu hatası"));
+  }
 }
 
 
@@ -322,14 +400,19 @@ function setupCustomerAutocomplete() {
     }
   });
 
-  customerInput.addEventListener("change", () => {
-    const list = JSON.parse(customerInput.dataset.customerList || "[]");
-    const selected = list.find(c => c.name === customerInput.value.trim());
-    customerIdInput.value = selected?.id || "";
-      if (selected?.id) {
-    doldurMusteriPaketleri(selected.id);
+customerInput.addEventListener("change", () => {
+  const list = JSON.parse(customerInput.dataset.customerList || "[]");
+  const selected = list.find(c => c.name === customerInput.value.trim());
+  const currentId = selected?.id || "";
+
+  customerIdInput.value = currentId;
+
+  if (currentId && currentId !== oncekiCustomerId) {
+    oncekiCustomerId = currentId;
+    doldurMusteriPaketleri(currentId);
   }
-  });
+});
+
 }
 
 export async function doldurTekSeferlikHizmetler() {
@@ -370,7 +453,6 @@ export async function doldurMusteriPaketleri(customerId) {
 
   // Temizle
   paketSelect.innerHTML = `<option value="" selected hidden>Paket</option>`;
-
   if (!customerId) return;
 
   const token = localStorage.getItem("companyToken");
@@ -379,27 +461,29 @@ export async function doldurMusteriPaketleri(customerId) {
   try {
     const res = await axios.get(`http://localhost:5001/api/customers/${customerId}/packages`, config);
 
-res.data.forEach(paket => {
-  const opt = document.createElement("option");
-  opt.value = paket.id;
+    res.data.forEach(paket => {
+      const opt = document.createElement("option");
 
-  const serviceName = paket?.Service?.name || "Hizmet Yok";
-  const session = paket.session || "-";
+      // ✅ Doğru alanlar: Service içindeki name ve color
+      const serviceName = paket?.name || paket?.Service?.name || "Hizmet Adı Eksik";
+      const session = paket?.session || "-";
 
-  opt.textContent = `${serviceName} | ${session} seans`;
+      opt.value = paket.saleId;
+      opt.textContent = `${serviceName} | ${session} seans`;
 
-  if (paket?.Service?.id) {
-    opt.value = paket.saleId; // randevuda bu ID'yi gönder
-opt.dataset.serviceid = paket.serviceId;
-opt.textContent = `${paket.name} | ${paket.session} seans`;
-  }
+      // Gerekirse ServiceId'yi ekle
+      if (paket?.serviceId) {
+        opt.dataset.serviceid = paket.serviceId;
+      }
 
-  paketSelect.appendChild(opt);
-});
+      paketSelect.appendChild(opt);
+    });
   } catch (err) {
     console.error("❌ Paketler alınamadı:", err);
   }
 }
+
+
 
 // Repeat Alanlarını Yönet
   const repeatSwitch = document.getElementById("repeatSwitch");
