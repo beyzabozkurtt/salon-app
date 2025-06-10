@@ -46,40 +46,36 @@
       <div class="d-flex gap-1 align-items-center">
         <!-- Filtre Dropdown -->
         <div class="dropdown">
-          <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" id="filterDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+          <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" id="filterDropdown" data-bs-toggle="dropdown" aria-expanded="false" data-bs-auto-close="outside">
             <i class="bi bi-funnel me-1"></i> Filtrele
           </button>
           <div class="dropdown-menu dropdown-menu-sm small p-3" aria-labelledby="filterDropdown" style="min-width: 240px;">
             <div class="mb-2">
-              <label class="form-label form-label-sm mb-1">Hizmet</label>
-              <select class="form-select form-select-sm">
-                <option value="">Tümü</option>
-                <option>Saç Kesimi</option>
-                <option>Masaj</option>
-                <option>Cilt Bakımı</option>
-              </select>
+              <label class="form-label form-label-sm mb-1">Paketler</label>
+              <input id="filterServiceInput" class="form-control form-control-sm awesomplete" placeholder="Paket ara..." />
+              <select id="filterService" class="form-select form-select-sm d-none"></select>
+            </div>
+
+            <div class="mb-2">
+              <label class="form-label form-label-sm mb-1">Hizmetler</label>
+              <input id="filterSingleServiceInput" class="form-control form-control-sm awesomplete" placeholder="Hizmet ara..." />
+              <select id="filterSingleService" class="form-select form-select-sm d-none"></select>
+            </div>
+             <div class="mb-2">
+              <label class="form-label form-label-sm mb-1">Müşteriler</label>
+              <input id="filterCustomerInput" class="form-control form-control-sm awesomplete" placeholder="Müşteri ara..." />
+              <select id="filterCustomer" class="form-select form-select-sm d-none"></select>
             </div>
             <div class="mb-2">
-              <label class="form-label form-label-sm mb-1">Personel</label>
-              <select class="form-select form-select-sm">
+              <label class="form-label form-label-sm mb-1">Personeller</label>
+              <select id="filterStaff" class="form-select form-select-sm">
                 <option value="">Tümü</option>
-                <option>Ayşe</option>
-                <option>Mehmet</option>
-                <option>Elif</option>
               </select>
             </div>
-            <div class="mb-2">
-              <label class="form-label form-label-sm mb-1">Müşteri</label>
-              <select class="form-select form-select-sm">
-                <option value="">Tümü</option>
-                <option>Ayşe</option>
-                <option>Mehmet</option>
-                <option>Elif</option>
-              </select>
-            </div>
+
             <div class="mb-2">
               <label class="form-label form-label-sm mb-1">Durum</label>
-              <select class="form-select form-select-sm">
+              <select id="filterStatus" class="form-select form-select-sm">
                 <option value="">Tümü</option>
                 <option value="bekliyor">Bekliyor</option>
                 <option value="tamamlandı">Tamamlandı</option>
@@ -87,8 +83,12 @@
               </select>
             </div>
             <div class="d-grid mt-2">
-              <button class="btn btn-sm btn-primary">Uygula</button>
+             <button id="applyFilters" class="btn btn-sm btn-primary">Uygula</button>
             </div>
+            <div class="d-grid mt-2">
+              <button id="resetFilters" class="btn btn-sm btn-light border">Sıfırla</button>
+            </div>
+
           </div>
         </div>
 
@@ -120,6 +120,24 @@
   <div id="monthHeader" style="text-align: center; font-weight: 600; font-size: 18px; margin-bottom: 30px;"></div>
   <div id="calendar">
   </div>
+<!-- Randevu Detay Modalı -->
+<div class="modal fade" id="appointmentDetailModal" tabindex="-1" aria-labelledby="appointmentDetailLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable">
+    <div class="modal-content p-3">
+      <div class="modal-header">
+        <h5 class="modal-title" id="appointmentDetailLabel">Randevu Detayları</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Kapat"></button>
+      </div>
+      <div class="modal-body" id="appointmentDetailContent">
+        <!-- JS ile içerik eklenecek -->
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline-primary btn-sm" data-bs-dismiss="modal">Kapat</button>
+        <button class="btn btn-primary btn-sm">Düzenle / Tahsilat</button>
+      </div>
+    </div>
+  </div>
+</div>
 
 
   <!-- JS -->
