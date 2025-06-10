@@ -1,0 +1,51 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+
+* {
+  font-family: 'Poppins', sans-serif;
+
+  box-sizing: border-box;
+  background-color: transparent;
+}
+body {
+  background-color: transparent !important;
+  margin: 0;
+  padding: 0;
+}
+.card {
+  border-radius: 12px;
+  border: 1px solid #dee2e6;
+}
+
+#working-hours-list .row {
+  margin-bottom: 0.5rem;
+}
+
+.day-label {
+  font-weight: 600;
+  font-size: 1rem;
+  text-align: center;
+  padding-top: 6px;
+}
+
+.form-select {
+  min-width: 100%;
+  font-size: 0.9rem;
+}
+
+.toggle-btn {
+  cursor: pointer;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: #0d6efd;
+}
+
+.mola-col {
+  display: none;
+  transition: all 0.3s ease;
+}
+
+@media (max-width: 768px) {
+  .day-label {
+    margin-bottom: 0.5rem;
+  }
+}

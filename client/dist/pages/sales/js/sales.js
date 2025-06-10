@@ -1,108 +1,8 @@
-<!DOCTYPE html>
-<html lang="tr">
-<head>
-  <meta charset="UTF-8" />
-  <title>Satışlar</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-</head>
-<body class="bg-light">
-
-<div class="container py-4">
-  <h3 class="mb-3">Satışlar</h3>
-  <button class="btn btn-success mb-3" onclick="openCreateModal()">+ Satış Oluştur</button>
-  <ul id="saleList" class="list-group"></ul>
-</div>
-
-<!-- Satış Modal -->
-<div class="modal fade" id="saleModal" tabindex="-1">
-  <div class="modal-dialog">
-    <form id="saleForm" class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title">Satış</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-      </div>
-      <div class="modal-body">
-        <input type="hidden" name="id" id="saleId" />
-        <div class="mb-2"><label class="form-label">Müşteri</label><select class="form-select" name="CustomerId" required id="customerSelect"></select></div>
-        <div class="mb-2"><label class="form-label">Personel</label><select class="form-select" name="UserId" required id="userSelect"></select></div>
-        <div class="mb-2"><label class="form-label">Hizmet</label><select class="form-select" name="ServiceId" required id="serviceSelect"></select></div>
-        <div class="mb-2"><label class="form-label">Fiyat</label><input type="number" class="form-control" name="price" step="0.01" required /></div>
-        <div class="mb-2"><label class="form-label">Seans</label><input type="number" class="form-control" name="session" required /></div>
-        <div class="mb-2"><label class="form-label">Taksit Sayısı</label><input type="number" class="form-control" name="installment" /></div>
-      </div>
-      <div class="modal-footer">
-        <button class="btn btn-secondary" type="button" id="openProductModalBtn" style="display: none;">Ürün Ekle</button>
-        <button class="btn btn-success" type="submit">Kaydet</button>
-        <button class="btn btn-secondary" type="button" data-bs-dismiss="modal">İptal</button>
-      </div>
-    </form>
-  </div>
-</div>
-
-<!-- Ürün Ekle Modal -->
-<div class="modal fade" id="productModal" tabindex="-1">
-  <div class="modal-dialog">
-    <form id="productForm" class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title">Ürün Ekle</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-      </div>
-      <div class="modal-body">
-        <input type="hidden" id="productSaleId" />
-        <input type="hidden" id="productCustomerId" />
-        <div class="mb-2"><label class="form-label">Ürün</label><select class="form-select" id="productSelect" name="ProductId" required></select></div>
-        <div class="mb-2"><label class="form-label">Adet</label><input type="number" class="form-control" name="quantity" required /></div>
-        <div class="mb-2"><label class="form-label">Satan Personel</label><select class="form-select" id="productUserSelect" name="UserId" required></select></div>
-      </div>
-      <div class="modal-footer">
-        <button class="btn btn-success" type="submit">Ekle</button>
-        <button class="btn btn-secondary" type="button" data-bs-dismiss="modal">İptal</button>
-      </div>
-    </form>
-  </div>
-</div>
-<!-- Ödeme Detay Modalı -->
-<div class="modal fade" id="paymentModal" tabindex="-1">
-  <div class="modal-dialog modal-lg">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title">Ödeme Detayları</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-      </div>
-      <div class="modal-body">
-        <p><strong>Müşteri:</strong> <span id="modalCustomerName"></span></p>
-        <p><strong>Hizmet:</strong> <span id="modalServiceName"></span></p>
-        <p><strong>Toplam Tutar:</strong> <span id="modalTotalPrice"></span></p>
-        <hr />
-        <table class="table table-bordered">
-          <thead>
-            <tr>
-              <th>Taksit</th>
-              <th>Tutar</th>
-              <th>Vade Tarihi</th>
-              <th>Durum</th>
-            </tr>
-          </thead>
-          <tbody id="paymentTableBody"></tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-</div>
-
-
-<script>
 const token = localStorage.getItem("companyToken");
 const axiosConfig = {
-  headers: {
-    Authorization: "Bearer " + token
-  }
+  headers: { Authorization: "Bearer " + token }
 };
 
-const saleList = document.getElementById("saleList");
 const saleForm = document.getElementById("saleForm");
 const productForm = document.getElementById("productForm");
 const customerSelect = document.getElementById("customerSelect");
@@ -114,37 +14,52 @@ const saleModal = new bootstrap.Modal(document.getElementById('saleModal'));
 const productModal = new bootstrap.Modal(document.getElementById('productModal'));
 const openProductBtn = document.getElementById("openProductModalBtn");
 const paymentModal = new bootstrap.Modal(document.getElementById("paymentModal"));
+const saleTableBody = document.getElementById("saleTableBody");
 
 let currentEditingSaleId = null;
 let currentCustomerId = null;
 
 async function loadSales() {
   const res = await axios.get("http://localhost:5001/api/sales", axiosConfig);
-  saleList.innerHTML = "";
+  saleTableBody.innerHTML = "";
 
   for (const sale of res.data) {
     const statusRes = await axios.get(`http://localhost:5001/api/sales/${sale.id}/payments-status`, axiosConfig);
     const odemeVar = statusRes.data.odemeVar;
 
-    const item = document.createElement("li");
-    item.className = "list-group-item d-flex justify-content-between align-items-center";
+    const tr = document.createElement("tr");
 
-    let buttons = "";
+    const customer = sale.Customer?.name || "-";
+    const service = sale.Service?.name || "-";
+    const price = `${sale.price}₺`;
+    const session = `${sale.session} seans`;
 
+    const btnGroup = document.createElement("td");
     if (odemeVar) {
-      buttons = `<button class="btn btn-sm btn-info" onclick="viewPayments(${sale.id})">İncele</button>`;
+      btnGroup.innerHTML = `
+        
+            
+    <div class="btn-group align-items-center">
+ <button class="btn btn-sm btn-light border d-flex justify-content-center align-items-center p-0" style="width:32px; height:32px;" onclick="viewPayments(${sale.id})" title="Detay">
+  <i class="bi bi-search text-info"></i>
+</button>
+    </div>
+      `;
     } else {
-      buttons = `
-        <button class="btn btn-sm btn-primary me-2" onclick="editSale(${sale.id})">Düzenle</button>
+      btnGroup.innerHTML = `
+        <button class="btn btn-sm btn-primary me-1" onclick="editSale(${sale.id})">Düzenle</button>
         <button class="btn btn-sm btn-danger" onclick="deleteSale(${sale.id})">Sil</button>
       `;
     }
 
-    item.innerHTML = `
-      ${sale.Customer?.name || "?"} → ${sale.Service?.name || "-"} • ${sale.price}₺ • ${sale.session} seans
-      <div>${buttons}</div>
+    tr.innerHTML = `
+      <td>${customer}</td>
+      <td>${service}</td>
+      <td>${price}</td>
+      <td>${session}</td>
     `;
-    saleList.appendChild(item);
+    tr.appendChild(btnGroup);
+    saleTableBody.appendChild(tr);
   }
 }
 
@@ -276,7 +191,3 @@ async function viewPayments(saleId) {
 
 loadSales();
 loadOptions();
-</script>
-
-</body>
-</html>

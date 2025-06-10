@@ -4,20 +4,73 @@
   <meta charset="UTF-8" />
   <title>Personel Yönetimi</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/intl-tel-input@17/build/css/intlTelInput.min.css" />
-<script src="https://cdn.jsdelivr.net/npm/intl-tel-input@17/build/js/intlTelInput.min.js"></script>
 
+  <!-- Telefon girişi için stil -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/intl-tel-input@17/build/css/intlTelInput.min.css" />
+  <script src="https://cdn.jsdelivr.net/npm/intl-tel-input@17/build/js/intlTelInput.min.js"></script>
+
+  <!-- Bootstrap Icons (ikonlar için) -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet" />
+
+  <!-- Kendi stil dosyan -->
+  <link rel="stylesheet" href="./css/services.css" />
 </head>
 <body class="bg-light">
-  <div class="container py-4">
-    <h3 class="mb-3">Personel Yönetimi</h3>
-    <button class="btn btn-success mb-3" data-bs-toggle="modal" data-bs-target="#createModal">+ Personel Ekle</button>
-    <ul id="userList" class="list-group"></ul>
-  </div>
+    <div class="container-fluid page-wrapper">
+    <!-- 🔝 Üst Bar -->
+    <div class="top-bar justify-content-between align-items-center flex-wrap mb-3">
+      <!-- Sol: Arama -->
+      <div class="search-bar">
+        <div class="input-group" style="width: 280px;">
+          <span class="input-group-text bg-white border-end-0 rounded-start">
+            <i class="bi bi-search text-muted"></i>
+          </span>
+          <input
+            type="text"
+            id="searchInput"
+            class="form-control border-start-0 rounded-end"
+            placeholder="Personel Ara..."
+            style="box-shadow: none;"
+          />
+        </div>
+      </div>
 
+      <!-- Sağ: Dışa Aktar / Filtre / Ekle -->
+      <div class="d-flex gap-2">
+        <button class="btn btn-outline-secondary px-2" id="exportBtn" title="Dışa Aktar">
+          <i class="bi bi-box-arrow-down"></i>
+        </button>
+        <button class="btn btn-outline-secondary px-2" id="filterBtn" title="Filtrele">
+          <i class="bi bi-funnel"></i>
+        </button>
+        <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#createModal">
+          + Personel Ekle
+        </button>
+      </div>
+    </div>
+
+    <!-- 👥 Personel Listesi (Tablo Formatında) -->
+    <div class="table-responsive scroll-container">
+      <table class="table table-sm table-bordered table-hover mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>Ad Soyad</th>
+            <th>E-Posta</th>
+            <th>Telefon</th>
+            <th>Rol</th>
+            <th>Cinsiyet</th>
+            <th>Müşteri Tercihi</th>
+            <th>İşlemler</th>
+          </tr>
+        </thead>
+        <tbody id="userList"></tbody>
+      </table>
+    </div>
+  </div>
   <!-- Create Modal -->
 <div class="modal fade" id="createModal" tabindex="-1">
   <div class="modal-dialog modal-dialog-scrollable">
@@ -227,149 +280,6 @@
     </form>
   </div>
 </div>
-
-
-  <!-- Scripts -->
-  <script>
-    const list = document.getElementById("userList");
-    const createForm = document.getElementById("userForm");
-    const updateForm = document.getElementById("updateForm");
-
-    const companyToken = localStorage.getItem("companyToken");
-    const axiosConfig = {
-      headers: {
-        Authorization: "Bearer " + companyToken,
-      },
-    };
-
-    createForm.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const data = Object.fromEntries(new FormData(createForm));
-      try {
-        await axios.post("http://localhost:5001/api/users", data, axiosConfig);
-        createForm.reset();
-        bootstrap.Modal.getInstance(document.getElementById('createModal')).hide();
-        if (data.salary === "") {
-        data.salary = null;
-}
-        loadUsers();
-      } catch (err) {
-        alert("Kayıt sırasında hata oluştu.");
-        console.error(err);
-      }
-    });
-
-    updateForm.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const data = Object.fromEntries(new FormData(updateForm));
-      try {
-        await axios.put(`http://localhost:5001/api/users/${data.id}`, data, axiosConfig);
-        bootstrap.Modal.getInstance(document.getElementById('updateModal')).hide();
-        if (data.salary === "") {
-        data.salary = null;
-}
-        loadUsers();
-      } catch (err) {
-        alert("Güncelleme sırasında hata oluştu.");
-        console.error(err);
-      }
-    });
-
-    async function loadUsers() {
-      try {
-        const res = await axios.get("http://localhost:5001/api/users", axiosConfig);
-        list.innerHTML = "";
-        res.data.forEach(u => {
-          const item = document.createElement("li");
-          item.className = "list-group-item d-flex justify-content-between align-items-center";
-          item.innerHTML = `
-            <span>${u.name} • ${u.email} • ${u.role}</span>
-            <div>
-              <button class="btn btn-sm btn-primary me-2" onclick='editUser(${JSON.stringify(u)})'>Düzenle</button>
-              <button class="btn btn-sm btn-danger" onclick='deleteUser(${u.id})'>Sil</button>
-            </div>
-          `;
-          list.appendChild(item);
-        });
-      } catch (err) {
-        alert("Personel verileri alınamadı.");
-        console.error(err);
-      }
-    }
-
-function editUser(user) {
-  updateForm.id.value = user.id;
-  updateForm.name.value = user.name || "";
-  updateForm.email.value = user.email || "";
-  updateForm.phone.value = user.phone || "";
-  updateForm.role.value = user.role || "personel";
-  updateForm.userGender.value = user.userGender || "";
-  updateForm.clientGender.value = user.clientGender || "";
-  updateForm.salary.value = user.salary || 0;
-
-  updateForm.hizmetNakit.value = user.hizmetNakit || 0;
-  updateForm.hizmetKart.value = user.hizmetKart || 0;
-  updateForm.urunNakit.value = user.urunNakit || 0;
-  updateForm.urunKart.value = user.urunKart || 0;
-  updateForm.paketNakit.value = user.paketNakit || 0;
-  updateForm.paketKart.value = user.paketKart || 0;
-
-  const modal = new bootstrap.Modal(document.getElementById("updateModal"));
-  modal.show();
-}
-
-
-    async function deleteUser(id) {
-      if (confirm("Silmek istiyor musun?")) {
-        try {
-          await axios.delete(`http://localhost:5001/api/users/${id}`, axiosConfig);
-          loadUsers();
-        } catch (err) {
-          alert("Silme sırasında hata oluştu.");
-          console.error(err);
-        }
-      }
-    }
-
-    // Hak ediş göster/gizle
-    function toggleKomisyon() {
-      const div = document.getElementById("komisyonContainer");
-      div.style.display = div.style.display === "none" ? "block" : "none";
-    }
-
-    // Select'lere 0-100% otomatik doldur
-    function populatePercentageOptions() {
-      const selects = document.querySelectorAll(".percentage-select");
-      selects.forEach(select => {
-        for (let i = 0; i <= 100; i++) {
-          const option = document.createElement("option");
-          option.value = i;
-          option.textContent = `${i}%`;
-          select.appendChild(option);
-        }
-      });
-    }
-
-    document.addEventListener("DOMContentLoaded", () => {
-      loadUsers();
-      populatePercentageOptions();
-    });
-
-
-    const phoneInput = document.querySelector("#phoneInput");
-
-  const iti = window.intlTelInput(phoneInput, {
-    initialCountry: "tr",
-    preferredCountries: ["tr", "de", "us"],
-    separateDialCode: true,
-    utilsScript: "https://cdn.jsdelivr.net/npm/intl-tel-input@17/build/js/utils.js",
-  });
-
-  // Form gönderiminde birleşik formatta al
-  document.getElementById("userForm").addEventListener("submit", function (e) {
-    const fullPhone = iti.getNumber(); // örn: +905001234567
-    phoneInput.value = fullPhone;
-  });
-  </script>
+<script src="./js/personel.js"> </script>
 </body>
 </html>

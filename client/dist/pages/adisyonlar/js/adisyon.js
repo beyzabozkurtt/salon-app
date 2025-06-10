@@ -1,34 +1,4 @@
-<!DOCTYPE html>
-<html lang="tr">
-<head>
-  <meta charset="UTF-8" />
-  <title>Adisyon Listesi</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
-</head>
-<body class="p-4">
-  <div class="container">
-    <h2 class="mb-4">Adisyon Listesi</h2>
-    <table class="table table-bordered table-striped">
-      <thead class="table-dark">
-        <tr>
-          <th>Müşteri</th>
-          <th>Hizmet</th>
-          <th>Paket</th>
-          <th>Ürün</th>
-          <th>Tarih</th>
-          <th>Saat</th>
-          <th>Durum</th>
-          <th>Oluşturulma</th>
-          <th>Detay</th>
-        </tr>
-      </thead>
-      <tbody id="adisyonTableBody"></tbody>
-    </table>
-  </div>
-
-  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-  <script>
-    const token = localStorage.getItem("companyToken");
+const token = localStorage.getItem("companyToken");
     const config = {
       headers: {
         Authorization: "Bearer " + token
@@ -56,7 +26,11 @@ res.data.forEach(app => {
     <td>${formattedTime}</td>
     <td>${app.status}</td>
     <td>${new Date(app.createdAt).toLocaleDateString('tr-TR')}</td>
-    <td><button class="btn btn-sm btn-info" onclick="goToDetail(${app.id})">Detay</button></td>
+    <td class="text-center">
+      <button class="btn btn-sm btn-light border" onclick="goToDetail(${app.id})" title="Detay">
+        <i class="bi bi-search text-info"></i>
+      </button>
+    </td>
   `;
   tbody.appendChild(tr);
 });
@@ -71,6 +45,12 @@ res.data.forEach(app => {
     }
 
     loadAdisyon();
-  </script>
-</body>
-</html>
+  // Arama özelliği (müşteri adına göre filtrele)
+  document.getElementById("searchInput").addEventListener("input", function () {
+    const searchTerm = this.value.toLowerCase();
+    const rows = document.querySelectorAll("#adisyonTableBody tr");
+    rows.forEach(row => {
+      const name = row.querySelector("td")?.textContent?.toLowerCase() || "";
+      row.style.display = name.includes(searchTerm) ? "" : "none";
+    });
+  });

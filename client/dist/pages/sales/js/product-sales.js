@@ -1,196 +1,3 @@
-<!DOCTYPE html>
-<html lang="tr">
-<head>
-  <meta charset="UTF-8" />
-  <title>Ürün Satışları</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-
-</head>
-<body class="bg-light">
-
-<div class="container py-4">
-  <div class="d-flex justify-content-between align-items-center mb-3">
-    <h3>Ürün Satışları</h3>
-    <button class="btn btn-success" onclick="openAddProductModal()">+ Ürün Satışı Oluştur</button>
-  </div>
-  <ul id="productSaleList" class="list-group"></ul>
-</div>
-
-<!-- Ürün Ekle Modal -->
-<div class="modal fade" id="addProductModal" tabindex="-1">
-  <div class="modal-dialog modal-dialog-centered modal-lg">
-    
-    <form id="addProductForm" class="modal-content" novalidate>
-
-      <div class="modal-header">
-        <h5 class="modal-title">Yeni ürün satışı</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-      </div>
-
-      <div class="modal-body">
-        <div class="input-group mb-2">
-        <input type="text" id="saleDate" class="form-control" placeholder="Tarih seçin" />
-        <span class="input-group-text" id="calendarTrigger" style="cursor: pointer;">
-          📅
-        </span>
-      </div>
-
-        <div class="mb-2">
-<input type="text" id="customerInput" class="form-control" placeholder="Müşteri adı girin" autocomplete="off" />
-<div id="customerDropdown" class="list-group position-absolute w-100" style="z-index: 1000;"></div>
-
-        </div>
-
-        <!-- Ürün ekleme alanı -->
-        <div id="productItems">
-          <div class="d-flex gap-2 align-items-center mb-2">
-<!-- Ürün input (her satır için ayrı) -->
-            <input class="form-control product-search-input"  placeholder="Ürün adı veya barkoduyla arayın"  required autocomplete="off"/>
-            <datalist id="productOptions"></datalist>
-            <input type="number" class="form-control quantity-input" placeholder="0" style="width: 70px;" required />
-
-            <span>ad</span>
-
-            <input type="number" class="form-control price-input" placeholder="Tutar" style="width: 120px;" required />
-
-            <span>TL</span>
-
-            <button type="button" class="btn btn-danger" onclick="removeProductRow(this)">🗑️</button>
-          </div>
-        </div>
-
-        <button type="button" class="btn btn-outline-primary w-100 mb-3" onclick="addProductRow()">+ Bir ürün daha ekle</button>
-
-        <select class="form-select mb-2" name="paymentMethod" required>
-          <option value="" disabled selected>Ödeme yöntemi</option>
-          <option>Nakit</option>
-          <option>Kredi kartı</option>
-          <option>Havale</option>
-          <option>Online ödeme</option>
-          <option>Diğer</option>
-        </select>
-
-        <select class="form-select mb-2" name="UserId" id="addUserSelect" required>
-          <option value="" disabled selected>Satıcı</option>
-        </select>
-
-        <textarea class="form-control mb-2" name="notes" placeholder="Notlar"></textarea>
-
-        <div class="form-check mb-3">
-          <input class="form-check-input" type="checkbox" id="paymentCollected" checked />
-          <label class="form-check-label" for="paymentCollected">Tüm tutar tahsil edildi</label>
-        </div>
-      </div>
-
-      <div class="modal-footer">
-        <button class="btn btn-primary w-100" type="submit">Kaydet</button>
-      </div>
-    </form>
-  </div>
-</div>
-
-<!-- Düzenle Modal -->
-<div class="modal fade" id="editProductModal" tabindex="-1">
-  <div class="modal-dialog">
-<form id="editProductForm" class="modal-content">
-  <div class="modal-header">
-    <h5 class="modal-title">Ürün Satışı Düzenle</h5>
-    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-  </div>
-  <div class="modal-body">
-    <input type="hidden" name="id" id="editProductId" />
-
-    <div class="mb-2">
-      <label class="form-label">Müşteri</label>
-      <input type="text" class="form-control" id="editCustomerInput" placeholder="Müşteri adı girin" autocomplete="off" />
-      <div id="editCustomerDropdown" class="list-group position-absolute w-100" style="z-index: 1000;"></div>
-    </div>
-
-    <div class="mb-2">
-      <label class="form-label">Adet</label>
-      <input type="number" class="form-control" name="quantity" id="editQuantity" required />
-    </div>
-
-    <div class="mb-2">
-      <label class="form-label">Ödeme Yöntemi</label>
-      <select class="form-select" name="paymentMethod" id="editPaymentMethod" required>
-        <option value="">Seçiniz</option>
-        <option>Nakit</option>
-        <option>Kredi kartı</option>
-        <option>Havale</option>
-        <option>Online ödeme</option>
-        <option>Diğer</option>
-      </select>
-    </div>
-
-    <div class="mb-2">
-      <label class="form-label">Personel</label>
-      <select class="form-select" name="UserId" id="editUserSelect" required></select>
-    </div>
-
-    <div class="mb-2">
-      <label class="form-label">Notlar</label>
-      <textarea class="form-control" name="notes" id="editNotes" rows="2"></textarea>
-    </div>
-  </div>
-  <div class="modal-footer">
-    <button class="btn btn-success" type="submit">Güncelle</button>
-    <button class="btn btn-secondary" type="button" data-bs-dismiss="modal">İptal</button>
-  </div>
-</form>
-
-  </div>
-</div>
-
-<style>
-  .customerDropdown {
-    max-height: 200px;
-    overflow-y: auto;
-    background: white;
-    border: 1px solid #dee2e6;
-    border-top: none;
-    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
-    position: absolute;
-    z-index: 9999;
-    width: 100%;
-    display: none;
-  }
-  .customerDropdown button {
-    text-align: left;
-    padding: 8px 12px;
-    background: white;
-    border: none;
-    width: 100%;
-  }
-  .customerDropdown button:hover {
-    background-color: #f1f1f1;
-  }
-  .autocomplete-results {
-  position: absolute;
-  z-index: 9999;
-  background: white;
-  border: 1px solid #ccc;
-  width: 100%;
-  max-height: 180px;
-  overflow-y: auto;
-  border-radius: 4px;
-}
-
-.autocomplete-results div {
-  padding: 8px 12px;
-  cursor: pointer;
-}
-
-.autocomplete-results div:hover {
-  background: #f1f1f1;
-}
-</style>
-<script>
 const productSaleList = document.getElementById("productSaleList");
 const editProductForm = document.getElementById("editProductForm");
 const addProductForm = document.getElementById("addProductForm");
@@ -310,18 +117,35 @@ async function loadProductSales() {
   const res = await axios.get("http://localhost:5001/api/sale-products", axiosConfig);
   productSaleList.innerHTML = "";
 
-  res.data.forEach(item => {
-    const li = document.createElement("li");
-    li.className = "list-group-item d-flex justify-content-between align-items-center";
-    li.innerHTML = `
-      ${item.Product?.name} (${item.quantity} adet) - ${item.User?.name} • ${item.Customer?.name || "Müşteri yok"} • ${(item.price * item.quantity).toFixed(2)}₺
-      <div>
-        <button class="btn btn-sm btn-primary me-2" onclick="openEditModal(${item.id})">Düzenle</button>
-        <button class="btn btn-sm btn-danger" onclick="deleteProductSale(${item.id})">Sil</button>
+ res.data.forEach(item => {
+  const tr = document.createElement("tr");
+
+  const productName = item.Product?.name || "-";
+  const quantity = item.quantity;
+  const seller = item.User?.name || "-";
+  const customer = item.Customer?.name || "-";
+  const totalPrice = (item.price * item.quantity).toFixed(2) + "₺";
+
+  tr.innerHTML = `
+    <td>${productName}</td>
+    <td>${quantity} adet</td>
+    <td>${seller}</td>
+    <td>${customer}</td>
+    <td>${totalPrice}</td>
+    <td>
+      <div class="btn-group">
+        <button class="btn btn-sm btn-light border" onclick="openEditModal(${item.id})" title="Düzenle">
+          <i class="bi bi-pencil text-primary"></i>
+        </button>
+        <button class="btn btn-sm btn-light border" onclick="deleteProductSale(${item.id})" title="Sil">
+          <i class="bi bi-trash text-danger"></i>
+        </button>
       </div>
-    `;
-    productSaleList.appendChild(li);
-  });
+    </td>
+  `;
+  productSaleList.appendChild(tr);
+});
+
 }
 
 // 🌟 Modal aç
@@ -647,8 +471,3 @@ document.addEventListener("click", e => {
   if (firstProductInput && firstPriceInput) {
     bindProductAutocomplete(firstProductInput, firstPriceInput);
   }
-</script>
-
-
-</body>
-</html>

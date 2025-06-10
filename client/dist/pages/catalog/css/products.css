@@ -1,0 +1,8 @@
+.scroll-container {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.table th, .table td {
+  vertical-align: middle;
+}

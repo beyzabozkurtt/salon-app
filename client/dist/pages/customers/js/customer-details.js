@@ -642,6 +642,9 @@ async function loadCustomerPayments(customerId, customer) {
           <button class="btn btn-outline-secondary btn-sm" id="refreshPayments" title="Yenile">
             <i class="bi bi-arrow-clockwise"></i>
           </button>
+          <button class="btn btn-outline-secondary btn-sm" id="filterAppointments" title="Filtrele">
+      <i class="bi bi-funnel"></i>
+    </button>
         </div>
       </div>
 
@@ -782,6 +785,9 @@ async function loadCustomerDebts(customerId, customer) {
           <button class="btn btn-outline-secondary btn-sm" id="refreshDebts" title="Yenile">
             <i class="bi bi-arrow-clockwise"></i>
           </button>
+          <button class="btn btn-outline-secondary btn-sm" id="filterAppointments" title="Filtrele">
+      <i class="bi bi-funnel"></i>
+    </button>
         </div>
       </div>
 

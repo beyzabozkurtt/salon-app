@@ -27,7 +27,7 @@ if (!localStorage.getItem("token") && !localStorage.getItem("companyId")) {
 function updatePageTitleByHref(href) {
   let title = 'Gösterge Paneli';
   if (href.includes('calendar')) title = 'Randevular';
-  else if (href.includes('service')) title = 'Paketler';
+  else if (href.includes('service')) title = 'Paketler/Hizmetler';
   else if (href.includes('products')) title = 'Ürünler';
   else if (href.includes('personel')) title = 'Personeller';
   else if (href.includes('sales') && !href.includes('product')) title = 'Paket Satışı';
@@ -35,7 +35,8 @@ function updatePageTitleByHref(href) {
   else if (href.includes('customers')) title = 'Müşteriler';
   else if (href.includes('payment-tracking')) title = 'Ödeme Takibi';
   else if (href.includes('cash-tracking')) title = 'Kasa Takibi';
-
+  else if (href.includes('adisyon')) title = 'Adisyonlar';
+  else if (href.includes('working-hours')) title = 'Çalışma Saatleri';
   document.querySelector('.app-content-header h3').innerText = title;
   document.querySelector('.breadcrumb-item.active').innerText = title;
 }

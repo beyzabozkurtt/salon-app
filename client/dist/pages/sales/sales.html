@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <title>Satışlar</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  <link rel="stylesheet" href="./css/sales.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+
+</head>
+<body class="bg-light">
+
+<div class="container-fluid page-wrapper p-4">
+  <!-- 🔝 Üst Bar -->
+  <div class="top-bar d-flex justify-content-between align-items-center flex-wrap mb-3">
+    <!-- Sol: Arama -->
+    <div class="search-bar">
+      <div class="input-group" style="width: 280px;">
+        <span class="input-group-text bg-white border-end-0 rounded-start">
+          <i class="bi bi-search text-muted"></i>
+        </span>
+        <input type="text" id="searchInput" class="form-control border-start-0 rounded-end" placeholder="Müşteri Ara..." style="box-shadow: none;" />
+      </div>
+    </div>
+
+    <!-- Sağ: Dışa Aktar, Yeni Satış -->    
+    <div class="d-flex gap-2">
+    <button class="btn  btn-outline-secondary px-2" id="exportBtn" title="Dışa Aktar">
+      <i class="bi bi-box-arrow-down"></i>
+    </button>
+    <button class="btn  btn-outline-secondary px-2" id="filterBtn" title="Filtrele">
+      <i class="bi bi-funnel"></i>
+    </button>
+    <button class="btn  btn-outline-primary" onclick="openCreateModal()">
+      +  Yeni Satış
+    </button>
+  </div>
+  </div>
+
+  <!-- 📋 Satış Listesi -->
+  <div class="table-responsive scroll-container">
+    <table class="table table-sm table-bordered table-hover mb-0">
+      <thead class="table-light">
+        <tr>
+          <th>Müşteri</th>
+          <th>Hizmet</th>
+          <th>Fiyat</th>
+          <th>Seans</th>
+          <th class="text-center">İşlem</th>
+        </tr>
+      </thead>
+      <tbody id="saleTableBody"></tbody>
+    </table>
+  </div>
+</div>
+<!-- Satış Modal -->
+<div class="modal fade" id="saleModal" tabindex="-1">
+  <div class="modal-dialog">
+    <form id="saleForm" class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Satış</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" name="id" id="saleId" />
+        <div class="mb-2"><label class="form-label">Müşteri</label><select class="form-select" name="CustomerId" required id="customerSelect"></select></div>
+        <div class="mb-2"><label class="form-label">Personel</label><select class="form-select" name="UserId" required id="userSelect"></select></div>
+        <div class="mb-2"><label class="form-label">Hizmet</label><select class="form-select" name="ServiceId" required id="serviceSelect"></select></div>
+        <div class="mb-2"><label class="form-label">Fiyat</label><input type="number" class="form-control" name="price" step="0.01" required /></div>
+        <div class="mb-2"><label class="form-label">Seans</label><input type="number" class="form-control" name="session" required /></div>
+        <div class="mb-2"><label class="form-label">Taksit Sayısı</label><input type="number" class="form-control" name="installment" /></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" type="button" id="openProductModalBtn" style="display: none;">Ürün Ekle</button>
+        <button class="btn btn-success" type="submit">Kaydet</button>
+        <button class="btn btn-secondary" type="button" data-bs-dismiss="modal">İptal</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Ürün Ekle Modal -->
+<div class="modal fade" id="productModal" tabindex="-1">
+  <div class="modal-dialog">
+    <form id="productForm" class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Ürün Ekle</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="productSaleId" />
+        <input type="hidden" id="productCustomerId" />
+        <div class="mb-2"><label class="form-label">Ürün</label><select class="form-select" id="productSelect" name="ProductId" required></select></div>
+        <div class="mb-2"><label class="form-label">Adet</label><input type="number" class="form-control" name="quantity" required /></div>
+        <div class="mb-2"><label class="form-label">Satan Personel</label><select class="form-select" id="productUserSelect" name="UserId" required></select></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-success" type="submit">Ekle</button>
+        <button class="btn btn-secondary" type="button" data-bs-dismiss="modal">İptal</button>
+      </div>
+    </form>
+  </div>
+</div>
+<!-- Ödeme Detay Modalı -->
+<div class="modal fade" id="paymentModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Ödeme Detayları</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <p><strong>Müşteri:</strong> <span id="modalCustomerName"></span></p>
+        <p><strong>Hizmet:</strong> <span id="modalServiceName"></span></p>
+        <p><strong>Toplam Tutar:</strong> <span id="modalTotalPrice"></span></p>
+        <hr />
+        <table class="table table-bordered">
+          <thead>
+            <tr>
+              <th>Taksit</th>
+              <th>Tutar</th>
+              <th>Vade Tarihi</th>
+              <th>Durum</th>
+            </tr>
+          </thead>
+          <tbody id="paymentTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<script src="./js/sales.js"></script>
+
+</body>
+</html>

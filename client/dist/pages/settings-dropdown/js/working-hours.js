@@ -1,49 +1,3 @@
-<!DOCTYPE html>
-<html lang="tr">
-<head>
-  <meta charset="UTF-8">
-  <title>Çalışma Saatleri</title>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
-  <style>
-    .day-label { width: 50px; font-weight: bold; }
-    .section-title { font-size: 1.5rem; font-weight: 600; margin-bottom: 20px; }
-    .mola-col { display: none; transition: all 0.3s ease; }
-    .toggle-btn { cursor: pointer; font-size: 0.9rem; font-weight: 500; color: #0d6efd; float: right; }
-  </style>
-</head>
-<body class="p-4">
-<div class="container mt-4">
-  <div class="d-flex justify-content-between align-items-center mb-3">
-    <h4 class="fw-bold">Çalışma saatleri</h4>
-    <span class="toggle-btn" onclick="toggleAllBreaks()">➕ Mola Saatlerini Göster</span>
-  </div>
-  <form id="working-hours-form">
-    <div id="working-hours-list"></div>
-    <button type="submit" class="btn btn-primary mt-4">Kaydet</button>
-  </form>
-</div>
-
-<!-- Modal -->
-<div class="modal fade" id="applyAllModal" tabindex="-1" aria-labelledby="applyAllModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content text-center">
-      <div class="modal-header">
-        <h5 class="modal-title">Çalışma saatleri</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Kapat"></button>
-      </div>
-      <div class="modal-body">
-        Seçtiğiniz saatin tüm günlere uygulanmasını ister misiniz?
-      </div>
-      <div class="modal-footer justify-content-center">
-        <button type="button" class="btn btn-success" id="confirmYes">Evet</button>
-        <button type="button" class="btn btn-danger" id="confirmNo">Hayır</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-<script>
 const days = ['Pts', 'Sal', 'Çar', 'Per', 'Cum', 'Cts', 'Paz'];
 let pendingSync = null; // modal için veri saklama
 
@@ -170,7 +124,3 @@ document.getElementById("working-hours-form").addEventListener("submit", async f
     alert("Bir hata oluştu.");
   }
 });
-</script>
-
-</body>
-</html>

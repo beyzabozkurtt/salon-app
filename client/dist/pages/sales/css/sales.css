@@ -1,0 +1,98 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+
+* {
+  font-family: 'Poppins', sans-serif;
+  font-size: 13px;
+
+  box-sizing: border-box;
+  background-color: transparent;
+}
+body {
+  background-color: transparent !important;
+  margin: 0;
+      padding: 0;
+}
+  .customerDropdown {
+    max-height: 200px;
+    overflow-y: auto;
+    background: white;
+    border: 1px solid #dee2e6;
+    border-top: none;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+    position: absolute;
+    z-index: 9999;
+    width: 100%;
+    display: none;
+  }
+  .customerDropdown button {
+    text-align: left;
+    padding: 8px 12px;
+    background: white;
+    border: none;
+    width: 100%;
+  }
+  .customerDropdown button:hover {
+    background-color: #f1f1f1;
+  }
+  .autocomplete-results {
+  position: absolute;
+  z-index: 9999;
+  background: white;
+  border: 1px solid #ccc;
+  width: 100%;
+  max-height: 180px;
+  overflow-y: auto;
+  border-radius: 4px;
+}
+
+.autocomplete-results div {
+  padding: 8px 12px;
+  cursor: pointer;
+}
+
+.autocomplete-results div:hover {
+  background: #f1f1f1;
+}
+.page-wrapper {
+  font-family: "Source Sans 3", sans-serif;
+}
+
+.top-bar {
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.scroll-container {
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.table thead th {
+  white-space: nowrap;
+}
+
+#saleTableBody td {
+  vertical-align: middle;
+}
+
+button i {
+  margin-right: 4px;
+}
+.modal-backdrop {
+  background-color: #ffffff !important;
+}
+.table td, .table th {
+  vertical-align: middle;
+}
+
+.table-hover tbody tr:hover {
+  background-color: #f8f9fa;
+}
+
+.modal-title {
+  font-weight: 600;
+}
+
+.shadow-sm {
+  box-shadow: 0 .125rem .25rem rgba(0,0,0,.075)!important;
+}
