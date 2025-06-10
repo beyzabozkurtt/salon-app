@@ -1,24 +1,32 @@
-const { Appointment, Customer, User, Service, Sale, SaleSingleService, Payment } = require('../models');
+const { Appointment, Customer, User, Service, Sale, SaleSingleService,SingleService, Payment } = require('../models');
 const { Op } = require('sequelize');
 
 module.exports = {
 async getAll(req, res) {
   try {
-    const { Appointment, Customer, User, Service, SingleService } = require('../models');
-
     const data = await Appointment.findAll({
       where: { CompanyId: req.company.companyId },
       include: [
         Customer,
         User,
         {
-  model: Service,
-  attributes: ['id', 'name', 'color']
-},
+          model: Service,
+          attributes: ['id', 'name', 'color']
+        },
         {
           model: SingleService,
           as: 'SingleService',
           attributes: ['id', 'name', 'color']
+        },
+        {
+          model: SaleSingleService,
+          attributes: ['price'],
+          include: [
+            {
+              model: require('../models').Payment,
+              attributes: ['status', 'dueDate', 'paymentDate']
+            }
+          ]
         }
       ],
       order: [['date', 'ASC']]
@@ -30,6 +38,7 @@ async getAll(req, res) {
     res.status(500).json({ error: 'Listeleme hatası' });
   }
 },
+
 
 
 async create(req, res) {
@@ -200,48 +209,53 @@ if (ServiceId && !SingleServiceId) {
     }
   },
 
-  async getPackageUsage(req, res) {
-  try {
-    const companyId = req.company.companyId;
-    const customerId = req.params.id;
+async getPackageUsage(req, res) {
+    try {
+      const companyId = req.company.companyId;
+      const customerId = req.params.id;
 
-    const allAppointments = await Appointment.findAll({
-      where: {
-        CustomerId: customerId,
-        CompanyId: companyId,
-        status: { [Op.ne]: 'iptal' }
-      },
-      include: [
-        { model: Service },
-        { model: require('../models').SingleService, as: 'SingleService' },
-        { model: User }
-      ],
-      order: [['date', 'ASC']]
-    });
+      const allAppointments = await Appointment.findAll({
+        where: {
+          CustomerId: customerId,
+          CompanyId: companyId,
+          status: { [Op.ne]: 'iptal' }
+        },
+        include: [
+          { model: Service },
+          { model: SingleService, as: 'SingleService' },
+          { model: User },
+          {
+            model: SaleSingleService,
+            include: [{ model: SingleService }]
+          }
+        ],
+        order: [['date', 'ASC']]
+      });
 
-    const enriched = allAppointments.map((app, _, arr) => {
-      const matching = arr.filter(a =>
-        a.ServiceId === app.ServiceId &&
-        a.SaleId === app.SaleId
-      ).sort((a, b) => new Date(a.date) - new Date(b.date));
+      const enriched = allAppointments.map((app, _, arr) => {
+        const matching = arr.filter(a =>
+          a.ServiceId === app.ServiceId &&
+          a.SaleId === app.SaleId
+        ).sort((a, b) => new Date(a.date) - new Date(b.date));
 
-      const sessionNumber = app.ServiceId
-  ? matching.findIndex(a => a.id === app.id) + 1
-  : 1;
+        const sessionNumber = app.ServiceId
+          ? matching.findIndex(a => a.id === app.id) + 1
+          : 1;
 
+        return {
+          ...app.toJSON(),
+          sessionNumber,
+          price: app.SaleSingleService?.price || 0 // 💰 fiyat bilgisi buradan
+        };
+      });
 
-      return {
-        ...app.toJSON(),
-        sessionNumber
-      };
-    });
+      res.json(enriched);
+    } catch (err) {
+      console.error("Paket kullanımı hatası:", err);
+      res.status(500).json({ error: "Paket kullanımları alınamadı." });
+    }
+  },
 
-    res.json(enriched);
-  } catch (err) {
-    console.error("Paket kullanımı hatası:", err);
-    res.status(500).json({ error: "Paket kullanımları alınamadı." });
-  }
-},
 async createFromPackage(req, res) {
   try {
     const CompanyId = req.company.companyId;
