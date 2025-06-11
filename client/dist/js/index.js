@@ -1,7 +1,7 @@
 // Logout işlemi
 document.getElementById("logoutBtn")?.addEventListener("click", function () {
   localStorage.removeItem("token");
-  window.location.href = "login.html";
+  window.location.href = "/client/dist/pages/auth/login.html";
 });
 
 // Sidebar scroll ayarları
@@ -20,12 +20,12 @@ document.addEventListener('DOMContentLoaded', function () {
 
 // Token kontrolü
 if (!localStorage.getItem("token") && !localStorage.getItem("companyId")) {
-  window.location.href = "login.html";
+  window.location.href = "/client/dist/pages/auth/login.html";
 }
 
 // Sayfa başlığını güncelleme
 function updatePageTitleByHref(href) {
-  let title = 'Gösterge Paneli';
+  let title = 'Özet';
   if (href.includes('calendar')) title = 'Randevular';
   else if (href.includes('service')) title = 'Paketler/Hizmetler';
   else if (href.includes('products')) title = 'Ürünler';
