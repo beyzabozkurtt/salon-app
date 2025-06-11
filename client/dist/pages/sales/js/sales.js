@@ -36,15 +36,13 @@ async function loadSales() {
 
     const btnGroup = document.createElement("td");
     if (odemeVar) {
-      btnGroup.innerHTML = `
-        
-            
-    <div class="btn-group align-items-center">
- <button class="btn btn-sm btn-light border d-flex justify-content-center align-items-center p-0" style="width:32px; height:32px;" onclick="viewPayments(${sale.id})" title="Detay">
-  <i class="bi bi-search text-info"></i>
-</button>
-    </div>
-      `;
+btnGroup.innerHTML = `
+  <div class="d-flex justify-content-center">
+    <button class="btn btn-sm btn-light border d-flex justify-content-center align-items-center p-0" style="width:36px; height:36px;" onclick="viewPayments(${sale.id})" title="Detay">
+      <i class="bi bi-search text-info fs-5 m-0 p-0"></i>
+    </button>
+  </div>
+`;
     } else {
       btnGroup.innerHTML = `
         <button class="btn btn-sm btn-primary me-1" onclick="editSale(${sale.id})">Düzenle</button>

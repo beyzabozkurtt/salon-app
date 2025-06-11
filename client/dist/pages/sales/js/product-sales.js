@@ -117,36 +117,29 @@ async function loadProductSales() {
   const res = await axios.get("http://localhost:5001/api/sale-products", axiosConfig);
   productSaleList.innerHTML = "";
 
- res.data.forEach(item => {
-  const tr = document.createElement("tr");
-
-  const productName = item.Product?.name || "-";
-  const quantity = item.quantity;
-  const seller = item.User?.name || "-";
-  const customer = item.Customer?.name || "-";
-  const totalPrice = (item.price * item.quantity).toFixed(2) + "₺";
-
-  tr.innerHTML = `
-    <td>${productName}</td>
-    <td>${quantity} adet</td>
-    <td>${seller}</td>
-    <td>${customer}</td>
-    <td>${totalPrice}</td>
-    <td>
-      <div class="btn-group">
-        <button class="btn btn-sm btn-light border" onclick="openEditModal(${item.id})" title="Düzenle">
-          <i class="bi bi-pencil text-primary"></i>
+  res.data.forEach(item => {
+    const row = document.createElement("tr");
+    row.innerHTML = `
+      <td>${item.Customer?.name || "-"}</td>
+      <td>${item.Product?.name || "-"} (${item.quantity})</td>
+      <td>${item.saleDate || "-"}</td>
+      <td>${(item.price * item.quantity).toFixed(2)}₺</td>
+      <td>${item.User?.name || "-"}</td>
+      <td>${item.paymentMethod || "-"}</td>
+      <td>${item.notes || "-"}</td>
+      <td class="text-center">
+        <button class="btn btn-sm btn-primary me-1" onclick="openEditModal(${item.id})">
+          <i class="bi bi-pencil"></i>
         </button>
-        <button class="btn btn-sm btn-light border" onclick="deleteProductSale(${item.id})" title="Sil">
-          <i class="bi bi-trash text-danger"></i>
+        <button class="btn btn-sm btn-danger" onclick="deleteProductSale(${item.id})">
+          <i class="bi bi-trash"></i>
         </button>
-      </div>
-    </td>
-  `;
-  productSaleList.appendChild(tr);
-});
-
+      </td>
+    `;
+    productSaleList.appendChild(row);
+  });
 }
+
 
 // 🌟 Modal aç
 function openAddProductModal() {

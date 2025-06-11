@@ -34,9 +34,13 @@ function updatePageTitleByHref(href) {
   else if (href.includes('product-sales')) title = 'Ürün Satışı';
   else if (href.includes('customers')) title = 'Müşteriler';
   else if (href.includes('payment-tracking')) title = 'Ödeme Takibi';
-  else if (href.includes('cash-tracking')) title = 'Kasa Takibi';
+  else if (href.includes('cash-tracking')) title = 'Ödemeler';
   else if (href.includes('adisyon')) title = 'Adisyonlar';
   else if (href.includes('working-hours')) title = 'Çalışma Saatleri';
+  else if (href.includes('alacaklar')) title = 'Alacaklar';
+  else if (href.includes('masraf')) title = 'Masraflar';
+  else if (href.includes('tahsilatlar')) title = 'Tahsilatlar';
+
   document.querySelector('.app-content-header h3').innerText = title;
   document.querySelector('.breadcrumb-item.active').innerText = title;
 }
