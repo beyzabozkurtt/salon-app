@@ -91,3 +91,8 @@
  margin-left: 20px;
   
 }
+.brand-image {
+  height: 130px !important;
+  max-height: none !important;
+  object-fit: contain;
+}
