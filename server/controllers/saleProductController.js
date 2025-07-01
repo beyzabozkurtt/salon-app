@@ -89,24 +89,25 @@ async create(req, res) {
     await product.decrement('stock', { by: quantity });
 
     // 🧾 Ödeme oluştur
-    if (CustomerId) {
-      const totalAmount = parseFloat(price) * parseInt(quantity);
-      const now = new Date();
+if (CustomerId) {
+  const totalAmount = parseFloat(price) * parseInt(quantity);
+  const now = new Date();
 
-      await Payment.create({
-        SaleId,
-        ProductId,
-        SaleProductId: newItem.id,
-        CustomerId,
-        installmentNo: 1,
-        amount: totalAmount,
-        dueDate: now,
-        status: paymentCollected === "true" ? "ödenmiş" : "bekliyor",
-        paymentDate: paymentCollected === "true" ? now : null,
-        paymentType: paymentCollected === "true" ? paymentMethod : null,
-        CompanyId: req.company.companyId
-      });
-    }
+  await Payment.create({
+    SaleId,
+    ProductId,
+    SaleProductId: newItem.id,
+    CustomerId,
+    installmentNo: 1,
+    amount: totalAmount,
+    dueDate: now,
+    status: paymentCollected ? "ödendi" : "bekliyor",
+    paymentDate: paymentCollected ? now : null,
+    paymentType: paymentCollected ? paymentMethod : null,
+    CompanyId: req.company.companyId
+  });
+}
+
 
     res.status(201).json(newItem);
   } catch (err) {
