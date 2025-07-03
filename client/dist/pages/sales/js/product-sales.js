@@ -4,6 +4,8 @@ const addProductForm = document.getElementById("addProductForm");
 
 const editModal = new bootstrap.Modal(document.getElementById("editProductModal"));
 const addModal = new bootstrap.Modal(document.getElementById("addProductModal"));
+const stockWarningModal = new bootstrap.Modal(document.getElementById("stockWarningModal"));
+
 
 const editUserSelect = document.getElementById("editUserSelect");
 const addUserSelect = document.getElementById("addUserSelect");
@@ -26,6 +28,16 @@ let customerMap = {};
 let productMap = {};
 let productPriceMap = {};
 let customers = [];
+let pendingForceData = null;
+let selectedDeleteId = null;
+
+// Sil butonuna tıklanınca modalı aç
+function openDeleteModal(id) {
+  selectedDeleteId = id;
+  const modal = new bootstrap.Modal(document.getElementById("deleteSaleModal"));
+  modal.show();
+}
+
 
 // 🌟 Ürün inputuna özel autocomplete ve fiyat bağlama
 function bindProductAutocomplete(inputEl, priceInputEl) {
@@ -115,6 +127,8 @@ function bindProductAutocomplete(inputEl, priceInputEl) {
 // 🌟 Satışları yükle
 async function loadProductSales() {
   const res = await axios.get("http://localhost:5001/api/sale-products", axiosConfig);
+  res.data.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
+
   productSaleList.innerHTML = "";
 
   res.data.forEach(item => {
@@ -122,8 +136,8 @@ async function loadProductSales() {
     row.innerHTML = `
       <td>${item.Customer?.name || "-"}</td>
       <td>${item.Product?.name || "-"} (${item.quantity})</td>
-      <td>${item.saleDate || "-"}</td>
-      <td>${(item.price * item.quantity).toFixed(2)}₺</td>
+      <td>${formatDateTR(item.saleDate)}</td>
+      <td>${item.price || "-"}₺</td>
       <td>${item.User?.name || "-"}</td>
       <td>${item.paymentMethod || "-"}</td>
       <td>${item.notes || "-"}</td>
@@ -131,13 +145,24 @@ async function loadProductSales() {
         <button class="btn btn-sm btn-primary me-1" onclick="openEditModal(${item.id})">
           <i class="bi bi-pencil"></i>
         </button>
-        <button class="btn btn-sm btn-danger" onclick="deleteProductSale(${item.id})">
+        <button class="btn btn-sm btn-danger" onclick="openDeleteModal(${item.id})">
           <i class="bi bi-trash"></i>
         </button>
       </td>
     `;
     productSaleList.appendChild(row);
   });
+}
+function formatDateTR(isoDate) {
+  if (!isoDate) return "-";
+  const date = new Date(isoDate);
+  const day = date.getDate().toString().padStart(2, "0");
+  const month = (date.getMonth() + 1).toString().padStart(2, "0");
+  const year = date.getFullYear();
+  const hours = date.getHours().toString().padStart(2, "0");
+  const minutes = date.getMinutes().toString().padStart(2, "0");
+  return `${day}.${month}.${year}&nbsp;&nbsp;&nbsp;${hours}:${minutes}`;
+
 }
 
 
@@ -167,7 +192,11 @@ async function loadAddModalDropdowns() {
   }).join("");
   productOptionsElement.innerHTML = productOptionsHTML;
 
-  addUserSelect.innerHTML = usersRes.data.map(u => `<option value="${u.id}">${u.name}</option>`).join("");
+addUserSelect.innerHTML = `
+  <option value="" disabled selected>Satıcı seçiniz</option>
+  ${usersRes.data.map(u => `<option value="${u.id}">${u.name}</option>`).join("")}
+`;
+
 
   customers = customersRes.data;
   customerMap = {};
@@ -255,7 +284,23 @@ if (!formIsValid) {
 
     
 
-    await axios.post("http://localhost:5001/api/sale-products", {
+try {
+  await axios.post("http://localhost:5001/api/sale-products", {
+    ProductId,
+    quantity,
+    price,
+    UserId,
+    CustomerId,
+    SaleId: null,
+    paymentMethod,
+    notes,
+    saleDate,
+    paymentCollected
+  }, axiosConfig);
+} catch (err) {
+  if (err.response && err.response.status === 409) {
+    // 🔐 Modal'a geçici veriyi sakla
+    pendingForceData = {
       ProductId,
       quantity,
       price,
@@ -266,7 +311,23 @@ if (!formIsValid) {
       notes,
       saleDate,
       paymentCollected
+    };
+    stockWarningModal.show();
+    await new Promise(resolve => window._resolveForceModal = resolve); // modal sonucu beklet
+    if (!pendingForceData) continue; // kullanıcı iptal ettiyse bu satırı atla
+    await axios.post("http://localhost:5001/api/sale-products", {
+      ...pendingForceData,
+      force: true
     }, axiosConfig);
+    pendingForceData = null;
+  } else {
+    console.error("Satış hatası:", err);
+    alert("Satış yapılamadı. Lütfen tekrar deneyin.");
+    return;
+  }
+}
+
+
   }
 
   addProductForm.reset();
@@ -354,12 +415,23 @@ editProductForm.addEventListener("submit", async e => {
 });
 
 
-// 🌟 Satışı sil
-async function deleteProductSale(id) {
-  if (!confirm("Bu ürün satışını silmek istiyor musun?")) return;
-  await axios.delete(`http://localhost:5001/api/sale-products/${id}`, axiosConfig);
-  loadProductSales();
-}
+document.getElementById("confirmDeleteBtn").addEventListener("click", async () => {
+  if (!selectedDeleteId) return;
+
+  try {
+    await axios.delete(`http://localhost:5001/api/sale-products/${selectedDeleteId}`, axiosConfig);
+    selectedDeleteId = null;
+
+    // Modalı kapat
+    const modal = bootstrap.Modal.getInstance(document.getElementById("deleteSaleModal"));
+    modal.hide();
+
+    // Listeyi yenile
+    loadProductSales();
+  } catch (err) {
+    console.error("Silme hatası:", err);
+  }
+});
 
 // 🌟 Yeni ürün satırı ekle
 function addProductRow() {
@@ -435,6 +507,8 @@ customerInput.addEventListener("input", () => {
     return;
   }
 
+
+  
   const filtered = customers.filter(c => c.name.toLowerCase().includes(val));
   filtered.forEach(c => {
     const option = document.createElement("button");
@@ -464,3 +538,15 @@ document.addEventListener("click", e => {
   if (firstProductInput && firstPriceInput) {
     bindProductAutocomplete(firstProductInput, firstPriceInput);
   }
+
+  // 🌟 Modal butonları kontrolü (sayfanın en altına koyabilirsin)
+document.getElementById("confirmForceSale").addEventListener("click", () => {
+  stockWarningModal.hide();
+  if (window._resolveForceModal) window._resolveForceModal(true);
+});
+
+document.getElementById("cancelForceSale").addEventListener("click", () => {
+  stockWarningModal.hide();
+  pendingForceData = null;
+  if (window._resolveForceModal) window._resolveForceModal(false);
+});

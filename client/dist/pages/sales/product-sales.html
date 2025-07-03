@@ -119,6 +119,27 @@
   </div>
 </div>
 
+<!-- 🛑 Stok Yetersiz Modalı -->
+<div class="modal fade" id="stockWarningModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header bg-warning text-dark">
+        <h5 class="modal-title">Stok Uyarısı</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Kapat"></button>
+      </div>
+      <div class="modal-body">
+        Seçtiğiniz ürün için stok yetersiz. Yine de bu satışı gerçekleştirmek istiyor musunuz?
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" id="cancelForceSale">Hayır</button>
+        <button type="button" class="btn btn-danger" id="confirmForceSale">Evet, Sat!</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
 <!-- Düzenle Modal -->
 <div class="modal fade" id="editProductModal" tabindex="-1">
   <div class="modal-dialog">
@@ -171,6 +192,28 @@
 
   </div>
 </div>
+
+
+<!-- Silme Onay Modali -->
+<div class="modal fade" id="deleteSaleModal" tabindex="-1" aria-labelledby="deleteSaleModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0">
+      <div class="modal-header bg-danger text-white">
+        <h5 class="modal-title" id="deleteSaleModalLabel">Satışı Sil</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Kapat"></button>
+      </div>
+      <div class="modal-body">
+        Bu ürün satışını silmek istediğinize emin misiniz?
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Vazgeç</button>
+        <button type="button" class="btn btn-danger" id="confirmDeleteBtn">Evet, Sil</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
 <script src="./js/product-sales.js"></script>
 
 

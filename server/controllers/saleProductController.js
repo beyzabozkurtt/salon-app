@@ -2,18 +2,32 @@ const { SaleProduct, Product, User, Customer, Payment } = require('../models');
 
 module.exports = {
   // 🔍 Tüm satışları getir
-  async getAll(req, res) {
-    try {
-      const items = await SaleProduct.findAll({
-        where: { CompanyId: req.company.companyId },
-        include: [Product, User, Customer]
-      });
-      res.json(items);
-    } catch (err) {
-      console.error(err);
-      res.status(500).json({ error: 'Ürün satışları alınamadı.' });
-    }
-  },
+async getAll(req, res) {
+  try {
+    const items = await SaleProduct.findAll({
+      where: { CompanyId: req.company.companyId },
+      include: [
+        { model: Product, attributes: ['name'] },
+        { model: User, attributes: ['name'] },
+        { model: Customer, attributes: ['name'] }
+      ],
+      attributes: {
+        exclude: ['createdAt']  // sadece updatedAt yeterli olacak
+      }
+    });
+
+    // 🌟 updatedAt'i saleDate olarak dönüyoruz
+    const formattedItems = items.map(item => ({
+      ...item.toJSON(),
+      saleDate: item.updatedAt  // 🌟 frontend'te doğrudan kullanılabilecek
+    }));
+
+    res.json(formattedItems);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Ürün satışları alınamadı.' });
+  }
+},
 
   // 🔍 Belirli bir satışa ait ürünleri getir
   async getBySaleId(req, res) {
@@ -66,10 +80,24 @@ async create(req, res) {
     });
     if (!product) return res.status(404).json({ error: "Ürün bulunamadı." });
 
-    // 🔻 Yetersiz stok kontrolü (opsiyonel ama mantıklı)
-    if (product.stock < quantity) {
-      return res.status(400).json({ error: "Yetersiz stok." });
-    }
+// NOT: Stok konrolü
+const forceSale = req.body.force || false;
+
+
+
+// Stok kontrolü ve güncelleme
+if (product.stock >= quantity) {
+  // Stok yeterli: normal satış
+  product.stock -= quantity;
+} else if (forceSale) {
+  // Stok yetersiz ama kullanıcı onayladı
+  product.stock = 0;
+} else {
+  // Stok yetersiz ve kullanıcı onaylamadı
+  return res.status(409).json({ error: "Yetersiz stok, onay gerekiyor." });
+}
+await product.save();
+
 
     // 🧾 Yeni satış kaydı oluştur
     const newItem = await SaleProduct.create({
@@ -85,12 +113,11 @@ async create(req, res) {
       CompanyId: req.company.companyId
     });
 
-    // 🧮 Stoktan düş
-    await product.decrement('stock', { by: quantity });
+
 
     // 🧾 Ödeme oluştur
 if (CustomerId) {
-  const totalAmount = parseFloat(price) * parseInt(quantity);
+  const totalAmount = parseFloat(price) 
   const now = new Date();
 
   await Payment.create({
