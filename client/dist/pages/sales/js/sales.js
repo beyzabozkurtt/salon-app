@@ -72,6 +72,8 @@ async function loadOptions() {
   serviceSelect.innerHTML = services.data.map(s => `<option value="${s.id}">${s.name}</option>`).join("");
 }
 
+
+
 async function loadProductOptions() {
   const [products, users] = await Promise.all([
     axios.get("http://localhost:5001/api/products", axiosConfig),
@@ -85,6 +87,11 @@ saleForm.addEventListener("submit", async e => {
   e.preventDefault();
   const formData = new FormData(saleForm);
   const data = Object.fromEntries(formData.entries());
+  data.prePayment = document.getElementById("prePayment")?.value || 0;
+  data.installment = document.getElementById("installmentCount")?.value || 0;
+  data.prePaymentType = document.getElementById("prePaymentType")?.value || null;
+
+
 
   if (!data.id) {
     delete data.id;
@@ -113,6 +120,12 @@ async function editSale(id) {
   saleForm.session.value = sale.session;
   saleForm.installment.value = sale.installment || "";
   saleForm.id.value = sale.id;
+
+  document.getElementById("prePayment").value = sale.prePayment || 0;
+document.getElementById("prePaymentType").value = sale.prePaymentType || "";
+document.getElementById("remainingAmount").value = (sale.price - (sale.prePayment || 0)).toFixed(2);
+document.getElementById("installmentCount").value = sale.installment || 0;
+document.getElementById("installmentsContainer").innerHTML = ""; // eski taksit kutularını temizle
 
   currentCustomerId = sale.CustomerId;
   openProductBtn.style.display = "inline-block";
@@ -189,3 +202,63 @@ async function viewPayments(saleId) {
 
 loadSales();
 loadOptions();
+
+// Ön ödeme girildiğinde kalan tutarı hesapla
+document.getElementById("prePayment").addEventListener("input", () => {
+  const price = parseFloat(document.getElementById("price").value) || 0;
+  const prePayment = parseFloat(document.getElementById("prePayment").value) || 0;
+  const remaining = Math.max(price - prePayment, 0);
+  document.getElementById("remainingAmount").value = remaining.toFixed(2);
+});
+
+function calculateRemainingAmount() {
+  const price = parseFloat(document.getElementById("price").value) || 0;
+  const prePayment = parseFloat(document.getElementById("prePayment").value) || 0;
+
+  const remaining = Math.max(price - prePayment, 0);
+  document.getElementById("remainingAmount").value = remaining.toFixed(2);
+}
+
+
+// Fiyat değiştiğinde de tetikle
+document.getElementById("price").addEventListener("input", calculateRemainingAmount);
+
+// Ön ödeme değiştiğinde de tetikle
+document.getElementById("prePayment").addEventListener("input", calculateRemainingAmount);
+
+document.addEventListener("DOMContentLoaded", calculateRemainingAmount);
+calculateRemainingAmount();
+
+document.getElementById("generateInstallments").addEventListener("click", () => {
+  const remaining = parseFloat(document.getElementById("remainingAmount").value) || 0;
+  const count = parseInt(document.getElementById("installmentCount").value) || 0;
+  const container = document.getElementById("installmentsContainer");
+
+  container.innerHTML = ""; // Önce temizle
+
+  if (count < 1 || remaining <= 0) return;
+
+  const today = new Date();
+
+  for (let i = 0; i < count; i++) {
+    const tutar = (remaining / count).toFixed(2);
+    const odemeTarihi = new Date(today);
+    odemeTarihi.setMonth(today.getMonth() + i + 1); // her ay bir sonraki
+
+    const div = document.createElement("div");
+    div.className = "form-row mb-2";
+
+    div.innerHTML = `
+      <div class="form-group col-md-6">
+        <label>Taksit ${i + 1} Tutarı (₺):</label>
+        <input type="number" class="form-control" value="${tutar}" readonly>
+      </div>
+      <div class="form-group col-md-6">
+        <label>Taksit ${i + 1} Tarihi:</label>
+        <input type="date" class="form-control" value="${odemeTarihi.toISOString().split('T')[0]}">
+      </div>
+    `;
+
+    container.appendChild(div);
+  }
+});

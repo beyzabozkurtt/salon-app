@@ -69,10 +69,46 @@
         <div class="mb-2"><label class="form-label">Müşteri</label><select class="form-select" name="CustomerId" required id="customerSelect"></select></div>
         <div class="mb-2"><label class="form-label">Personel</label><select class="form-select" name="UserId" required id="userSelect"></select></div>
         <div class="mb-2"><label class="form-label">Hizmet</label><select class="form-select" name="ServiceId" required id="serviceSelect"></select></div>
-        <div class="mb-2"><label class="form-label">Fiyat</label><input type="number" class="form-control" name="price" step="0.01" required /></div>
         <div class="mb-2"><label class="form-label">Seans</label><input type="number" class="form-control" name="session" required /></div>
-        <div class="mb-2"><label class="form-label">Taksit Sayısı</label><input type="number" class="form-control" name="installment" /></div>
-      </div>
+        <div class="mb-2"><label class="form-label">Fiyat</label><input type="number" class="form-control" name="price" id="price" step="0.01" required /></div>
+<!-- Satır 1: Ön Ödeme + Ödeme Türü -->
+<div class="form-row">
+  <div class="form-group col-md-6">
+    <label for="prePayment">Ön Ödeme (₺):</label>
+    <input type="number" class="form-control" id="prePayment" placeholder="0" value="0">
+  </div>
+  <div class="form-group col-md-6">
+    <label for="prePaymentType">Ödeme Türü:</label>
+    <select class="form-control" id="prePaymentType">
+      <option value="">Ödeme türü seçin</option> <!-- ✅ default -->
+      <option value="nakit">Nakit</option>
+      <option value="kart">Kart</option>
+      <option value="havale">Havale</option>
+    </select>
+  </div>
+</div>
+
+<!-- Satır 2: Kalan Tutar + Taksit Sayısı -->
+<div class="form-row">
+  <div class="form-group col-md-6">
+    <label for="remainingAmount">Kalan Tutar (₺):</label>
+    <input type="text" class="form-control bg-light" id="remainingAmount" readonly>
+  </div>
+  <div class="form-group col-md-6">
+    <label for="installmentCount">Taksit Sayısı:</label>
+    <input type="number" class="form-control" id="installmentCount" placeholder="Örn: 3">
+  </div>
+</div>
+
+<!-- Buton -->
+<button type="button" id="generateInstallments" class="btn btn-primary btn-block">
+  Taksitleri Oluştur
+</button>
+
+<!-- Taksit Kutuları -->
+<div id="installmentsContainer" class="mt-3"></div>
+
+
       <div class="modal-footer">
         <button class="btn btn-secondary" type="button" id="openProductModalBtn" style="display: none;">Ürün Ekle</button>
         <button class="btn btn-success" type="submit">Kaydet</button>

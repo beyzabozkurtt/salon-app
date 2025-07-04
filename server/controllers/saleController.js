@@ -32,42 +32,80 @@ module.exports = {
     }
   },
 
-  async create(req, res) {
-    try {
-      const sale = await Sale.create({
-        ...req.body,
+async create(req, res) {
+  try {
+    const sale = await Sale.create({
+      ...req.body,
+      CompanyId: req.company.companyId
+    });
+
+    const { installment, price, prePayment } = req.body;
+
+    const toplamTutar = parseFloat(price) || 0;
+    const onOdeme = parseFloat(prePayment) || 0;
+    const taksitSayisi = parseInt(installment) || 0;
+    const kalanTutar = Math.max(toplamTutar - onOdeme, 0);
+    const simdi = new Date();
+
+    // 1. Ön ödeme varsa, ilk payment olarak "ödendi" durumunda ekle
+    if (onOdeme > 0) {
+      await Payment.create({
+        SaleId: sale.id,
+        installmentNo: 0,
+        CustomerId: sale.CustomerId,
+        amount: onOdeme,
+        paymentType: req.body.prePaymentType || null,
+        dueDate: simdi,
+        paymentDate: simdi,
+        status: 'ödendi',
         CompanyId: req.company.companyId
       });
-
-      const { installment, price } = req.body;
-
-      if (installment && price) {
-        const taksitSayisi = parseInt(installment);
-        const toplamTutar = parseFloat(price);
-        const taksitTutar = parseFloat((toplamTutar / taksitSayisi).toFixed(2));
-        const simdi = new Date();
-
-        for (let i = 0; i < taksitSayisi; i++) {
-          const vadeTarihi = new Date(simdi);
-          vadeTarihi.setMonth(vadeTarihi.getMonth() + i);
-
-          await Payment.create({
-            SaleId: sale.id,
-            installmentNo: i + 1,
-            amount: taksitTutar,
-            dueDate: vadeTarihi,
-            status: 'bekliyor',
-            CompanyId: req.company.companyId
-          });
-        }
-      }
-
-      res.json(sale);
-    } catch (err) {
-      console.error(err);
-      res.status(500).json({ error: 'Satış eklenemedi.' });
     }
-  },
+
+if (kalanTutar > 0) {
+  const simdi = new Date();
+
+  if (taksitSayisi > 0) {
+    const taksitTutar = parseFloat((kalanTutar / taksitSayisi).toFixed(2));
+    for (let i = 0; i < taksitSayisi; i++) {
+      const vadeTarihi = new Date(simdi);
+      vadeTarihi.setMonth(vadeTarihi.getMonth() + i + 1); // ✅ her taksit 1 ay sonrasından başlar
+
+      await Payment.create({
+        SaleId: sale.id,
+        CustomerId: sale.CustomerId,
+        installmentNo: i + 1,
+        amount: taksitTutar,
+        dueDate: vadeTarihi,
+        status: 'bekliyor',
+        CompanyId: req.company.companyId
+      });
+    }
+  } else {
+    // ✅ Taksit sayısı yoksa: kalan tutar tek parça olarak 1 ay sonraya eklenir
+    const tekVade = new Date(simdi);
+    tekVade.setMonth(tekVade.getMonth() + 1); // 1 ay sonrası
+
+    await Payment.create({
+      SaleId: sale.id,
+      CustomerId: sale.CustomerId,
+      installmentNo: 1,
+      amount: kalanTutar,
+      dueDate: tekVade,
+      status: 'bekliyor',
+      CompanyId: req.company.companyId
+    });
+  }
+}
+
+
+    res.json(sale);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Satış eklenemedi.' });
+  }
+},
+
 
   async update(req, res) {
     try {
