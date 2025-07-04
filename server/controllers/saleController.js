@@ -53,6 +53,7 @@ async create(req, res) {
         SaleId: sale.id,
         installmentNo: 0,
         CustomerId: sale.CustomerId,
+        UserId:sale.UserId,
         amount: onOdeme,
         paymentType: req.body.prePaymentType || null,
         dueDate: simdi,
@@ -76,6 +77,7 @@ if (kalanTutar > 0) {
         CustomerId: sale.CustomerId,
         installmentNo: i + 1,
         amount: taksitTutar,
+        UserId:sale.UserId,
         dueDate: vadeTarihi,
         status: 'bekliyor',
         CompanyId: req.company.companyId
@@ -91,6 +93,7 @@ if (kalanTutar > 0) {
       CustomerId: sale.CustomerId,
       installmentNo: 1,
       amount: kalanTutar,
+      UserId:sale.UserId,
       dueDate: tekVade,
       status: 'bekliyor',
       CompanyId: req.company.companyId

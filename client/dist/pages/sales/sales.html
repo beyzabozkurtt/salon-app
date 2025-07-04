@@ -67,7 +67,7 @@
       <div class="modal-body">
         <input type="hidden" name="id" id="saleId" />
         <div class="mb-2"><label class="form-label">Müşteri</label><select class="form-select" name="CustomerId" required id="customerSelect"></select></div>
-        <div class="mb-2"><label class="form-label">Personel</label><select class="form-select" name="UserId" required id="userSelect"></select></div>
+        <div class="mb-2"><label class="form-label">Ödeme Alan</label><select class="form-select" name="UserId" required id="userSelect"></select></div>
         <div class="mb-2"><label class="form-label">Hizmet</label><select class="form-select" name="ServiceId" required id="serviceSelect"></select></div>
         <div class="mb-2"><label class="form-label">Seans</label><input type="number" class="form-control" name="session" required /></div>
         <div class="mb-2"><label class="form-label">Fiyat</label><input type="number" class="form-control" name="price" id="price" step="0.01" required /></div>
@@ -141,18 +141,19 @@
   </div>
 </div>
 <!-- Ödeme Detay Modalı -->
-<div class="modal fade" id="paymentModal" tabindex="-1">
+<!-- Ödeme Detay Modalı -->
+<div class="modal fade" id="paymentModal" tabindex="-1" aria-labelledby="paymentModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-lg">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title">Ödeme Detayları</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        <h5 class="modal-title" id="paymentModalLabel">Ödeme Detayları</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Kapat"></button>
       </div>
       <div class="modal-body">
-        <p><strong>Müşteri:</strong> <span id="modalCustomerName"></span></p>
-        <p><strong>Hizmet:</strong> <span id="modalServiceName"></span></p>
-        <p><strong>Toplam Tutar:</strong> <span id="modalTotalPrice"></span></p>
-        <hr />
+        <p><strong>Müşteri:</strong> <span id="modalCustomerName">-</span></p>
+        <p><strong>Hizmet:</strong> <span id="modalServiceName">-</span></p>
+        <p><strong>Toplam Tutar:</strong> <span id="modalTotalPrice">-</span></p>
+        <hr>
         <table class="table table-bordered">
           <thead>
             <tr>
@@ -162,7 +163,9 @@
               <th>Durum</th>
             </tr>
           </thead>
-          <tbody id="paymentTableBody"></tbody>
+          <tbody id="paymentTableBody">
+            <!-- JS ile doldurulacak -->
+          </tbody>
         </table>
       </div>
     </div>
@@ -171,6 +174,20 @@
 
 
 <script src="./js/sales.js"></script>
+<script type="module">
+  // Sayfa içinde `viewSaleDetail` fonksiyonunun çağrılabilmesi için modül import edilmeli
+  window.openSaleDetail = async function (saleId) {
+    const token = localStorage.getItem("companyToken");
+    await loadModal(
+  "../modals/saleDetailModal.html",
+  "../modals/js/saleDetailModal.js",
+      async () => {
+        const { viewSaleDetail } = await import("../modals/js/saleDetailModal.js");
+        viewSaleDetail(saleId, token);
+      }
+    );
+  };
+</script>
 
 </body>
 </html>

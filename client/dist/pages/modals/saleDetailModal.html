@@ -1,0 +1,37 @@
+<div class="modal fade" id="saleDetailModal" tabindex="-1" aria-labelledby="saleDetailModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+
+      <div class="modal-header">
+        <h5 class="modal-title" id="saleDetailModalLabel">Satış Detayları</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Kapat"></button>
+      </div>
+
+      <div class="modal-body">
+        <p><strong>Müşteri:</strong> <span id="detailCustomerName">-</span></p>
+        <p><strong>Hizmet:</strong> <span id="detailServiceName">-</span></p>
+        <p><strong>Toplam Tutar:</strong> <span id="detailTotalPrice">-</span></p>
+        <p><strong>Ön Ödeme:</strong> <span id="detailPrePayment">-</span> <small>(<span id="detailPrePaymentType">-</span>)</small></p>
+        <p><strong>Kalan Tutar:</strong> <span id="detailRemainingAmount">-</span></p>
+        <p><strong>Taksit Sayısı:</strong> <span id="detailInstallmentCount">-</span></p>
+        
+        <hr>
+        <h6 class="mt-3">Taksitler</h6>
+        <table class="table table-bordered">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Tutar</th>
+              <th>Vade</th>
+              <th>Durum</th>
+            </tr>
+          </thead>
+          <tbody id="detailInstallmentsTableBody">
+            <!-- js ile dolacak -->
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+  </div>
+</div>
