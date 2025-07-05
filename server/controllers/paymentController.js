@@ -1,4 +1,4 @@
-const { Payment, Sale, Customer, Service, SaleProduct, Product, User } = require('../models');
+const { Payment, Sale, Customer, Service, SaleProduct, Product, User,SingleService,SaleSingleService } = require('../models');
 const { Op } = require('sequelize');
 
 module.exports = {
@@ -176,26 +176,33 @@ async getCashTracking(req, res) {
   try {
     let payments = await Payment.findAll({
       where: { CompanyId: req.company.companyId },
-      include: [
-        { model: User, attributes: ['id', 'name'] },
-        {
-          model: Sale,
-          include: [
-            { model: Customer, attributes: ['id', 'name', 'phone'] },
-            { model: Service, attributes: ['id', 'name'] }
-          ]
-        },
-        {
-          model: Product,
-          include: [
-            {
-              model: SaleProduct,
-              include: [{ model: Customer, attributes: ['id', 'name', 'phone'] }]
-            }
-          ]
-        }
-      ],
-      order: [['paymentDate', 'DESC']]
+include: [
+  { model: User, attributes: ['id', 'name'] },
+  {
+    model: Sale,
+    include: [
+      { model: Customer, attributes: ['id', 'name', 'phone'] },
+      { model: Service, attributes: ['id', 'name'] }
+    ]
+  },
+  {
+    model: Product,
+    include: [
+      {
+        model: SaleProduct,
+        include: [{ model: Customer, attributes: ['id', 'name', 'phone'] }]
+      }
+    ]
+  },
+  {
+    model: SaleSingleService, // ✅ eklenen kısım
+    include: [
+      { model: SingleService, attributes: ['id', 'name'] },
+      { model: Customer, attributes: ['id', 'name', 'phone'] }
+    ]
+  }
+],
+      order: [['dueDate', 'ASC']]
     });
 
     const now = new Date();
@@ -210,10 +217,11 @@ async getCashTracking(req, res) {
 
     // 🔁 mapping sonrası geri dönüş
     payments = payments.map(p => {
-      if (!p.Sale && p.Product?.SaleProducts?.length > 0) {
-        const sp = p.Product.SaleProducts[0];
-        p.dataValues.FallbackCustomer = sp.Customer || null;
-      }
+    if (!p.Sale && !p.SaleSingleService && p.Product?.SaleProducts?.length > 0) {
+      const matching = p.Product.SaleProducts.find(sp => sp.CustomerId === p.CustomerId);
+      p.dataValues.FallbackCustomer = matching?.Customer || null;
+    }
+
 
       return {
         id: p.id,
@@ -222,8 +230,10 @@ async getCashTracking(req, res) {
         paymentType: p.paymentType,
         paymentDate: p.paymentDate,
         dueDate: p.dueDate,
+        createdAt: p.createdAt,
         status: p.status,
         User: p.User,
+        SaleSingleService: p.SaleSingleService,
         Product: p.Product,
         Sale: p.Sale,
         FallbackCustomer: p.dataValues.FallbackCustomer || null

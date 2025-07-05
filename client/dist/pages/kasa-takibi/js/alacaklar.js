@@ -33,12 +33,27 @@ allData = Array.isArray(innerData) ? innerData.filter(p => p.status === "gecikmi
       const now = new Date();
 
       allData.forEach(p => {
-        const musteri = p.Sale?.Customer?.name || p.FallbackCustomer?.name || "-";
-        const tel = p.Sale?.Customer?.phone || p.FallbackCustomer?.phone || "-";
-        const hizmet = p.Product?.name || p.Sale?.Service?.name || "-";
-        const tip = p.Sale ? "Paket satışı" : p.Product ? "Ürün" : p.SingleService ? "Hizmet" : "Bilinmiyor";
-        const tutar = parseFloat(p.amount || 0).toFixed(2) + " TL";
+const musteri = 
+  p.Sale?.Customer?.name || 
+  p.SaleSingleService?.Customer?.name || 
+  p.FallbackCustomer?.name || "-";
 
+const tel = 
+  p.Sale?.Customer?.phone || 
+  p.SaleSingleService?.Customer?.phone || 
+  p.FallbackCustomer?.phone || "-";
+
+const hizmet = 
+  p.Product?.name || 
+  p.Sale?.Service?.name || 
+  p.SaleSingleService?.SingleService?.name || "-";
+
+const tip = 
+  p.Sale ? "Paket satışı" : 
+  p.Product ? "Ürün" : 
+  p.SaleSingleService ? "Hizmet" : "Bilinmiyor";
+
+const tutar = parseFloat(p.amount || 0).toFixed(2) + " TL";
 const due = new Date(p.dueDate);
 
 due.setHours(0, 0, 0, 0);

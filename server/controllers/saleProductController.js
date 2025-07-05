@@ -125,6 +125,7 @@ if (CustomerId) {
     ProductId,
     SaleProductId: newItem.id,
     CustomerId,
+    UserId,
     installmentNo: 1,
     amount: totalAmount,
     dueDate: now,
