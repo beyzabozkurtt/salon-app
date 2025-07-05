@@ -12,6 +12,7 @@
 </head>
 <body class="bg-light">
 <div class="container-fluid page-wrapper">
+
   <!-- Üst araç çubuğu -->
   <div class="top-bar">
     <div class="input-group" style="width: 280px;">
@@ -21,98 +22,35 @@
       <input type="text" id="searchInput" class="form-control border-start-0" placeholder="Tahsilat Ara..." />
     </div>
     <div class="d-flex gap-2">
-<button class="btn  btn-outline-success px-2" title="Dışa Aktar" onclick="exportToExcel()"><i class="bi bi-download "></i> Dışa Aktar</button>
+      <button class="btn btn-outline-success px-2" title="Dışa Aktar" onclick="exportToExcel()">
+        <i class="bi bi-download"></i> Dışa Aktar
+      </button>
     </div>
   </div>
 
   <!-- Tablo -->
-    <div class="table-responsive">
-      <table class="table table-bordered table-hover align-middle text-nowrap table-sm">
-        <thead class="table-light">
-          <tr>
-            <th>Müşteri</th>
-            <th>Satış Tarihi</th>
-            <th>Ödeme Yöntemi</th>
-            <th>Tutar</th>
-            <th>Kaynak</th>
-            <th>Ürün / Hizmet</th>
-            <th>Oluşturan</th>
-          </tr>
-        </thead>
-        <tbody id="tahsilatTable"></tbody>
-      </table>
-    </div>
-    <div class="text-end fw-semibold mt-2">
-      Toplam Tutar: <span id="toplamTutar">0 TL</span>
-    </div>
+  <div class="table-responsive">
+    <table class="table table-bordered table-hover align-middle text-nowrap table-sm">
+      <thead class="table-light">
+        <tr>
+          <th>Müşteri</th>
+          <th>Satış Tarihi</th>
+          <th>Ödeme Yöntemi</th>
+          <th>Tutar</th>
+          <th>Kaynak</th>
+          <th>Ürün / Hizmet</th>
+          <th>Oluşturan</th>
+        </tr>
+      </thead>
+      <tbody id="tahsilatTable"></tbody>
+    </table>
   </div>
+  <div class="text-end fw-semibold mt-2">
+    Toplam Tutar: <span id="toplamTutar">0 TL</span>
+  </div>
+</div>
 
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-<script>
-const tableBody = document.getElementById("tahsilatTable");
-const toplamTutarSpan = document.getElementById("toplamTutar");
-const searchInput = document.getElementById("searchInput");
-const token = localStorage.getItem("companyToken");
-
-let allData = [];
-
-async function loadTahsilatlar() {
-  const res = await fetch("http://localhost:5001/api/payments/cash-tracking", {
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: "Bearer " + token
-    }
-  });
-  const result = await res.json();
-  const innerData = result.data || result;
-  allData = Array.isArray(innerData) ? innerData.filter(p => p.status === "ödendi") : [];
-  renderTahsilatlar();
-}
-
-function renderTahsilatlar() {
-  tableBody.innerHTML = "";
-  let toplam = 0;
-  const keyword = searchInput.value.trim().toLowerCase();
-
-  allData.forEach(p => {
-    const musteri = (p.Sale?.Customer?.name || p.FallbackCustomer?.name || "-").toLowerCase();
-    const odeme = (p.paymentType || "-").toLowerCase();
-    const kaynak = p.Sale ? "Paket satışı" : p.Product ? "Ürün satışı" : p.SingleService ? "Hizmet satışı" : "Bilinmiyor";
-    const urun = (p.Product?.name || p.Sale?.Service?.name || "-").toLowerCase();
-    const user = (p.User?.name || "-").toLowerCase();
-
-    const match = [musteri, odeme, kaynak, urun, user].some(val => val.includes(keyword));
-    if (!match) return;
-
-    const tarih = p.paymentDate ? new Date(p.paymentDate).toLocaleDateString("tr-TR") : "-";
-    const tutar = parseFloat(p.amount || 0).toFixed(2) + " TL";
-    toplam += parseFloat(p.amount || 0);
-
-    tableBody.innerHTML += `
-      <tr>
-        <td>${musteri}</td>
-        <td>${tarih}</td>
-        <td>${p.paymentType || "-"}</td>
-        <td>${tutar}</td>
-        <td>${kaynak}</td>
-        <td>${p.Product?.name || p.Sale?.Service?.name || "-"}</td>
-        <td>${p.User?.name || "-"}</td>
-      </tr>
-    `;
-  });
-
-  toplamTutarSpan.textContent = toplam.toFixed(2) + " TL";
-}
-
-searchInput.addEventListener("input", renderTahsilatlar);
-
-function exportToExcel() {
-  const table = document.querySelector("table");
-  const wb = XLSX.utils.table_to_book(table, { sheet: "Tahsilatlar" });
-  XLSX.writeFile(wb, "tahsilatlar.xlsx");
-}
-
-window.addEventListener("DOMContentLoaded", loadTahsilatlar);
-</script>
+<script src="./js/tahsilatlar.js"></script>
 </body>
 </html>
