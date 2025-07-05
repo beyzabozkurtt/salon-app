@@ -273,6 +273,13 @@ window.openSaleDetail = async function (saleId) {
     }
   );
 };
+// 🔥 Silme işlemi için global fonksiyon
+window.handleDeleteSaleWithConfirm = async function () {
+  const token = localStorage.getItem("companyToken");
+  const { handleDeleteSale } = await import("../../modals/js/saleDetailModal.js");
+  handleDeleteSale(token);
+};
+
 
 
 // Fiyat değiştiğinde de tetikle

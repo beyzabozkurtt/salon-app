@@ -30,8 +30,51 @@
             <!-- js ile dolacak -->
           </tbody>
         </table>
-      </div>
+                <div class="text-end mt-4">
+        <button id="deleteSaleBtn" class="btn btn-outline-danger">
+            <i class="bi bi-exclamation-triangle me-1"></i> Satışı Kalıcı Olarak Sil
+        </button>
+        </div>
+      </div>    
 
+    </div>
+  </div>
+</div>
+<div class="modal fade" id="confirmDeleteModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content border-danger">
+      <div class="modal-header bg-danger text-white">
+        <h5 class="modal-title"><i class="bi bi-exclamation-triangle me-2"></i>Satışı Sil</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        Bu satış ve ilişkili tüm ödemeler silinecek. Devam etmek istediğinize emin misiniz?
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hayır</button>
+        <button type="button" id="confirmDeleteBtn" class="btn btn-danger">Evet, Sil</button>
+      </div>
+    </div>
+  </div>
+</div>
+<hr>
+
+
+<!-- Uyarı Modali -->
+<div class="modal fade" id="deleteWarningModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header bg-danger text-white">
+        <h5 class="modal-title">Dikkat!</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        Bu satış ve ilgili tüm ödemeler kalıcı olarak silinecek. Emin misiniz?
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+        <button type="button" class="btn btn-danger" id="confirmDeleteSale">Evet, Sil</button>
+      </div>
     </div>
   </div>
 </div>

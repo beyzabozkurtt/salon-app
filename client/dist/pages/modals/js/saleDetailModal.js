@@ -1,4 +1,6 @@
 export async function viewSaleDetail(saleId, token) {
+    window.currentSaleId = saleId;
+
   const axiosConfig = {
     headers: { Authorization: "Bearer " + token }
   };
@@ -70,3 +72,57 @@ document.getElementById("detailRemainingAmount").textContent = `${kalan.toFixed(
     alert("Detaylar getirilemedi.");
   }
 }
+
+export function handleDeleteSale(token) {
+  if (!window.currentSaleId) return;
+
+  const confirmBtn = document.getElementById("confirmDeleteSale");
+
+  confirmBtn.onclick = async () => {
+    try {
+      await axios.delete(`http://localhost:5001/api/sales/${window.currentSaleId}`, {
+        headers: { Authorization: "Bearer " + token }
+      });
+      alert("Satış ve tüm ödemeleri silindi.");
+      window.location.reload();
+    } catch (err) {
+      console.error("Silme hatası:", err);
+      alert("Silme sırasında hata oluştu.");
+    }
+  };
+
+  const warningModal = new bootstrap.Modal(document.getElementById("deleteWarningModal"));
+  warningModal.show();
+}
+
+
+let currentSaleIdForDelete = null;
+
+document.getElementById("deleteSaleBtn").addEventListener("click", () => {
+  currentSaleIdForDelete = window.currentSaleId;
+  const confirmModal = new bootstrap.Modal(document.getElementById("confirmDeleteModal"));
+  confirmModal.show();
+});
+
+document.getElementById("confirmDeleteBtn").addEventListener("click", async () => {
+  if (!currentSaleIdForDelete) return;
+
+  try {
+    await axios.delete(`http://localhost:5001/api/sales/${currentSaleIdForDelete}`, {
+      headers: { Authorization: "Bearer " + localStorage.getItem("companyToken") }
+    });
+
+    // modalları kapat
+    bootstrap.Modal.getInstance(document.getElementById("confirmDeleteModal"))?.hide();
+    bootstrap.Modal.getInstance(document.getElementById("saleDetailModal"))?.hide();
+
+    // tabloyu güncelle (listeyi yeniden çek)
+    if (typeof loadSales === "function") loadSales(); // dışarıdan global fonksiyon varsa tetikle
+
+    alert("Satış ve ilişkili ödemeler başarıyla silindi.");
+  } catch (err) {
+    console.error("Silme işlemi başarısız:", err);
+    alert("Silme işlemi başarısız oldu.");
+  }
+});
+
