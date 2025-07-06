@@ -1,0 +1,42 @@
+<!-- modals/paymentModal.html -->
+<div class="modal fade" id="odemeModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Ödeme</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+
+      <div class="modal-body">
+        <div class="row g-2">
+          <div class="col-md-4">
+            <label class="form-label">Tutar</label>
+            <div class="input-group">
+              <input type="number" id="odemeTutari" class="form-control" />
+              <span class="input-group-text">TL</span>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Ödeme Türü</label>
+            <select id="odemeYontemi" class="form-select" data-bs-toggle="tooltip" data-bs-placement="top" title="">
+            <option value="">Ödeme türü seçiniz</option>
+             </select>
+
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Ödemeyi Alan Personel</label>
+            <select id="odemePersonel" class="form-select" data-bs-toggle="tooltip" data-bs-placement="top" title="">
+            <option value="">Personel seçiniz</option>
+            </select>
+
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Kapat</button>
+        <button type="button" class="btn btn-primary" onclick="window.paymentModal.odemeYap()">Ödeme Yap</button>
+      </div>
+    </div>
+  </div>
+</div>

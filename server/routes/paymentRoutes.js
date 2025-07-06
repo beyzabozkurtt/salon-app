@@ -11,6 +11,8 @@ router.post('/pay/:id', authMiddleware, paymentController.makePayment); // 💰 
 router.get('/cash-tracking', authMiddleware, paymentController.getCashTracking);
 router.get('/by-sale/:saleId', authMiddleware, paymentController.getBySale);
 router.get('/by-customer/:customerId', authMiddleware, paymentController.getByCustomerId);
+router.get('/:id', authMiddleware, paymentController.getOne);
+
 
 
 

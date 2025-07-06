@@ -11,6 +11,19 @@ body {
   margin: 0;
   padding: 0;
 }
+/* Modal arka planını beyaz buğulu yap */
+.modal-backdrop.show {
+  background-color: rgba(255, 255, 255, 0.3) !important;
+  backdrop-filter: blur(5px);
+}
+.modal-content {
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(8px);
+  border-radius: 12px;
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
 
 .page-wrapper {
   max-width: 1300px;

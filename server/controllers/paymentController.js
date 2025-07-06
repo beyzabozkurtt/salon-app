@@ -45,6 +45,34 @@ module.exports = {
   }
 },
 
+async getOne(req, res) {
+  try {
+    const payment = await Payment.findOne({
+      where: {
+        id: req.params.id,
+        CompanyId: req.company.companyId
+      },
+      include: [
+        { model: Sale, include: [Customer, Service] },
+        { model: Product },
+        { model: SaleProduct, include: [Customer] },
+        { model: SaleSingleService, include: [Customer, SingleService] },
+        { model: User }
+      ]
+    });
+
+    if (!payment) {
+      return res.status(404).json({ error: "Ödeme kaydı bulunamadı." });
+    }
+
+    res.json(payment);
+  } catch (err) {
+    console.error("❌ getOne (payment) hatası:", err);
+    res.status(500).json({ error: "Sunucu hatası." });
+  }
+},
+
+
 
   async getPaymentsByCustomer(req, res) {
     const customerId = parseInt(req.params.id);
