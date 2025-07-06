@@ -40,6 +40,22 @@ setTimeout(() => {
   document.querySelectorAll(".modal-backdrop").forEach(el => el.remove());
 }, 300);
 
+// ✅ TOAST GÖSTER
+Swal.fire({
+  toast: true,
+  position: "top-end",
+  icon: "success",
+  title: "Müşteri başarıyla eklendi!",
+  showConfirmButton: false,
+  timer: 2000,
+  timerProgressBar: true,
+  background: "#d1e7dd",
+  color: "#0f5132",
+  didOpen: (toast) => {
+    toast.style.zIndex = 99999;
+  }
+});
+
 // Event dispatch
 const event = new Event("customers-updated");
 window.dispatchEvent(event);

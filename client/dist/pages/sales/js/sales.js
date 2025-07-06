@@ -109,6 +109,22 @@ saleForm.addEventListener("submit", async e => {
   saleModal.hide();
   await loadSales();
   loadSales();
+
+  // ✅ TOAST BİLDİRİMİ
+Swal.fire({
+  toast: true,
+  position: "top-end",
+  icon: "success",
+  title: "Paket satışı başarıyla kaydedildi!",
+  showConfirmButton: false,
+  timer: 2000,
+  timerProgressBar: true,
+  background: "#d1e7dd",
+  color: "#0f5132",
+  didOpen: (toast) => {
+    toast.style.zIndex = 99999;
+  }
+});
 });
 
 async function editSale(id) {

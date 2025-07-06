@@ -369,8 +369,7 @@ async function loadCustomerSales(customerId, customer) {
             <tr>
               <th>Ürün</th>
               <th>Adet</th>
-              <th>Fiyat</th>
-              <th>Toplam</th>
+              <th>Toplam Fiyat</th>
               <th>Ödeme</th>
               <th>Not</th>
             </tr>
@@ -430,7 +429,6 @@ function renderSaleList(sales) {
         <td>${sale.Product?.name || "-"}</td>
         <td class="text-center">${sale.quantity}</td>
         <td class="text-end">${parseFloat(sale.price).toFixed(2)} ₺</td>
-        <td class="text-end">${total} ₺</td>
         <td class="text-center">${sale.paymentMethod || "-"}</td>
         <td>${sale.notes || "-"}</td>
       </tr>`;
@@ -934,8 +932,7 @@ window.changeDebtPage = function (page) {
   renderDebtPagination(allDebts.length);
 };
 document.addEventListener("DOMContentLoaded", () => {
-  // ... mevcut kodların sonuna ekle
-  if (sessionStorage.getItem("odemeBasarili") === "1") {
+  if (window.performance?.navigation?.type === 1 && sessionStorage.getItem("odemeBasarili") === "1") {
     sessionStorage.removeItem("odemeBasarili");
 
     if (typeof Swal !== "undefined") {

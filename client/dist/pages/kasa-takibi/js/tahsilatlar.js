@@ -68,12 +68,13 @@ function renderTahsilatlar() {
     );
     if (!match) return;
 
-const tarih = p.dueDate
-  ? `${new Date(p.dueDate).toLocaleDateString("tr-TR")} - ${new Date(p.dueDate).toLocaleTimeString("tr-TR", {
+const tarih = p.paymentDate
+  ? `${new Date(p.paymentDate).toLocaleDateString("tr-TR")} - ${new Date(p.paymentDate).toLocaleTimeString("tr-TR", {
       hour: "2-digit",
       minute: "2-digit"
     })}`
   : "-";
+
 
 
     const tutar = parseFloat(p.amount || 0).toFixed(2) + " TL";

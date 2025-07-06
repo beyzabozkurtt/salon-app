@@ -333,6 +333,22 @@ try {
   addProductForm.reset();
   addModal.hide();
   loadProductSales();
+
+  // ✅ Toast mesajı
+Swal.fire({
+  toast: true,
+  position: "top-end",
+  icon: "success",
+  title: "Ürün satışı başarıyla kaydedildi!",
+  showConfirmButton: false,
+  timer: 2000,
+  timerProgressBar: true,
+  background: "#d1e7dd",
+  color: "#0f5132",
+  didOpen: (toast) => {
+    toast.style.zIndex = 99999;
+  }
+});
 });
 
 // 🌟 Ürün düzenleme modalı

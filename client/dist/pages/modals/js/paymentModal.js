@@ -132,12 +132,7 @@ function showSuccessToast() {
 
     odemeModal?.hide();
     sessionStorage.setItem("odemeBasarili", "1");
-
-    if (typeof window.refreshPayments === "function") {
-      window.refreshPayments();
-    } else {
-      location.reload();
-    }
+    location.reload();
 
 
   }
