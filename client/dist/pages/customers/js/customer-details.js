@@ -155,6 +155,12 @@ document.addEventListener("DOMContentLoaded", async () => {
       }
     });
 
+        // ✅ Ödeme sonrası yenileme fonksiyonunu buraya koy:
+    window.refreshPayments = function () {
+      loadCustomerDebts(customerId, customer);
+      loadCustomerPayments(customerId, customer);
+    };
+
   } catch (err) {
     alert("Müşteri bilgileri getirilemedi.");
     console.error(err);
@@ -854,22 +860,38 @@ function renderDebtList(debts) {
         <td class="text-center">${vade}</td>
         <td class="text-center"><span class="badge bg-${statusBadge}">${p.status}</span></td>
         <td class="text-center">
-          <button class="btn btn-sm btn-outline-success ms-2 pay-btn" data-id="${customerId}">
+        <td class="text-center">
+          <button class="btn btn-sm btn-outline-success ms-2 pay-btn" data-payment-id="${p.id}">
             Ödeme Yap
           </button>
+        </td>
+
         </td>
       </tr>`;
   });
 
   // Butonlara listener ekle
-  setTimeout(() => {
-    document.querySelectorAll(".pay-btn").forEach(btn => {
-      btn.addEventListener("click", e => {
-        const customerId = e.target.dataset.id;
-        window.location.href = `payment-details.html?id=${customerId}`;
-      });
-    });
-  }, 0);
+setTimeout(() => {
+document.querySelectorAll(".pay-btn").forEach(btn => {
+  btn.addEventListener("click", async e => {
+    const paymentId = btn.dataset.paymentId;
+
+    try {
+      await loadPopup("paymentModal"); // ✅ Modalı yükle
+      if (window.paymentModal?.open) {
+        window.paymentModal.open(paymentId); // ✅ Aç
+      } else {
+        alert("Ödeme modülü henüz yüklenmedi.");
+      }
+    } catch (err) {
+      console.error("Ödeme popup yüklenemedi:", err);
+      alert("Ödeme popup'ı yüklenirken hata oluştu.");
+    }
+  });
+});
+
+}, 0);
+
 }
 
 
@@ -911,3 +933,26 @@ window.changeDebtPage = function (page) {
   renderDebtList(allDebts);
   renderDebtPagination(allDebts.length);
 };
+document.addEventListener("DOMContentLoaded", () => {
+  // ... mevcut kodların sonuna ekle
+  if (sessionStorage.getItem("odemeBasarili") === "1") {
+    sessionStorage.removeItem("odemeBasarili");
+
+    if (typeof Swal !== "undefined") {
+      Swal.fire({
+        toast: true,
+        position: "top-end",
+        icon: "success",
+        title: "Ödeme başarıyla alındı!",
+        showConfirmButton: false,
+        timer: 2000,
+        timerProgressBar: true,
+        background: "#d1e7dd",
+        color: "#0f5132",
+        didOpen: (toast) => {
+          toast.style.zIndex = 99999;
+        }
+      });
+    }
+  }
+});
