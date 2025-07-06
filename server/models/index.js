@@ -16,6 +16,8 @@ const Company = require('./Company')(sequelize, DataTypes);
 const SingleService = require('./SingleService')(sequelize, DataTypes);
 const SaleSingleService = require('./SaleSingleService')(sequelize, DataTypes);
 const Expense = require('./Expense')(sequelize, DataTypes);
+const ExpenseCategory = require("./ExpenseCategory")(sequelize, DataTypes);
+
 
 
 
@@ -64,6 +66,11 @@ Sale.belongsTo(User);
 
 Service.hasMany(Sale);
 Sale.belongsTo(Service);
+
+Company.hasMany(ExpenseCategory, { foreignKey: 'CompanyId' });
+ExpenseCategory.belongsTo(Company, { foreignKey: 'CompanyId' });
+
+
 
 User.hasMany(Payment, { foreignKey: 'UserId' });
 Payment.belongsTo(User, { foreignKey: 'UserId' });
@@ -178,5 +185,6 @@ module.exports = {
   WorkingHours,
   SaleSingleService,
   Company,
-  SingleService
+  SingleService,
+  ExpenseCategory
 };
