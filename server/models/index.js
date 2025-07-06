@@ -15,6 +15,8 @@ const WorkingHours = require('./WorkingHours')(sequelize, DataTypes);
 const Company = require('./Company')(sequelize, DataTypes);
 const SingleService = require('./SingleService')(sequelize, DataTypes);
 const SaleSingleService = require('./SaleSingleService')(sequelize, DataTypes);
+const Expense = require('./Expense')(sequelize, DataTypes);
+
 
 
 
@@ -151,6 +153,11 @@ WorkingHours.belongsTo(Company);
 Company.hasMany(CashRegister);
 CashRegister.belongsTo(Company);
 
+Company.hasMany(Expense);
+Expense.belongsTo(Company);
+
+User.hasMany(Expense);
+Expense.belongsTo(User);
 
 Company.hasMany(SaleProduct);
 SaleProduct.belongsTo(Company); // eğer CompanyId eklediysen buraya da bağladım
@@ -163,6 +170,7 @@ module.exports = {
   Service,
   Appointment,
   Product,
+  Expense,
   Sale,
   SaleProduct,
   CashRegister,

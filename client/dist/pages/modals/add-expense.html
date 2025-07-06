@@ -1,0 +1,81 @@
+<div class="modal fade" id="createExpenseModal" tabindex="-1" aria-labelledby="createExpenseModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-md modal-dialog-centered">
+    <div class="modal-content rounded-3 shadow-sm border-0" style="font-family: 'Source Sans 3', sans-serif;">
+      <div class="modal-header border-0 pb-0">
+        <h6 class="modal-title fw-semibold">Yeni masraf</h6>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Kapat"></button>
+      </div>
+      <div class="modal-body pt-2">
+        <form id="expenseForm">
+          <!-- Tarih -->
+          <div class="mb-2">
+            <div class="input-group">
+              <input id="expense-date" type="text" class="form-control form-control-sm flatpickr" placeholder="Tarih seçin" />
+              <span class="input-group-text bg-white"><i class="bi bi-calendar-event text-muted"></i></span>
+            </div>
+          </div>
+
+          <!-- Kategori -->
+          <div class="mb-2">
+            <select id="expense-category" class="form-select form-select-sm">
+              <option selected disabled>Masraf kategorisi</option>
+              <option>Ofis</option>
+              <option>Yol</option>
+              <option>Fatura</option>
+            </select>
+          </div>
+
+          <!-- Açıklama -->
+          <div class="mb-2">
+            <textarea id="expense-description" class="form-control form-control-sm" rows="2" placeholder="Açıklama"></textarea>
+          </div>
+
+          <!-- Tutar -->
+          <div class="mb-2">
+            <div class="input-group">
+              <input id="expense-amount" type="number" class="form-control form-control-sm" placeholder="Tutar" />
+              <span class="input-group-text">TL</span>
+            </div>
+          </div>
+
+          <!-- Ödeme yöntemi -->
+          <div class="mb-2">
+            <select id="expense-method" class="form-select form-select-sm">
+              <option selected disabled>Ödeme yöntemi</option>
+              <option>Nakit</option>
+              <option>Kart</option>
+              <option>Banka</option>
+            </select>
+          </div>
+
+          <!-- Harcayan -->
+          <div class="mb-2">
+            <select id="expense-user" class="form-select form-select-sm">
+              <option disabled selected>Harcayan seçin</option>
+              <!-- Personeller JS ile buraya eklenecek -->
+            </select>
+          </div>
+          <!-- Notlar -->
+          <div class="mb-2">
+            <textarea id="expense-notes" class="form-control form-control-sm" rows="2" placeholder="Notlar"></textarea>
+          </div>
+
+          <!-- Dosya -->
+          <div class="mb-2">
+            <label class="btn btn-sm w-100 btn-outline-secondary d-flex align-items-center justify-content-center gap-2">
+              <i class="bi bi-paperclip"></i> Masraf dokümanı ekleyin
+              <input type="file" hidden />
+            </label>
+          </div>
+
+          <!-- Kaydet -->
+          <div class="d-grid">
+            <button type="submit" class="btn btn-sm" style="background-color: #e6a0d3; color: white;">
+              Kaydet
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>

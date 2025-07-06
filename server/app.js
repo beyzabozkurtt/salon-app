@@ -7,6 +7,8 @@ const saleSingleServiceRoutes = require('./routes/saleSingleServiceRoutes');
 const appointmentRoutes = require('./routes/appointmentRoutes'); // bunu da buraya aldık
 
 
+
+
 const app = express();
 const PORT = process.env.PORT || 5001;
 
@@ -29,6 +31,8 @@ app.use('/api/companies', require('./routes/companyRoutes'));
 app.use('/api/single-services', require('./routes/singleServiceRoutes'));
 app.use('/api/salesingleservices', saleSingleServiceRoutes);
 app.use('/api/appointments', appointmentRoutes);
+app.use("/api/expenses", require("./routes/expenseRoutes"));
+
 
 
 // 🎯 Kontrol route'u
