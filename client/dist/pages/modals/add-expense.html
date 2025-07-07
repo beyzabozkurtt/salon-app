@@ -15,17 +15,36 @@
             </div>
           </div>
 
-        <!-- Kategori -->
-        <div class="mb-2">
-          <div class="input-group">
-            <select id="expense-category" class="form-select form-select-sm">
-              <option selected disabled>Masraf kategorisi</option>
-            </select>
-            <button id="addCategoryBtn" type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#addCategoryModal">
-              <i class="bi bi-plus-lg"></i>
-            </button>
-          </div>
-        </div>
+
+
+<div class="row mb-2">
+  <!-- Kategori + Ekle Butonu -->
+  <div class="col-5 d-flex gap-1">
+    <select id="expense-category" class="form-select form-select-sm flex-grow-1">
+      <option selected disabled>Masraf kategorisi</option>
+      <!-- JS ile kategoriler buraya eklenecek -->
+    </select>
+    <button type="button" id="add-category-btn" class="btn btn-sm btn-outline-secondary" title="Kategori Ekle">
+      <i class="bi bi-plus"></i>
+    </button>
+  </div>
+
+  <!-- Tekrar Sıklığı -->
+  <div class="col-4">
+    <select id="expense-repeat-frequency" class="form-select form-select-sm">
+      <option value="">Tekrar sıklığı</option>
+      <option value="monthly">Aylık</option>
+      <option value="weekly">Haftalık</option>
+      <option value="yearly">Yıllık</option>
+    </select>
+  </div>
+
+  <!-- Tekrar Sayısı -->
+  <div class="col-3">
+    <input type="number" id="expense-repeat-count" class="form-control form-control-sm" placeholder="Tekrar" min="0" />
+  </div>
+</div>
+
           <!-- Açıklama -->
           <div class="mb-2">
             <textarea id="expense-description" class="form-control form-control-sm" rows="2" placeholder="Açıklama"></textarea>
@@ -95,6 +114,73 @@
           </div>
           <div class="d-grid">
             <button type="submit" class="btn btn-sm btn-primary">Ekle</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+  <!-- Düzenle Modalı -->
+   <input type="hidden" id="edit-expense-id" />
+
+<div class="modal fade" id="editExpenseModal" tabindex="-1" aria-labelledby="editExpenseModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-md modal-dialog-centered">
+    <div class="modal-content rounded-3 shadow-sm border-0" style="font-family: 'Source Sans 3', sans-serif;">
+      <div class="modal-header border-0 pb-0">
+        <h6 class="modal-title fw-semibold">Masrafı Düzenle</h6>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Kapat"></button>
+      </div>
+      <div class="modal-body pt-2">
+        <form id="editExpenseForm">
+          <!-- Tarih -->
+          <div class="mb-2">
+            <div class="input-group">
+              <input id="edit-expense-date" type="text" class="form-control form-control-sm flatpickr" placeholder="Tarih seçin" />
+              <span class="input-group-text bg-white"><i class="bi bi-calendar-event text-muted"></i></span>
+            </div>
+          </div>
+
+          <!-- Kategori -->
+          <div class="mb-2">
+            <select id="edit-expense-category" class="form-select form-select-sm">
+              <option selected disabled>Masraf kategorisi</option>
+            </select>
+          </div>
+
+          <!-- Açıklama -->
+          <div class="mb-2">
+            <textarea id="edit-expense-description" class="form-control form-control-sm" rows="2" placeholder="Açıklama"></textarea>
+          </div>
+
+          <!-- Tutar -->
+          <div class="mb-2">
+            <div class="input-group">
+              <input id="edit-expense-amount" type="number" class="form-control form-control-sm" placeholder="Tutar" />
+              <span class="input-group-text">TL</span>
+            </div>
+          </div>
+
+          <!-- Ödeme yöntemi -->
+          <div class="mb-2">
+            <select id="edit-expense-method" class="form-select form-select-sm">
+              <option selected disabled>Ödeme yöntemi</option>
+              <option>Nakit</option>
+              <option>Kart</option>
+              <option>Banka</option>
+            </select>
+          </div>
+
+          <!-- Harcayan -->
+          <div class="mb-2">
+            <select id="edit-expense-user" class="form-select form-select-sm">
+              <option disabled selected>Harcayan seçin</option>
+            </select>
+          </div>
+
+
+          <!-- Kaydet -->
+          <div class="d-grid">
+            <button type="submit" class="btn btn-sm btn-primary">Kaydet</button>
           </div>
         </form>
       </div>

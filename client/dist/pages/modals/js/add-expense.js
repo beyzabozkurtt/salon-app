@@ -74,12 +74,48 @@ window.addExpenseModal = {
       };
 
       try {
-        await axios.post("http://localhost:5001/api/expenses", payload, {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        });
-        alert("✅ Masraf başarıyla kaydedildi.");
+const frequency = document.getElementById("expense-repeat-frequency").value;
+const repeatCount = parseInt(document.getElementById("expense-repeat-count").value || 0);
+
+// ilk masrafı ve tekrarlı masrafları tek tek oluştur
+const requests = [];
+
+for (let i = 0; i <= repeatCount; i++) {
+  let date = new Date(isoDate);
+  if (i > 0) {
+    if (frequency === "monthly") {
+      date.setMonth(date.getMonth() + i);
+    } else if (frequency === "weekly") {
+      date.setDate(date.getDate() + i * 7);
+    } else if (frequency === "yearly") {
+      date.setFullYear(date.getFullYear() + i);
+    }
+  }
+
+  const clone = { ...payload, expenseDate: date.toISOString().split("T")[0] };
+  requests.push(
+    axios.post("http://localhost:5001/api/expenses", clone, {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+  );
+}
+  Swal.fire({
+  toast: true,
+  position: "top-end",
+  icon: "success",
+  title: "Kategori başarıyla eklendi!",
+  showConfirmButton: false,
+  timer: 2000,
+  timerProgressBar: true,
+  background: "#d1e7dd",
+  color: "#0f5132",
+  didOpen: (toast) => {
+    toast.style.zIndex = 99999;
+  }
+});
+await Promise.all(requests);
+
+        
 
         const modal = bootstrap.Modal.getInstance(document.getElementById("createExpenseModal"));
         modal.hide();
@@ -94,12 +130,34 @@ window.addExpenseModal = {
       }
     });
 
+    // 🔄 Yeni kategori modalını aç
+document.getElementById("add-category-btn").addEventListener("click", () => {
+  const modal = new bootstrap.Modal(document.getElementById("addCategoryModal"));
+  modal.show();
+});
+
+
     // 🔄 Yeni kategori ekleme
 document.getElementById("addCategoryForm").addEventListener("submit", async function (e) {
   e.preventDefault();
 
   const name = document.getElementById("new-category-name").value.trim();
   if (!name) return alert("Kategori adı boş olamaz!");
+
+  Swal.fire({
+  toast: true,
+  position: "top-end",
+  icon: "success",
+  title: "Kategori başarıyla eklendi!",
+  showConfirmButton: false,
+  timer: 2000,
+  timerProgressBar: true,
+  background: "#d1e7dd",
+  color: "#0f5132",
+  didOpen: (toast) => {
+    toast.style.zIndex = 99999;
+  }
+});
 
   try {
     const token = localStorage.getItem("companyToken");

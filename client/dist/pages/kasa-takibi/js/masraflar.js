@@ -4,6 +4,12 @@ document.addEventListener("DOMContentLoaded", () => {
     locale: "tr"
   });
 
+  // editExpenseForm submit dinleyicisini bağla
+  const editForm = document.getElementById("editExpenseForm");
+  if (editForm) {
+    editForm.addEventListener("submit", handleEditExpense);
+  }
+
   loadModal("../modals/add-expense.html", "addExpenseModal");
   fetchExpenses();
 });
@@ -13,8 +19,18 @@ async function loadModal(url, name) {
   const res = await fetch(url);
   const html = await res.text();
   document.getElementById("modal-container").innerHTML = html;
-  window[name].init();
+
+  // Modal yüklendikten sonra init varsa çalıştır
+  if (window[name]?.init) {
+    window[name].init();
+  }
+
+  // Eğer editExpenseModal yüklendiyse form olayını burada bağla
+  if (name === "editExpenseModal") {
+    document.getElementById("editExpenseForm").addEventListener("submit", handleEditExpense);
+  }
 }
+
 
 // 📥 Masraf verilerini getir
 async function fetchExpenses() {
@@ -45,6 +61,14 @@ async function fetchExpenses() {
   <td>${item.paymentMethod || "-"}</td>
   <td>${formatDate(item.expenseDate)}</td>
   <td>${formatDateTime(item.createdAt)}</td>
+  <td class="text-nowrap">
+    <button class="btn btn-sm btn-light border me-1" onclick='editExpense(${JSON.stringify(item)})'>
+      <i class="bi bi-pencil text-primary"></i>
+    </button>
+    <button class="btn btn-sm btn-light border" onclick='deleteExpense(${item.id})'>
+      <i class="bi bi-trash text-danger"></i>
+    </button>
+  </td>
 </tr>
       `;
       tbody.appendChild(row);
@@ -90,3 +114,204 @@ function formatDateTime(dateStr) {
   const d = new Date(dateStr);
   return d.toLocaleString("tr-TR");
 }
+
+// 🧠 '13.12.2025' → '2025-12-13' dönüştür
+function convertToISO(dateStr) {
+  const parts = dateStr.split(".");
+  if (parts.length !== 3) return null;
+
+  const [day, month, year] = parts;
+  const isoDate = `${year}-${month}-${day}`;
+  const testDate = new Date(isoDate);
+
+  if (isNaN(testDate)) {
+    console.warn("❌ Geçersiz tarih:", dateStr);
+    return null;
+  }
+
+  return isoDate;
+}
+
+
+async function populateEditUsers() {
+  const token = localStorage.getItem("companyToken");
+  const select = document.getElementById("edit-expense-user");
+  if (!select) return;
+
+  try {
+    const res = await axios.get("http://localhost:5001/api/users", {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+
+    select.innerHTML = `<option disabled selected>Harcayan seçin</option>`;
+    res.data.forEach(user => {
+      const opt = document.createElement("option");
+      opt.value = user.id;
+      opt.textContent = user.name;
+      select.appendChild(opt);
+    });
+  } catch (err) {
+    console.error("Kullanıcılar alınamadı", err);
+  }
+}
+async function populateEditCategories() {
+  const token = localStorage.getItem("companyToken");
+  const select = document.getElementById("edit-expense-category");
+  if (!select) return;
+
+  try {
+    const res = await axios.get("http://localhost:5001/api/expense-categories", {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+
+    select.innerHTML = `<option disabled selected>Kategori seçin</option>`;
+    res.data.forEach(cat => {
+      const opt = document.createElement("option");
+      opt.value = cat.name;
+      opt.textContent = cat.name;
+      select.appendChild(opt);
+    });
+  } catch (err) {
+    console.error("Kategoriler alınamadı", err);
+  }
+}
+
+
+window.editExpense = async function (item) {
+  const modalEl = document.getElementById("editExpenseModal");
+  const modal = new bootstrap.Modal(modalEl);
+  modal.show();
+
+  await populateEditUsers();
+  await populateEditCategories();
+
+  // inputları doldur
+  document.getElementById("edit-expense-id").value = item.id;
+  document.getElementById("edit-expense-category").value = item.category;
+  document.getElementById("edit-expense-description").value = item.description || "";
+  document.getElementById("edit-expense-amount").value = item.amount;
+  document.getElementById("edit-expense-user").value = item.UserId;
+  document.getElementById("edit-expense-method").value = item.paymentMethod || "";
+
+  flatpickr("#edit-expense-date", {
+    dateFormat: "d.m.Y",
+    locale: "tr",
+    defaultDate: new Date(item.expenseDate),
+    allowInput: true
+  });
+
+  // 🔥 Modal DOM'a tam yüklendikten sonra formu bağla
+  modalEl.addEventListener("shown.bs.modal", () => {
+    const form = document.getElementById("editExpenseForm");
+    if (form) {
+      form.addEventListener("submit", handleEditExpense);
+      console.log("🟢 Form başarıyla bağlandı.");
+    } else {
+      console.warn("🚫 Form bulunamadı.");
+    }
+  }, { once: true }); // sadece bir kere bağla
+};
+
+
+
+
+async function handleEditExpense(e) {
+  e.preventDefault();
+
+  const token = localStorage.getItem("companyToken");
+  const id = document.getElementById("edit-expense-id").value;
+
+  const rawDate = document.getElementById("edit-expense-date").value;
+  const isoDate = convertToISO(rawDate);
+
+  if (!isoDate) {
+    alert("Geçersiz tarih girdiniz.");
+    return;
+  }
+
+  const updatedExpense = {
+    expenseDate: isoDate,
+    category: document.getElementById("edit-expense-category").value,
+    description: document.getElementById("edit-expense-description").value,
+    amount: parseFloat(document.getElementById("edit-expense-amount").value),
+    paymentMethod: document.getElementById("edit-expense-method").value,
+    UserId: document.getElementById("edit-expense-user").value,
+    notes: document.getElementById("edit-expense-notes")?.value || null
+  };
+
+  try {
+    await axios.put(`http://localhost:5001/api/expenses/${id}`, updatedExpense, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+
+    const modal = bootstrap.Modal.getInstance(document.getElementById("editExpenseModal"));
+    modal.hide();
+    await fetchExpenses();
+          // ✅ Başarılı güncelleme bildirimi
+      Swal.fire({
+        toast: true,
+        position: "top-end",
+        icon: "success",
+        title: "Masraf başarıyla güncellendi!",
+        showConfirmButton: false,
+        timer: 2000,
+        timerProgressBar: true,
+        background: "#d1e7dd",
+        color: "#0f5132",
+        didOpen: (toast) => {
+          toast.style.zIndex = 99999;
+        }
+      });
+
+  } catch (err) {
+    console.error("❌ Masraf güncellenemedi:", err);
+    alert("Güncelleme sırasında bir hata oluştu.");
+  }
+}
+
+
+
+window.deleteExpense = async function (id) {
+  const result = await Swal.fire({
+    title: "Emin misiniz?",
+    text: "Bu masraf kalıcı olarak silinecek!",
+    icon: "warning",
+    showCancelButton: true,
+    confirmButtonColor: "#d33",
+    cancelButtonColor: "#6c757d",
+    confirmButtonText: "Evet, sil",
+    cancelButtonText: "Vazgeç"
+  });
+
+  if (result.isConfirmed) {
+    try {
+      const token = localStorage.getItem("companyToken");
+      await axios.delete(`http://localhost:5001/api/expenses/${id}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      await fetchExpenses();
+
+      // ✅ Başarılı silme bildirimi
+      Swal.fire({
+        toast: true,
+        position: "top-end",
+        icon: "success",
+        title: "Masraf başarıyla silindi!",
+        showConfirmButton: false,
+        timer: 2000,
+        timerProgressBar: true,
+        background: "#d1e7dd",
+        color: "#0f5132",
+        didOpen: (toast) => {
+          toast.style.zIndex = 99999;
+        }
+      });
+    } catch (err) {
+      console.error("Silme hatası:", err);
+      Swal.fire("Hata!", "Masraf silinemedi.", "error");
+    }
+  }
+};

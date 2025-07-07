@@ -8,6 +8,8 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet" />
   <link href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" rel="stylesheet" />
   <link href="https://cdn.jsdelivr.net/npm/@fontsource/source-sans-3/index.css" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
   <link rel="stylesheet" href="./css/masraf.css" />
 </head>
 <body>
@@ -41,6 +43,7 @@
               <th>Ödeme Yöntemi</th>
               <th>Tarih</th>
               <th>Oluşturulma</th>
+              <th>İşlem</th>
             </tr>
           </thead>
           <tbody id="expense-table-body"></tbody>
@@ -87,5 +90,8 @@
   <!-- Sayfa ve Modal JS -->
   <script src="./js/masraflar.js"></script>
   <script src="../modals/js/add-expense.js"></script>
+
+  <div id="toast-wrapper" class="position-fixed bottom-0 end-0 p-3" style="z-index: 9999;"></div>
+
 </body>
 </html>
