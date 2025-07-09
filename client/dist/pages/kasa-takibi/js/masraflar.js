@@ -315,3 +315,44 @@ window.deleteExpense = async function (id) {
     }
   }
 };
+
+const token = localStorage.getItem("companyToken");
+const axiosConfig = { headers: { Authorization: "Bearer " + token } };
+
+// Maaş günü bilgisi çekilsin
+async function fetchMaasGunu() {
+  try {
+    const res = await axios.get("http://localhost:5001/api/companies/maas-gunu", axiosConfig);
+    document.getElementById("maasGunuText").textContent = res.data.maasGunu;
+  } catch (err) {
+    console.error("Maaş günü alınamadı:", err);
+  }
+}
+
+// Maaş günü güncelle
+function guncelleMaasGunu() {
+  Swal.fire({
+    title: "Maaş Günü Güncelle",
+    input: "number",
+    inputLabel: "Her ayın kaçında?",
+    inputPlaceholder: "1-31 arasında bir gün",
+    inputAttributes: { min: 1, max: 31 },
+    showCancelButton: true,
+    confirmButtonText: "Kaydet",
+    cancelButtonText: "İptal"
+  }).then(async (result) => {
+    if (result.isConfirmed && result.value >= 1 && result.value <= 31) {
+      try {
+        await axios.put("http://localhost:5001/api/companies/maas-gunu", { maasGunu: result.value }, axiosConfig);
+        document.getElementById("maasGunuText").textContent = result.value;
+        Swal.fire("Başarılı", "Maaş günü güncellendi", "success");
+      } catch (err) {
+        Swal.fire("Hata", "Güncelleme başarısız", "error");
+        console.error("Maaş günü güncelleme hatası:", err);
+      }
+    }
+  });
+}
+
+// Sayfa yüklendiğinde çağır
+window.addEventListener("DOMContentLoaded", fetchMaasGunu);

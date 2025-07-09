@@ -13,12 +13,15 @@ exports.getAll = async (req, res) => {
   }
 };
 
-// ➕ Yeni personel oluştur (şifresiz)
+// ➕ Yeni personel oluştur
 exports.create = async (req, res) => {
   try {
     const {
-      name, email, phone, role, clientGender,
-      salary, hizmetNakit, hizmetKart, urunNakit, urunKart, paketNakit, paketKart
+      name, email, phone, role,userGender, clientGender,
+      salary,
+      hizmetPrimTipi, hizmetPrimDegeri,
+      urunPrimTipi, urunPrimDegeri,
+      paketPrimTipi, paketPrimDegeri
     } = req.body;
 
     const parsedSalary = salary === '' ? null : parseFloat(salary);
@@ -28,14 +31,20 @@ exports.create = async (req, res) => {
       email,
       phone,
       role,
+      userGender,
       clientGender,
       salary: parsedSalary,
-      hizmetNakit,
-      hizmetKart,
-      urunNakit,
-      urunKart,
-      paketNakit,
-      paketKart,
+
+      // ✅ prim tipi kontrolü: sadece biri yazılıyor
+      hizmetTl: hizmetPrimTipi === 'tl' ? parseInt(hizmetPrimDegeri) : null,
+      hizmetYuzde: hizmetPrimTipi === 'yuzde' ? parseInt(hizmetPrimDegeri) : null,
+
+      urunTl: urunPrimTipi === 'tl' ? parseInt(urunPrimDegeri) : null,
+      urunYuzde: urunPrimTipi === 'yuzde' ? parseInt(urunPrimDegeri) : null,
+
+      paketTl: paketPrimTipi === 'tl' ? parseInt(paketPrimDegeri) : null,
+      paketYuzde: paketPrimTipi === 'yuzde' ? parseInt(paketPrimDegeri) : null,
+
       CompanyId: req.company.companyId
     });
 
@@ -46,11 +55,36 @@ exports.create = async (req, res) => {
   }
 };
 
-
-// 🔄 Kullanıcı güncelle (şirket kontrolü dahil)
+// 🔄 Kullanıcı güncelle
 exports.update = async (req, res) => {
   try {
-    await User.update(req.body, {
+    const {
+      name, email, phone, role,userGender, clientGender,
+      salary,
+      hizmetPrimTipi, hizmetPrimDegeri,
+      urunPrimTipi, urunPrimDegeri,
+      paketPrimTipi, paketPrimDegeri
+    } = req.body;
+
+    await User.update({
+      name,
+      email,
+      phone,
+      role,
+      userGender,
+      clientGender,
+      salary: salary === '' ? null : parseFloat(salary),
+
+      hizmetTl: hizmetPrimTipi === 'tl' ? parseInt(hizmetPrimDegeri) : null,
+      hizmetYuzde: hizmetPrimTipi === 'yuzde' ? parseInt(hizmetPrimDegeri) : null,
+
+      urunTl: urunPrimTipi === 'tl' ? parseInt(urunPrimDegeri) : null,
+      urunYuzde: urunPrimTipi === 'yuzde' ? parseInt(urunPrimDegeri) : null,
+
+      paketTl: paketPrimTipi === 'tl' ? parseInt(paketPrimDegeri) : null,
+      paketYuzde: paketPrimTipi === 'yuzde' ? parseInt(paketPrimDegeri) : null
+
+    }, {
       where: {
         id: req.params.id,
         CompanyId: req.company.companyId
@@ -64,7 +98,7 @@ exports.update = async (req, res) => {
   }
 };
 
-// 🗑️ Kullanıcı sil (şirkete aitse)
+// 🗑️ Kullanıcı sil
 exports.delete = async (req, res) => {
   try {
     await User.destroy({

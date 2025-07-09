@@ -1,30 +1,55 @@
 module.exports = (sequelize, DataTypes) => {
   return sequelize.define('User', {
     name: DataTypes.STRING,
-    email: DataTypes.STRING, // Email eşsiz olmalı
-    phone: DataTypes.STRING, // 📞 Yeni eklendi
+    email: DataTypes.STRING,
+    phone: DataTypes.STRING,
     role: {
       type: DataTypes.ENUM('admin', 'personel'),
       defaultValue: 'personel',
     },
     clientGender: {
-      type: DataTypes.STRING, // "Kadın", "Erkek", "Farketmez"
+      type: DataTypes.STRING,
       allowNull: true
     },
     userGender: {
-      type: DataTypes.STRING, // "Kadın", "Erkek"
+      type: DataTypes.STRING,
       allowNull: true
     },
     salary: {
       type: DataTypes.FLOAT,
       allowNull: true
     },
-    hizmetNakit: DataTypes.INTEGER,
-    hizmetKart: DataTypes.INTEGER,
-    urunNakit: DataTypes.INTEGER,
-    urunKart: DataTypes.INTEGER,
-    paketNakit: DataTypes.INTEGER,
-    paketKart: DataTypes.INTEGER,
+
+    // ✅ HİZMET PRİMLERİ
+    hizmetTl: {
+      type: DataTypes.INTEGER,
+      allowNull: true
+    },
+    hizmetYuzde: {
+      type: DataTypes.INTEGER,
+      allowNull: true
+    },
+
+    // ✅ ÜRÜN PRİMLERİ
+    urunTl: {
+      type: DataTypes.INTEGER,
+      allowNull: true
+    },
+    urunYuzde: {
+      type: DataTypes.INTEGER,
+      allowNull: true
+    },
+
+    // ✅ PAKET PRİMLERİ
+    paketTl: {
+      type: DataTypes.INTEGER,
+      allowNull: true
+    },
+    paketYuzde: {
+      type: DataTypes.INTEGER,
+      allowNull: true
+    },
+
     CompanyId: {
       type: DataTypes.INTEGER,
       allowNull: true

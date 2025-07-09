@@ -58,9 +58,15 @@
         <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#kategori">Masraf Kategorisi</button></li>
         <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#grafik">Grafik</button></li>
       </ul>
-      <div>
-        <button class="btn btn-outline-success px-2"><i class="bi bi-download"></i> Dışa Aktar</button>
+      <div class="d-flex align-items-center gap-2">
+        <div class="form-control bg-light border-0 text-muted py-1 px-2" id="maasGunuBox" style="width: auto;">
+          Maaş Günü: <span id="maasGunuText">1</span>
+        </div>
+        <button class="btn btn-outline-secondary btn-sm" onclick="guncelleMaasGunu()">
+          <i class="bi bi-arrow-clockwise"></i> Güncelle
+        </button>
       </div>
+
     </div>
 
     <!-- Sekme İçeriği -->

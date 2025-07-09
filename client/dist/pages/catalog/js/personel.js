@@ -64,8 +64,19 @@ document.getElementById("searchInput").addEventListener("input", function () {
 // Personel oluştur
 createForm?.addEventListener("submit", async (e) => {
   e.preventDefault();
-  const data = Object.fromEntries(new FormData(createForm));
-  if (data.salary === "") data.salary = null;
+  const raw = Object.fromEntries(new FormData(createForm));
+  if (raw.salary === "") raw.salary = null;
+
+  const data = {
+    ...raw,
+    hizmetPrimTipi: raw.hizmetPrimTipi || null,
+    hizmetPrimDegeri: raw.hizmetPrimDegeri || null,
+    urunPrimTipi: raw.urunPrimTipi || null,
+    urunPrimDegeri: raw.urunPrimDegeri || null,
+    paketPrimTipi: raw.paketPrimTipi || null,
+    paketPrimDegeri: raw.paketPrimDegeri || null
+  };
+
   try {
     await axios.post("http://localhost:5001/api/users", data, axiosConfig);
     bootstrap.Modal.getInstance(document.getElementById("createModal")).hide();
@@ -77,11 +88,23 @@ createForm?.addEventListener("submit", async (e) => {
   }
 });
 
+
 // Personel güncelle
 updateForm?.addEventListener("submit", async (e) => {
   e.preventDefault();
-  const data = Object.fromEntries(new FormData(updateForm));
-  if (data.salary === "") data.salary = null;
+  const raw = Object.fromEntries(new FormData(updateForm));
+  if (raw.salary === "") raw.salary = null;
+
+  const data = {
+    ...raw,
+    hizmetPrimTipi: raw.hizmetPrimTipi || null,
+    hizmetPrimDegeri: raw.hizmetPrimDegeri || null,
+    urunPrimTipi: raw.urunPrimTipi || null,
+    urunPrimDegeri: raw.urunPrimDegeri || null,
+    paketPrimTipi: raw.paketPrimTipi || null,
+    paketPrimDegeri: raw.paketPrimDegeri || null
+  };
+
   try {
     await axios.put(`http://localhost:5001/api/users/${data.id}`, data, axiosConfig);
     bootstrap.Modal.getInstance(document.getElementById("updateModal")).hide();
@@ -92,6 +115,7 @@ updateForm?.addEventListener("submit", async (e) => {
   }
 });
 
+
 // Düzenleme için modalı aç
 function editUser(user) {
   updateForm.id.value = user.id;
@@ -101,15 +125,34 @@ function editUser(user) {
   updateForm.role.value = user.role || "personel";
   updateForm.userGender.value = user.userGender || "";
   updateForm.clientGender.value = user.clientGender || "";
-  updateForm.salary.value = user.salary || 0;
-  updateForm.hizmetNakit.value = user.hizmetNakit || 0;
-  updateForm.hizmetKart.value = user.hizmetKart || 0;
-  updateForm.urunNakit.value = user.urunNakit || 0;
-  updateForm.urunKart.value = user.urunKart || 0;
-  updateForm.paketNakit.value = user.paketNakit || 0;
-  updateForm.paketKart.value = user.paketKart || 0;
+  updateForm.salary.value = user.salary || "";
+
+  // Yeni eklenen hak ediş bilgileri
+updateForm.hizmetPrimTipi.value = user.hizmetTl != null ? 'tl' : user.hizmetYuzde != null ? 'yuzde' : "";
+updateForm.hizmetPrimDegeri.value = user.hizmetTl ?? user.hizmetYuzde ?? "";
+updateForm.urunPrimTipi.value = user.urunTl != null ? 'tl' : user.urunYuzde != null ? 'yuzde' : "";
+updateForm.urunPrimDegeri.value = user.urunTl ?? user.urunYuzde ?? "";
+updateForm.paketPrimTipi.value = user.paketTl != null ? 'tl' : user.paketYuzde != null ? 'yuzde' : "";
+updateForm.paketPrimDegeri.value = user.paketTl ?? user.paketYuzde ?? "";
+
+
+  // Gerekirse aktifliklerini kontrol et
+  togglePrimInput(updateForm.urunPrimTipi, 'urun');
+  togglePrimInput(updateForm.hizmetPrimTipi, 'hizmet');
+  togglePrimInput(updateForm.paketPrimTipi, 'paket');
+
   bootstrap.Modal.getOrCreateInstance(document.getElementById("updateModal")).show();
 }
+
+
+function setPrim(form, prefix, tl, yuzde) {
+  const tipi = tl != null ? 'tl' : yuzde != null ? 'yuzde' : "";
+  const deger = tl != null ? tl : yuzde != null ? yuzde : "";
+  form[`${prefix}PrimTipi`].value = tipi;
+  form[`${prefix}PrimDegeri`].value = deger;
+  form[`${prefix}PrimDegeri`].disabled = !tipi;
+}
+
 
 // Personel sil
 async function deleteUser(id) {
@@ -125,10 +168,11 @@ async function deleteUser(id) {
 }
 
 // Komisyon ayarlarını aç/kapat
-function toggleKomisyon() {
-  const div = document.getElementById("komisyonContainer");
+function toggleKomisyon(containerId = 'komisyonContainer') {
+  const div = document.getElementById(containerId);
   div.style.display = div.style.display === "none" ? "block" : "none";
 }
+
 
 // Yüzdelik selectleri doldur
 function populatePercentageOptions() {
@@ -162,3 +206,13 @@ window.addEventListener("DOMContentLoaded", () => {
     });
   }
 });
+
+function togglePrimInput(selectElement, prefix) {
+  const input = document.querySelector(`input[name='${prefix}PrimDegeri']`);
+  if (selectElement.value === "") {
+    input.value = "";
+    input.disabled = true;
+  } else {
+    input.disabled = false;
+  }
+}
