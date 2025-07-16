@@ -158,6 +158,7 @@ Inputmask({
 export function init() {
   const form = document.getElementById("customerForm");
   if (form) {
+    form.removeEventListener("submit", window.createCustomer);
     form.addEventListener("submit", window.createCustomer);
   }
   document.getElementById("phoneNumber").addEventListener("keypress", function (e) {

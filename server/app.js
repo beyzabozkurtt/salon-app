@@ -33,6 +33,8 @@ app.use('/api/salesingleservices', saleSingleServiceRoutes);
 app.use('/api/appointments', appointmentRoutes);
 app.use("/api/expenses", require("./routes/expenseRoutes"));
 app.use('/api/expense-categories', require('./routes/expenseCategoryRoutes'));
+app.use('/api/salaries', require('./routes/salaryRoutes'));
+
 
 
 

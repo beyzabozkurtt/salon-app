@@ -17,6 +17,7 @@ const SingleService = require('./SingleService')(sequelize, DataTypes);
 const SaleSingleService = require('./SaleSingleService')(sequelize, DataTypes);
 const Expense = require('./Expense')(sequelize, DataTypes);
 const ExpenseCategory = require("./ExpenseCategory")(sequelize, DataTypes);
+const Salary = require('./Salary')(sequelize, DataTypes);
 
 
 
@@ -66,6 +67,22 @@ Sale.belongsTo(User);
 
 Service.hasMany(Sale);
 Sale.belongsTo(Service);
+
+// 👤 Salary - User ilişkisi
+User.hasMany(Salary);
+Salary.belongsTo(User);
+
+// 💼 Salary - Sale ilişkisi
+Salary.hasMany(Sale);
+Sale.belongsTo(Salary);
+
+// 💊 Salary - SaleProduct ilişkisi
+Salary.hasMany(SaleProduct);
+SaleProduct.belongsTo(Salary);
+
+// 🛎️ Salary - SaleSingleService ilişkisi
+Salary.hasMany(SaleSingleService);
+SaleSingleService.belongsTo(Salary);
 
 Company.hasMany(ExpenseCategory, { foreignKey: 'CompanyId' });
 ExpenseCategory.belongsTo(Company, { foreignKey: 'CompanyId' });
@@ -179,6 +196,7 @@ module.exports = {
   Product,
   Expense,
   Sale,
+  Salary,
   SaleProduct,
   CashRegister,
   Payment,

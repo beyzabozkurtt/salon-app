@@ -11,7 +11,10 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   loadModal("../modals/add-expense.html", "addExpenseModal");
+  generateSalariesIfDue();
+  calculateMonthlySalariesIfDue();
   fetchExpenses();
+  fetchSalaries();
 });
 
 // 🔄 Modal yükle
@@ -82,26 +85,111 @@ async function fetchExpenses() {
     });
 
     document.getElementById("total-amount").textContent = `Toplam tutar: ${total.toFixed(2)} TL`;
-    fillCategorySummary(summary);
+    //fillCategorySummary(summary);
   } catch (err) {
     console.error("Masraflar alınamadı:", err);
   }
 }
 
-// 📊 Kategori tablosu doldur
-function fillCategorySummary(summary) {
-  const tbody = document.getElementById("category-summary-body");
-  tbody.innerHTML = "";
-  for (const kategori in summary) {
-    const tr = document.createElement("tr");
-    tr.innerHTML = `
-      <td>${kategori}</td>
-      <td>${summary[kategori].adet}</td>
-      <td>${summary[kategori].toplam.toFixed(2)} TL</td>
-    `;
-    tbody.appendChild(tr);
+// 📅 Ay sonu maaşları oluştur
+async function generateMonthlySalaries() {
+  const startDate = "2025-07-01"; // 🛠️ Test için sabit tuttuk
+  const endDate = "2025-08-01";
+
+  try {
+    const res = await axios.post(
+      `http://localhost:5001/api/salaries/generate-monthly?startDate=${startDate}&endDate=${endDate}`,
+      {},
+      axiosConfig
+    );
+    Swal.fire("Başarılı", res.data.message, "success");
+    fetchSalaries();
+  } catch (err) {
+    console.error("Maaş oluşturma hatası:", err);
+    Swal.fire("Hata", "Maaşlar oluşturulamadı", "error");
   }
 }
+
+
+async function calculateMonthlySalariesIfDue() {
+  try {
+    const now = new Date();
+    const gun = now.getDate();
+    const ay = now.getMonth() + 1;
+    const yil = now.getFullYear();
+
+    // Örneğin her ayın 1'i ise çalıştır
+    if (gun === 1) {
+      const start = `${yil}-${String(ay).padStart(2, '0')}-01`;
+      const endDate = new Date(yil, ay, 1); // bir sonraki ayın 1’i
+      const end = `${endDate.getFullYear()}-${String(endDate.getMonth() + 1).padStart(2, '0')}-01`;
+
+      await axios.post(
+        `http://localhost:5001/api/salaries/generate-monthly?start=${start}&end=${end}`,
+        {},
+        axiosConfig
+      );
+
+      console.log("✅ Otomatik prim hesaplaması yapıldı.");
+    }
+  } catch (err) {
+    console.error("❌ Prim hesaplama hatası:", err);
+  }
+}
+
+
+async function generateSalariesIfDue() {
+  try {
+    await axios.post("http://localhost:5001/api/salaries/generate", {}, axiosConfig);
+  } catch (err) {
+    console.error("Maaş oluşturma hatası:", err);
+  }
+}
+
+
+// 🧾 Personel maaş giderlerini getir
+async function fetchSalaries() {
+  try {
+    const res = await axios.get("http://localhost:5001/api/salaries", axiosConfig);
+    const data = res.data;
+    const tbody = document.getElementById("salary-table-body");
+    tbody.innerHTML = "";
+
+    data.forEach(item => {
+      const toplam = (item.salary || 0) + (item.hizmetPrim || 0) + (item.urunPrim || 0) + (item.paketPrim || 0);
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${item.User?.name || "-"}</td>
+        <td>${item.salary?.toFixed(2) || "0.00"} TL</td>
+        <td>${item.urunPrim?.toFixed(2) || "0.00"} TL</td>
+        <td>${item.paketPrim?.toFixed(2) || "0.00"} TL</td>
+        <td>${item.hizmetPrim?.toFixed(2) || "0.00"} TL</td>
+        <td class="fw-bold">${toplam.toFixed(2)} TL</td>
+        <td>
+          <button class="btn btn-sm btn-light border" onclick="yenidenHesapla(${item.id})">
+            <i class="bi bi-arrow-repeat text-primary"></i>
+          </button>
+        </td>
+      `;
+      tbody.appendChild(tr);
+    });
+  } catch (err) {
+    console.error("Maaş giderleri alınamadı:", err);
+  }
+}
+
+window.yenidenHesapla = async function (id) {
+  try {
+    await axios.get(`http://localhost:5001/api/salaries/calculate/${id}`, axiosConfig);
+    fetchSalaries();
+    Swal.fire("Başarılı", "Maaş yeniden hesaplandı", "success");
+  } catch (err) {
+    console.error("Yeniden hesaplama hatası:", err);
+    Swal.fire("Hata", "Hesaplama başarısız", "error");
+  }
+}
+
+
 
 // 📅 Yardımcı formatlayıcılar
 function formatDate(dateStr) {
