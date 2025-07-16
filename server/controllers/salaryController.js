@@ -152,29 +152,29 @@ exports.generateMonthlySalaries = async (req, res) => {
 
 
       // PRİM HESAPLAMALARI
+// PRİM HESAPLAMALARI
 const toplamUrun = urunler.reduce((sum, s) => {
   if (user.urunYuzde && user.urunYuzde > 0) {
     return sum + (s.price * user.urunYuzde / 100);
   }
-  if (user.urunTT && user.urunTT > 0) {
-    return sum + (user.urunTT * s.quantity);
+  if (user.urunTl && user.urunTl > 0) {
+    return sum + (user.urunTl * s.quantity);
   }
   return sum;
 }, 0);
 
+const toplamPaket = paketler.reduce((sum, s) => {
+  if (user.paketYuzde) return sum + (s.price * user.paketYuzde / 100);
+  if (user.paketTl) return sum + user.paketTl;
+  return sum;
+}, 0);
 
+const toplamHizmet = hizmetler.reduce((sum, s) => {
+  if (user.hizmetYuzde) return sum + (s.price * user.hizmetYuzde / 100);
+  if (user.hizmetTl) return sum + user.hizmetTl;
+  return sum;
+}, 0);
 
-      const toplamPaket = paketler.reduce((sum, s) => {
-        if (user.paketYuzde) return sum + (s.price * user.paketYuzde / 100);
-        if (user.paketTT) return sum + user.paketTT;
-        return sum;
-      }, 0);
-
-      const toplamHizmet = hizmetler.reduce((sum, s) => {
-        if (user.hizmetYuzde) return sum + (s.price * user.hizmetYuzde / 100);
-        if (user.hizmetTT) return sum + user.hizmetTT;
-        return sum;
-      }, 0);
 
       const total = (user.salary || 0) + toplamUrun + toplamPaket + toplamHizmet;
 
