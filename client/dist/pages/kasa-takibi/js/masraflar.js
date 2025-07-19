@@ -4,18 +4,42 @@ document.addEventListener("DOMContentLoaded", () => {
     locale: "tr"
   });
 
-  // editExpenseForm submit dinleyicisini bağla
   const editForm = document.getElementById("editExpenseForm");
   if (editForm) {
     editForm.addEventListener("submit", handleEditExpense);
   }
+document.getElementById("monthSelect").addEventListener("change", onFilterChange);
 
+  updateMonthSelect();
+  fetchMaasGunu();
   loadModal("../modals/add-expense.html", "addExpenseModal");
-  generateSalariesIfDue();
-  calculateMonthlySalariesIfDue();
+
+  // Artık sadece bu yeterli:
+  generateSalariesIfDue(); // Maaş günü geldiyse Salary + Expense'e yaz
+  fetchExpenses();         // Güncel masrafları getir
+  fetchSalaries();         // Güncel PRİMLER ile maaşları getir
+});
+
+function initMonthDropdown() {
+  const monthSelect = document.getElementById("monthSelect");
+  monthSelect.value = selectedDate.getMonth();
+}
+function onFilterChange() {
+  const month = parseInt(document.getElementById("monthSelect").value);
+  selectedDate.setMonth(month);
+  updateMonthSelect(); // ekstra
   fetchExpenses();
   fetchSalaries();
-});
+}
+
+function changeMonth(offset) {
+  selectedDate.setMonth(selectedDate.getMonth() + offset);
+  updateMonthSelect();
+  fetchExpenses();
+  fetchSalaries();
+}
+
+
 
 // 🔄 Modal yükle
 async function loadModal(url, name) {
@@ -39,7 +63,8 @@ async function loadModal(url, name) {
 async function fetchExpenses() {
   try {
     const token = localStorage.getItem("companyToken");
-    const res = await axios.get("http://localhost:5001/api/expenses", {
+    const { startDate, endDate } = getSalaryDateRange();
+    const res = await axios.get(`http://localhost:5001/api/expenses?startDate=${startDate}&endDate=${endDate}`, {
     headers: {
         Authorization: `Bearer ${token}`,
     },
@@ -91,51 +116,8 @@ async function fetchExpenses() {
   }
 }
 
-// 📅 Ay sonu maaşları oluştur
-async function generateMonthlySalaries() {
-  const startDate = "2025-07-01"; // 🛠️ Test için sabit tuttuk
-  const endDate = "2025-08-01";
-
-  try {
-    const res = await axios.post(
-      `http://localhost:5001/api/salaries/generate-monthly?startDate=${startDate}&endDate=${endDate}`,
-      {},
-      axiosConfig
-    );
-    Swal.fire("Başarılı", res.data.message, "success");
-    fetchSalaries();
-  } catch (err) {
-    console.error("Maaş oluşturma hatası:", err);
-    Swal.fire("Hata", "Maaşlar oluşturulamadı", "error");
-  }
-}
 
 
-async function calculateMonthlySalariesIfDue() {
-  try {
-    const now = new Date();
-    const gun = now.getDate();
-    const ay = now.getMonth() + 1;
-    const yil = now.getFullYear();
-
-    // Örneğin her ayın 1'i ise çalıştır
-    if (gun === 1) {
-      const start = `${yil}-${String(ay).padStart(2, '0')}-01`;
-      const endDate = new Date(yil, ay, 1); // bir sonraki ayın 1’i
-      const end = `${endDate.getFullYear()}-${String(endDate.getMonth() + 1).padStart(2, '0')}-01`;
-
-      await axios.post(
-        `http://localhost:5001/api/salaries/generate-monthly?start=${start}&end=${end}`,
-        {},
-        axiosConfig
-      );
-
-      console.log("✅ Otomatik prim hesaplaması yapıldı.");
-    }
-  } catch (err) {
-    console.error("❌ Prim hesaplama hatası:", err);
-  }
-}
 
 
 async function generateSalariesIfDue() {
@@ -150,7 +132,9 @@ async function generateSalariesIfDue() {
 // 🧾 Personel maaş giderlerini getir
 async function fetchSalaries() {
   try {
-    const res = await axios.get("http://localhost:5001/api/salaries", axiosConfig);
+    const { startDate, endDate } = getSalaryDateRange();
+    const res = await axios.get(`http://localhost:5001/api/salaries?startDate=${startDate}&endDate=${endDate}`, axiosConfig);
+
     const data = res.data;
     const tbody = document.getElementById("salary-table-body");
     tbody.innerHTML = "";
@@ -441,6 +425,31 @@ function guncelleMaasGunu() {
     }
   });
 }
+
+let selectedDate = new Date(); // başta bugün
+
+function updateMonthSelect() {
+  const select = document.getElementById("monthSelect");
+  select.value = selectedDate.getMonth();
+}
+
+
+function changeMonth(offset) {
+  selectedDate.setMonth(selectedDate.getMonth() + offset);
+  updateMonthSelect();
+  fetchExpenses();
+  fetchSalaries();
+}
+
+function getSalaryDateRange() {
+  const start = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1);
+  const end = new Date(selectedDate.getFullYear(), selectedDate.getMonth() + 1, 1);
+  return {
+    startDate: start.toISOString().split("T")[0],
+    endDate: end.toISOString().split("T")[0]
+  };
+}
+
 
 // Sayfa yüklendiğinde çağır
 window.addEventListener("DOMContentLoaded", fetchMaasGunu);

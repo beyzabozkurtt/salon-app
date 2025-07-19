@@ -1,4 +1,4 @@
-const { Salary, User, Sale, SaleProduct, SaleSingleService ,Company} = require('../models');
+const { Salary, Prim, User, Sale, SaleProduct, SaleSingleService ,Company} = require('../models');
 const { Op } = require('sequelize');
 
 
@@ -10,7 +10,7 @@ exports.generateUpcomingSalaries = async (req, res) => {
     const CompanyId = req.company?.companyId;
     if (!CompanyId) return res.status(401).json({ error: "Şirket bilgisi alınamadı" });
 
-    const company = await require('../models').Company.findByPk(CompanyId);
+    const company = await Company.findByPk(CompanyId);
     const maasGunu = company.maasGunu || 1;
 
     const today = new Date();
@@ -28,7 +28,7 @@ exports.generateUpcomingSalaries = async (req, res) => {
     const existing = await Salary.findAll({
       where: {
         CompanyId,
-        salaryDate
+        salaryDate: endDate
       }
     });
 
@@ -36,36 +36,98 @@ exports.generateUpcomingSalaries = async (req, res) => {
       return res.json({ message: "Zaten oluşturulmuş" });
     }
 
-    const users = await User.findAll({
-      where: {
-        role: 'personel',
-        CompanyId
-      }
+    // ✅ Önce salary kayıtları oluştur
+    await exports.generateMonthlySalaries({
+      query: {
+        startDate: startDate.toISOString().split("T")[0],
+        endDate: endDate.toISOString().split("T")[0]
+      },
+      company: { companyId: CompanyId }
+    }, { status: () => ({ json: () => {} }) });
+
+    // ✅ Ardından salary kayıtlarını alıp Expense tablosuna yaz
+    const salaries = await Salary.findAll({
+      where: { CompanyId, salaryDate: endDate }
     });
 
-    const newRecords = users.map(u => ({
-      UserId: u.id,
-      CompanyId,
-      startDate,
-      endDate,
-      salaryDate,
-      salaryAmount: u.salary || 0,
-      createdFrom: "auto"
-    }));
+    const { Expense } = require('../models'); // Expense modelini yukarıda da tanımlayabilirsin
 
-    await Salary.bulkCreate(newRecords);
-    res.status(201).json({ message: `${newRecords.length} maaş kaydı oluşturuldu`, salaries: newRecords });
+    for (const s of salaries) {
+      await Expense.create({
+        CompanyId,
+        UserId: s.UserId,
+        category: "Maaş",
+        description: "Maaş ve Prim",
+        amount: s.total,
+        expenseDate: s.salaryDate,
+        paymentMethod: "Banka"
+      });
+    }
+
+    res.status(201).json({ message: "Maaş ve giderler oluşturuldu" });
   } catch (err) {
     console.error("📛 Maaş kayıtları oluşturulamadı:", err);
     res.status(500).json({ error: "Oluşturma sırasında hata oluştu" });
   }
 };
+// Yeni fonksiyon: Prim özetlerini personel bazında getir
+exports.getPrimSummary = async (req, res) => {
+  const { startDate, endDate } = req.query;
+  const CompanyId = req.company.companyId;
+
+  if (!startDate || !endDate) {
+    return res.status(400).json({ error: "startDate ve endDate zorunludur." });
+  }
+
+  try {
+    const users = await User.findAll({
+      where: { CompanyId, role: 'personel' },
+      attributes: ['id', 'name', 'salary']
+    });
+
+    const prims = await Prim.findAll({
+      where: {
+        CompanyId,
+        createdAt: {
+          [Op.between]: [new Date(startDate), new Date(endDate)]
+        }
+      }
+    });
+
+    const summary = users.map(user => {
+      const userPrims = prims.filter(p => p.UserId === user.id);
+      const hizmetPrim = userPrims.filter(p => p.type === 'hizmet').reduce((sum, p) => sum + Number(p.amount), 0);
+      const urunPrim = userPrims.filter(p => p.type === 'ürün').reduce((sum, p) => sum + Number(p.amount), 0);
+      const paketPrim = userPrims.filter(p => p.type === 'paket').reduce((sum, p) => sum + Number(p.amount), 0);
+      const salaryAmount = Number(user.salary || 0);
+      const total = salaryAmount + hizmetPrim + urunPrim + paketPrim;
+
+      return {
+        User: { id: user.id, name: user.name },
+        salary: salaryAmount,
+        hizmetPrim,
+        urunPrim,
+        paketPrim,
+        total
+      };
+    });
+
+    res.json(summary);
+  } catch (err) {
+    console.error("❌ Prim özeti hatası:", err);
+    res.status(500).json({ error: "Prim özeti getirilemedi" });
+  }
+};
+
 
 
 // 🎯 Belirli ay ve yıla göre tüm maaş kayıtlarını getir
 exports.getAll = async (req, res) => {
   try {
     const { startDate, endDate } = req.query;
+if (!startDate || !endDate) {
+  return res.status(400).json({ error: "startDate ve endDate zorunludur." });
+}
     const where = {};
 
     if (startDate && endDate) {
@@ -85,14 +147,26 @@ const salaries = await Salary.findAll({
 
 const fullList = users.map(user => {
   const kayit = salaries.find(s => s.UserId === user.id);
+  if (!kayit) {
+    return {
+      User: user,
+      salary: 0,
+      urunPrim: 0,
+      paketPrim: 0,
+      hizmetPrim: 0,
+      total: 0,
+      id: null
+    };
+  }
+
   return {
     User: user,
-    salary: kayit?.salaryAmount || user.salary || 0,
-    urunPrim: kayit?.urunPrim || 0,
-    paketPrim: kayit?.paketPrim || 0,
-    hizmetPrim: kayit?.hizmetPrim || 0,
-    total: kayit?.total || user.salary || 0,
-    id: kayit?.id || null
+    salary: kayit.salaryAmount || 0,
+    urunPrim: kayit.urunPrim || 0,
+    paketPrim: kayit.paketPrim || 0,
+    hizmetPrim: kayit.hizmetPrim || 0,
+    total: kayit.total || 0,
+    id: kayit.id || null
   };
 });
 
@@ -115,9 +189,14 @@ exports.generateMonthlySalaries = async (req, res) => {
     }
 
     const start = new Date(startDate + "T00:00:00");
-    const end = new Date(endDate + "T23:59:59");
+    const end = new Date(endDate + "T00:00:00");
+    end.setDate(end.getDate() - 1);
+    end.setHours(23, 59, 59, 100); // 1 gün geri git, günün sonuna ayarla
 
-    const salaryDate = new Date(end); // Örn: 01.08.2025
+
+    const salaryDate = new Date(end.getFullYear(), end.getMonth(), end.getDate());
+    salaryDate.setHours(12, 0, 0, 0);
+
 
     const users = await User.findAll({
       where: { role: 'personel', CompanyId }

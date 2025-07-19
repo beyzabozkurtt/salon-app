@@ -1,6 +1,7 @@
 const sequelize = require('../config/config');
 const { DataTypes } = require('sequelize');
 
+
 // 🔁 Modelleri çağır
 const User = require('./User')(sequelize, DataTypes);
 const Customer = require('./Customer')(sequelize, DataTypes);
@@ -18,6 +19,7 @@ const SaleSingleService = require('./SaleSingleService')(sequelize, DataTypes);
 const Expense = require('./Expense')(sequelize, DataTypes);
 const ExpenseCategory = require("./ExpenseCategory")(sequelize, DataTypes);
 const Salary = require('./Salary')(sequelize, DataTypes);
+const Prim = require('./Prim')(sequelize, DataTypes);
 
 
 
@@ -204,5 +206,6 @@ module.exports = {
   SaleSingleService,
   Company,
   SingleService,
-  ExpenseCategory
+  ExpenseCategory,
+  Prim
 };

@@ -1,4 +1,4 @@
-const { Sale, Customer, User, Service, Payment } = require('../models');
+const { Sale, Customer, User, Service, Payment,Prim } = require('../models');
 
 module.exports = {
   async getAll(req, res) {
@@ -98,6 +98,34 @@ if (kalanTutar > 0) {
       status: 'bekliyor',
       CompanyId: req.company.companyId
     });
+  }
+}
+
+// 💰 Prim oluştur
+if (sale.UserId) {
+  const user = await User.findByPk(sale.UserId);
+
+  let primTutar = 0;
+
+  if (user) {
+    if (user.paketTl) {
+      // TL bazlı prim
+      primTutar = user.paketTl;
+    } else if (user.paketYuzde) {
+      // Yüzde bazlı prim
+      primTutar = (toplamTutar * user.paketYuzde) / 100;
+    }
+
+    // 💾 Prim kaydı yapılacaksa
+    if (primTutar > 0) {
+      await Prim.create({
+        amount: primTutar,
+        type: "paket",
+        sourceId: sale.id,
+        UserId:sale.UserId,
+        CompanyId: req.company.companyId
+      });
+    }
   }
 }
 
