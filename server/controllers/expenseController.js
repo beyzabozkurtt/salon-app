@@ -1,20 +1,38 @@
 const { Expense, User } = require('../models');
 
 // 🔍 Tüm masrafları getir (şirkete göre)
+const { Op } = require("sequelize");
+
+
 exports.getAll = async (req, res) => {
   try {
+    const { startDate, endDate } = req.query;
+
+  
+
+    const where = {
+      CompanyId: req.company.companyId,
+    };
+
+    if (startDate && endDate) {
+      where.expenseDate = {
+        [Op.between]: [startDate, endDate],
+      };
+    }
+
     const expenses = await Expense.findAll({
-      where: { CompanyId: req.company.companyId },
-      include: [{ model: User, attributes: ['id', 'name'] }],
-      order: [['expenseDate', 'DESC']]
+      where,
+      include: [{ model: User, attributes: ["id", "name"] }],
+      order: [["expenseDate", "DESC"]],
     });
 
     res.json(expenses);
   } catch (err) {
-    console.error("❌ Masraf listesi hatası:", err);
-    res.status(500).json({ error: 'Masraflar alınamadı.' });
+    console.error("❌ Masraf listesi hatası:", err); // Hata detaylarını da bastıralım
+    res.status(500).json({ error: "Masraflar alınamadı." });
   }
 };
+
 
 // ➕ Yeni masraf ekle
 exports.create = async (req, res) => {

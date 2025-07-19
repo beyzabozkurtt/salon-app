@@ -11,10 +11,11 @@ router.post("/", authMiddleware, primController.create);
 // Primleri listele
 router.get("/", authMiddleware, primController.getAll);
 
-// 
 router.get('/summary', authMiddleware, primController.getPrimSummary);
 
 router.get("/details", authMiddleware, primController.getDetails);
+
+router.delete("/:id", authMiddleware, primController.delete);
 
 
 module.exports = router;

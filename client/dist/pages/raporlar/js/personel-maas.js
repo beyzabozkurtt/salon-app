@@ -334,6 +334,7 @@ async function openDetailModal(userId) {
             <th>Satış Tipi</th>
             <th>Satış Tutarı</th>
             <th>Prim Tutarı</th>
+            <th>İşlem</th>
           </tr>
         </thead>
         <tbody>
@@ -350,6 +351,11 @@ async function openDetailModal(userId) {
           ${satir.type === "ürün" && satir.quantity ? ` (${satir.quantity} adet)` : ""}
           </td>
           <td>${Number(satir.primAmount || 0).toFixed(2)} TL</td>
+          <td>
+            <button class="btn btn-sm btn-light border" onclick="deletePrim(${satir.id})">
+              <i class="bi bi-trash text-danger"></i>
+            </button>
+          </td>
         </tr>
       `;
     });
@@ -365,5 +371,75 @@ async function openDetailModal(userId) {
   } catch (err) {
     console.error("Prim detayları alınamadı:", err);
     Swal.fire("Hata", "Detaylar yüklenemedi", "error");
+  }
+}
+document.getElementById("exportSalaryBtn").addEventListener("click", () => {
+  const rows = document.querySelectorAll("#salary-table-body tr");
+  if (rows.length === 0) {
+    Swal.fire("Uyarı", "Dışa aktarılacak veri bulunamadı.", "warning");
+    return;
+  }
+
+  let csv = "Personel;Maaş;Ürün Primi;Paket Primi;Hizmet Primi;Toplam\n";
+
+  rows.forEach(row => {
+    const cols = row.querySelectorAll("td");
+    const data = [
+      cols[0].innerText.trim(), // personel
+      cols[1].innerText.trim(), // maaş
+      cols[2].innerText.trim(), // ürün primi
+      cols[3].innerText.trim(), // paket primi
+      cols[4].innerText.trim(), // hizmet primi
+      cols[5].innerText.trim()  // toplam
+    ];
+    csv += data.join(";") + "\n";
+  });
+
+  const bom = "\uFEFF"; // UTF-8 BOM
+  const blob = new Blob([bom + csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = "personel_maas_giderleri.csv";
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+});
+async function deletePrim(id) {
+    const token = localStorage.getItem("companyToken");
+  const config = { headers: { Authorization: "Bearer " + token } };
+  const result = await Swal.fire({
+    title: "Emin misiniz?",
+    text: "Bu prim kaydı silinecek!",
+    icon: "warning",
+    showCancelButton: true,
+    confirmButtonColor: "#d33",
+    cancelButtonColor: "#6c757d",
+    confirmButtonText: "Evet, sil",
+    cancelButtonText: "Vazgeç"
+  });
+
+  if (result.isConfirmed) {
+    try {
+      await axios.delete(`http://localhost:5001/api/prims/${id}`, axiosConfig);
+
+      Swal.fire({
+        icon: "success",
+        title: "Silindi",
+        text: "Prim kaydı başarıyla silindi.",
+        timer: 2000,
+        showConfirmButton: false,
+        toast: true,
+        position: "top-end"
+      });
+
+      // Tabloyu yeniden yükle (detayları yeniden çağırman gerekebilir)
+      if (typeof selectedUserId !== "undefined") {
+        await loadPrimDetails(selectedUserId); // örnek fonksiyon
+      }
+    } catch (err) {
+      Swal.fire("Hata", "Silme işlemi başarısız oldu.", "error");
+    }
   }
 }

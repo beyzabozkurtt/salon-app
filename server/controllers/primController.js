@@ -137,6 +137,7 @@ async getDetails(req, res) {
 
     for (const prim of prims) {
       let item = {
+        id: prim.id,
         date: prim.createdAt,
         amount: prim.amount,
         type: prim.type,
@@ -185,6 +186,28 @@ if (prim.type === "hizmet") {
   } catch (err) {
     console.error("Prim detayları alınamadı:", err);
     res.status(500).json({ message: "Prim detayları alınamadı" });
+  }
+},
+async delete(req, res) {
+  try {
+    const { id } = req.params;
+    const CompanyId = req.company?.companyId;
+
+    const deleted = await Prim.destroy({
+      where: {
+        id,
+        CompanyId
+      }
+    });
+
+    if (deleted === 0) {
+      return res.status(404).json({ message: "Prim bulunamadı veya size ait değil." });
+    }
+
+    res.json({ message: "Prim başarıyla silindi." });
+  } catch (err) {
+    console.error("Prim silme hatası:", err);
+    res.status(500).json({ message: "Prim silinemedi." });
   }
 }
 
