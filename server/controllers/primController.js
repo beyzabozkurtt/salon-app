@@ -107,6 +107,86 @@ module.exports = {
       console.error("❌ Prim özeti hatası:", err);
       res.status(500).json({ error: "Prim özeti getirilemedi" });
     }
+  },
+
+  // Detaylı prim listesi (inceleme modali için)
+async getDetails(req, res) {
+  const { startDate, endDate, UserId } = req.query;
+  const CompanyId = req.company?.companyId;
+
+  if (!startDate || !endDate || !UserId) {
+    return res.status(400).json({ message: "startDate, endDate ve UserId zorunludur" });
   }
+
+  try {
+    const prims = await Prim.findAll({
+      where: {
+        CompanyId,
+        UserId,
+        createdAt: {
+          [Op.between]: [
+            new Date(`${startDate}T00:00:00.000Z`),
+            new Date(`${endDate}T23:59:59.999Z`)
+          ]
+        }
+      },
+      order: [["createdAt", "DESC"]],
+    });
+
+    const results = [];
+
+    for (const prim of prims) {
+      let item = {
+        date: prim.createdAt,
+        amount: prim.amount,
+        type: prim.type,
+      };
+
+      if (prim.type === "paket") {
+        const sale = await require("../models").Sale.findByPk(prim.sourceId, {
+          include: ["Customer"],
+        });
+        if (sale) {
+          item.customerName = sale.Customer?.name || "-";
+          item.saleAmount = sale.price;
+          item.primAmount = prim.amount;
+
+        }
+      }
+
+if (prim.type === "ürün") {
+  const saleProduct = await require("../models").SaleProduct.findByPk(prim.sourceId, {
+    include: ["Customer"],
+  });
+  if (saleProduct) {
+    item.customerName = saleProduct.Customer?.name || "-";
+    item.saleAmount = saleProduct.price;
+    item.quantity = saleProduct.quantity;
+    item.primAmount = prim.amount;
+  }
+}
+
+if (prim.type === "hizmet") {
+  const single = await require("../models").SaleSingleService.findByPk(prim.sourceId, {
+    include: ["Customer"],
+  });
+  if (single) {
+    item.customerName = single.Customer?.name || "-";
+    item.saleAmount = single.price;
+    item.primAmount = prim.amount;
+  }
+}
+
+
+      results.push(item);
+    }
+
+    res.json(results);
+  } catch (err) {
+    console.error("Prim detayları alınamadı:", err);
+    res.status(500).json({ message: "Prim detayları alınamadı" });
+  }
+}
+
 
 };

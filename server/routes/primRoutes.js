@@ -14,5 +14,7 @@ router.get("/", authMiddleware, primController.getAll);
 // 
 router.get('/summary', authMiddleware, primController.getPrimSummary);
 
+router.get("/details", authMiddleware, primController.getDetails);
+
 
 module.exports = router;

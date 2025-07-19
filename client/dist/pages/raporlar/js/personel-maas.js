@@ -332,7 +332,8 @@ async function openDetailModal(userId) {
             <th>Tarih</th>
             <th>Müşteri</th>
             <th>Satış Tipi</th>
-            <th>Tutar</th>
+            <th>Satış Tutarı</th>
+            <th>Prim Tutarı</th>
           </tr>
         </thead>
         <tbody>
@@ -344,7 +345,11 @@ async function openDetailModal(userId) {
           <td>${new Date(satir.date).toLocaleDateString("tr-TR")}</td>
           <td>${satir.customerName}</td>
           <td>${satir.type}</td>
-          <td>${satir.amount.toFixed(2)} TL</td>
+          <td>
+          ${Number(satir.saleAmount || 0).toFixed(2)} TL
+          ${satir.type === "ürün" && satir.quantity ? ` (${satir.quantity} adet)` : ""}
+          </td>
+          <td>${Number(satir.primAmount || 0).toFixed(2)} TL</td>
         </tr>
       `;
     });
