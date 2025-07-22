@@ -1,0 +1,94 @@
+
+
+/* Tablo Satırları */
+#salesReportTable tbody td {
+  vertical-align: middle;
+  text-align: center;
+  font-size: 14px;
+}
+
+/* Alternatif satır arka planı */
+#salesReportTable tbody tr:nth-child(even) {
+  background-color: #f9f9f9;
+}
+
+/* Toplam - Mavi */
+#salesReportTable td:nth-child(6) {
+  color: #007bff;
+  font-weight: 500;
+}
+
+/* Tahsil - Yeşil */
+#salesReportTable td:nth-child(7) {
+  color: #28a745;
+  font-weight: 500;
+}
+
+/* Masraf - Kırmızı */
+#salesReportTable td:nth-child(8) {
+  color: #dc3545;
+  font-weight: 500;
+}
+
+/* Hover efekti */
+#salesReportTable tbody tr:hover {
+  background-color: #e9ecef;
+  transition: background-color 0.2s ease-in-out;
+}
+
+/* Responsive tablonun kenar boşlukları */
+.table-responsive {
+  border: 1px solid #dee2e6;
+  border-radius: 5px;
+  padding: 10px;
+  background-color: white;
+}
+/* Tablo Başlığı */
+#salesReportTable thead th {
+  background-color: #f8f9fa !important;
+  color: #212529 !important;
+  font-weight: 600;
+  text-align: center;
+  border-bottom: 2px solid #dee2e6;
+}
+
+/*kartlar*/
+.dashboard-card {
+  border-radius: 20px;
+  padding: 30px 20px;
+  color: #fff;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  background: linear-gradient(135deg, #666, #999);
+  text-align: center;
+  transition: 0.3s;
+}
+.dashboard-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.2);
+}
+.card-value {
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: 5px;
+}
+.card-label {
+  font-size: 1rem;
+  opacity: 0.9;
+}
+
+/* Renk Sınıfları */
+.dashboard-card.purple {
+  background: linear-gradient(135deg, #8e2de2, #4a00e0);
+}
+.dashboard-card.blue {
+  background: linear-gradient(135deg, #2193b0, #6dd5ed);
+}
+.dashboard-card.green {
+  background: linear-gradient(135deg, #56ab2f, #a8e063);
+}
+.dashboard-card.red {
+  background: linear-gradient(135deg, #f85032, #e73827);
+}
+.dashboard-card.yellow {
+  background: linear-gradient(135deg, #f7971e, #ffd200);
+}

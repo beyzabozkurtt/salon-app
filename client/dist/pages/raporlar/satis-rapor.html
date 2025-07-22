@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <title>Satış Raporu</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="../raporlar/css/satis-rapor.css" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" rel="stylesheet" />
+</head>
+<body>
+    
+  <div class="container mt-5">
+    
+<!-- Tarih Filtre Aracı -->
+<div class="d-flex align-items-center gap-2 flex-wrap mb-4">
+
+  <!-- Filtre Dropdown -->
+  <div class="dropdown">
+    <button class="btn btn-outline-primary btn-sm dropdown-toggle" type="button" id="dateFilterDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+      <i class="bi bi-calendar-event"></i> <span id="dateFilterLabel">Bu Ay</span>
+    </button>
+    <ul class="dropdown-menu" aria-labelledby="dateFilterDropdown">
+      <li><a class="dropdown-item" href="#" onclick="setFilterType('today')">Bugün</a></li>
+      <li><a class="dropdown-item" href="#" onclick="setFilterType('yesterday')">Dün</a></li>
+      <li><a class="dropdown-item" href="#" onclick="setFilterType('this-month')">Bu Ay</a></li>
+      <li><a class="dropdown-item" href="#" onclick="setFilterType('last-month')">Geçen Ay</a></li>
+      <li><hr class="dropdown-divider"></li>
+      <li><a class="dropdown-item" href="#" onclick="setFilterType('custom')">Özel Tarih</a></li>
+    </ul>
+  </div>
+
+  <!-- Özel Tarih Alanı -->
+  <div id="custom-date-wrapper" class="d-none d-flex align-items-center flex-wrap gap-2 bg-light p-2 rounded border">
+    <span><strong>Başlangıç:</strong></span>
+    <span id="startDateLabel" class="text-primary" style="cursor:pointer;">Seç</span>
+
+    <span class="mx-1 text-muted">-</span>
+
+    <span><strong>Bitiş:</strong></span>
+    <span id="endDateLabel" class="text-primary" style="cursor:pointer;">Seç</span>
+
+    <button id="getReportBtn" class="btn btn-sm btn-primary ms-2 d-none">
+      <i class="bi bi-funnel"></i> Filtrele
+    </button>
+  </div>
+</div>
+<!--kartlar-->
+<div class="row g-3 mb-4 justify-content-center text-white" id="summaryCards">
+  <div class="col-6 col-md-2">
+    <div class="dashboard-card purple">
+      <div class="card-value" id="paketToplam">0 ₺</div>
+      <div class="card-label">Paket Satışı</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-2">
+    <div class="dashboard-card blue">
+      <div class="card-value" id="hizmetToplam">0 ₺</div>
+      <div class="card-label">Hizmet Satışı</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-2">
+    <div class="dashboard-card yellow">
+      <div class="card-value" id="urunToplam">0 ₺</div>
+      <div class="card-label">Ürün Satışı</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-2">
+    <div class="dashboard-card green">
+      <div class="card-value" id="tahsilToplam">0 ₺</div>
+      <div class="card-label">Toplam Tahsilat</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-2">
+    <div class="dashboard-card red">
+      <div class="card-value" id="masrafToplam">0 ₺</div>
+      <div class="card-label">Toplam Gider</div>
+    </div>
+  </div>
+</div>
+
+
+
+<div class="row mb-4">
+  <!-- Pie Chart -->
+  <div class="col-md-6">
+    <div class="card h-100 shadow">
+      <div class="card-body">
+        <h6 class="fw-bold mb-3">Satış & Gider Dağılımı</h6>
+        <div id="salesPieChart" style="height: 400px;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Line Chart -->
+  <div class="col-md-6">
+    <div class="card h-100 shadow">
+      <div class="card-body">
+        <h6 class="fw-bold mb-3">Satış & Gider Trend (Günlük)</h6>
+        <div id="dailyLineChart" style="height: 400px;"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+    <div class="table-responsive">
+      <table class="table table-hover table-striped table-bordered align-middle" id="salesReportTable">
+        <thead>
+          <tr class="text-center">
+            <th>Tarih</th>
+            <th>Gün</th>
+            <th>Hizmet</th>
+            <th>Paket</th>
+            <th>Ürün</th>
+            <th>Toplam</th>
+            <th>Tahsil</th>
+            <th>Masraf</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Flatpickr -->
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/tr.js"></script>
+
+  <!-- Bootstrap -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+  <!-- Highcharts -->
+  <script src="https://code.highcharts.com/highcharts.js"></script>
+  <script src="https://code.highcharts.com/modules/accessibility.js"></script>
+
+  <!-- En son kendi JS dosyan -->
+  <script src="../raporlar/js/satis-rapor.js"></script>
+
+
+
+</body>
+</html>
+
+
