@@ -185,6 +185,12 @@ async function fetchExpenses(startDate, endDate) {
 
     document.getElementById("total-amount").textContent = `Toplam tutar: ${total.toFixed(2)} TL`;
     fillCategorySummary(summary);
+    const chartData = Object.entries(summary).map(([kategori, { toplam }]) => ({
+    kategori,
+    toplam
+}));
+renderAnimatedExpenseChart(chartData);
+
   } catch (err) {
     console.error("Masraflar alınamadı:", err);
   }
@@ -328,3 +334,46 @@ window.deleteExpense = async function (id) {
     }
   }
 };
+
+function renderAnimatedExpenseChart(expenseData) {
+  Highcharts.chart('expenseChart', {
+    chart: {
+      type: 'pie',
+      animation: Highcharts.svg, // IE < 10 için fallback
+      backgroundColor: 'transparent'
+    },
+    title: { text: '' },
+    tooltip: {
+      pointFormat: '<b>{point.y:.2f} TL</b> ({point.percentage:.1f}%)'
+    },
+    accessibility: {
+      point: { valueSuffix: 'TL' }
+    },
+    plotOptions: {
+      pie: {
+        allowPointSelect: true,
+        cursor: 'pointer',
+        startAngle: -90,
+        endAngle: 90,
+        center: ['50%', '75%'],
+        size: '100%',
+        dataLabels: {
+          enabled: true,
+          format: '<b>{point.name}</b>: {point.y:.0f} TL',
+          style: {
+            fontWeight: 'bold',
+            color: 'black'
+          }
+        }
+      }
+    },
+    series: [{
+      name: 'Tutar',
+      colorByPoint: true,
+      data: expenseData.map(item => ({
+        name: item.kategori,
+        y: item.toplam
+      }))
+    }]
+  });
+}

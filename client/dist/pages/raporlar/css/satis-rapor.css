@@ -23,6 +23,12 @@
   color: #28a745;
   font-weight: 500;
 }
+#salesReportTable tfoot td {
+  font-weight: bold;
+  background-color: #f8f9fa;
+  border-top: 2px solid #dee2e6;
+}
+
 
 /* Masraf - Kırmızı */
 #salesReportTable td:nth-child(8) {

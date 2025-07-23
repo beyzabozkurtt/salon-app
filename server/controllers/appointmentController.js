@@ -4,33 +4,35 @@ const { Op } = require('sequelize');
 module.exports = {
 async getAll(req, res) {
   try {
-    const data = await Appointment.findAll({
-      where: { CompanyId: req.company.companyId },
+const data = await Appointment.findAll({
+  where: { CompanyId: req.company.companyId },
+  include: [
+    Customer,
+    User,
+    {
+      model: Service,
+      as: 'Service', // ✅ EKLENDİ
+      attributes: ['id', 'name', 'color']
+    },
+    {
+      model: SingleService,
+      as: 'SingleService',
+      attributes: ['id', 'name', 'color']
+    },
+    {
+      model: SaleSingleService,
+      attributes: ['price'],
       include: [
-        Customer,
-        User,
         {
-          model: Service,
-          attributes: ['id', 'name', 'color']
-        },
-        {
-          model: SingleService,
-          as: 'SingleService',
-          attributes: ['id', 'name', 'color']
-        },
-        {
-          model: SaleSingleService,
-          attributes: ['price'],
-          include: [
-            {
-              model: require('../models').Payment,
-              attributes: ['status', 'dueDate', 'paymentDate']
-            }
-          ]
+          model: require('../models').Payment,
+          attributes: ['status', 'dueDate', 'paymentDate']
         }
-      ],
-      order: [['date', 'ASC']]
-    });
+      ]
+    }
+  ],
+  order: [['date', 'ASC']]
+});
+
 
     res.json(data);
   } catch (err) {

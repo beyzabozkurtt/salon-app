@@ -100,6 +100,29 @@ function renderPieChart(paketToplam, hizmetToplam, urunToplam, masrafToplam) {
     }]
   });
 }
+function updateColumnTotals() {
+  let hizmet = 0, paket = 0, urun = 0, toplam = 0, tahsil = 0, masraf = 0;
+
+  document.querySelectorAll("#salesReportTable tbody tr").forEach(row => {
+    const cells = row.querySelectorAll("td");
+
+    const temizle = (text) => parseFloat((text || "0").replace(/[^\d.-]+/g, ""));
+
+    hizmet += temizle(cells[2]?.textContent);
+    paket += temizle(cells[3]?.textContent);
+    urun += temizle(cells[4]?.textContent);
+    toplam += temizle(cells[5]?.textContent);
+    tahsil += temizle(cells[6]?.textContent);
+    masraf += temizle(cells[7]?.textContent);
+  });
+
+  document.getElementById("hizmetTotal").textContent = hizmet.toLocaleString() + " ₺";
+  document.getElementById("paketTotal").textContent = paket.toLocaleString() + " ₺";
+  document.getElementById("urunTotal").textContent = urun.toLocaleString() + " ₺";
+  document.getElementById("genelTotal").textContent = toplam.toLocaleString() + " ₺";
+  document.getElementById("tahsilTotal").textContent = tahsil.toLocaleString() + " ₺";
+  document.getElementById("masrafTotal").textContent = masraf.toLocaleString() + " ₺";
+}
 
 async function fetchSalesReport(start, end) {
   const startStr = start.toISOString().split("T")[0];
@@ -155,6 +178,7 @@ async function fetchSalesReport(start, end) {
       urunListesi.push(item.urun);
       tahsilListesi.push(item.tahsil);
       masrafListesi.push(item.masraf);
+      updateColumnTotals();
     });
 
     // Kartlara yaz

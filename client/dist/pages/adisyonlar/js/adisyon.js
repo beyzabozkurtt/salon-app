@@ -16,12 +16,17 @@ res.data.forEach(app => {
   const formattedDate = dateObj.toLocaleDateString('tr-TR');
   const formattedTime = dateObj.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
 
+  const isSingle = !!app.SingleServiceId;
+  const typeLabel = isSingle ? "Hizmet" : "Paket";
+  const serviceName = isSingle
+    ? (app.SingleService?.name || '-')
+    : (app.Service?.name || '-');
+
   const tr = document.createElement("tr");
   tr.innerHTML = `
     <td>${app.Customer?.name || '-'}</td>
-    <td>${app.Service?.name || '-'}</td>
-    <td>-</td>
-    <td>-</td>
+    <td>${typeLabel}</td>
+    <td>${serviceName}</td>
     <td>${formattedDate}</td>
     <td>${formattedTime}</td>
     <td>${app.status}</td>
@@ -34,6 +39,7 @@ res.data.forEach(app => {
   `;
   tbody.appendChild(tr);
 });
+
 
       } catch (err) {
         console.error("Adisyon verisi alınamadı:", err);
