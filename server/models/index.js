@@ -20,6 +20,7 @@ const Expense = require('./Expense')(sequelize, DataTypes);
 const ExpenseCategory = require("./ExpenseCategory")(sequelize, DataTypes);
 const Salary = require('./Salary')(sequelize, DataTypes);
 const Prim = require('./Prim')(sequelize, DataTypes);
+const UserWorkingHours = require('./UserWorkingHours')(sequelize, DataTypes);
 
 
 
@@ -89,6 +90,12 @@ SaleSingleService.belongsTo(Salary);
 Company.hasMany(ExpenseCategory, { foreignKey: 'CompanyId' });
 ExpenseCategory.belongsTo(Company, { foreignKey: 'CompanyId' });
 
+
+User.hasMany(UserWorkingHours, { foreignKey: 'UserId' });
+UserWorkingHours.belongsTo(User, { foreignKey: 'UserId' });
+
+Company.hasMany(UserWorkingHours, { foreignKey: 'CompanyId' });
+UserWorkingHours.belongsTo(Company, { foreignKey: 'CompanyId' });
 
 
 User.hasMany(Payment, { foreignKey: 'UserId' });
@@ -207,5 +214,6 @@ module.exports = {
   Company,
   SingleService,
   ExpenseCategory,
-  Prim
+  Prim,
+  UserWorkingHours
 };

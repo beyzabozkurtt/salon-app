@@ -60,12 +60,55 @@ document.getElementById("searchInput").addEventListener("input", function () {
   });
 });
 
+function populateTimeDropdowns() {
+  const ids = ["dayStartTime", "dayEndTime", "updateDayStartTime", "updateDayEndTime"];
+
+  ids.forEach((id) => {
+    const select = document.getElementById(id);
+    if (!select) return;
+
+    // önce eski seçenekleri temizle
+    select.innerHTML = "";
+
+    for (let hour = 8; hour <= 23; hour++) {
+      for (let min = 0; min < 60; min += 30) {
+        const timeStr = `${hour.toString().padStart(2, '0')}:${min.toString().padStart(2, '0')}`;
+        const option = document.createElement("option");
+        option.value = timeStr;
+        option.textContent = timeStr;
+        select.appendChild(option);
+      }
+    }
+  });
+}
+
+
+function getWorkingHoursFromForm() {
+  const days = [
+    { key: "monday", label: "Pazartesi" },
+    { key: "tuesday", label: "Salı" },
+    { key: "wednesday", label: "Çarşamba" },
+    { key: "thursday", label: "Perşembe" },
+    { key: "friday", label: "Cuma" },
+    { key: "saturday", label: "Cumartesi" },
+    { key: "sunday", label: "Pazar" }
+  ];
+
+  return days.map(day => ({
+    day: day.label,
+    startTime: document.querySelector(`[name='${day.key}Start']`)?.value || null,
+    endTime: document.querySelector(`[name='${day.key}End']`)?.value || null,
+    isClosed: document.querySelector(`[name='${day.key}Closed']`)?.checked || false
+  }));
+}
+
 
 // Personel oluştur
 createForm?.addEventListener("submit", async (e) => {
   e.preventDefault();
   const raw = Object.fromEntries(new FormData(createForm));
-  if (raw.salary === "") raw.salary = null;
+  raw.salary = raw.salary && !isNaN(raw.salary) ? Number(raw.salary) : null;
+
 
   const data = {
     ...raw,
@@ -77,8 +120,20 @@ createForm?.addEventListener("submit", async (e) => {
     paketPrimDegeri: raw.paketPrimDegeri || null
   };
 
+  const workingHours = getWorkingHoursFromForm();
+
   try {
-    await axios.post("http://localhost:5001/api/users", data, axiosConfig);
+    // 1️⃣ Önce personeli kaydet
+    const res = await axios.post("http://localhost:5001/api/users", data, axiosConfig);
+    const userId = res.data.id;
+
+    // 2️⃣ Ardından çalışma saatlerini kaydet
+    await axios.post("http://localhost:5001/api/user-working-hours", {
+      UserId: userId,
+      workingHours
+    }, axiosConfig);
+
+    // 3️⃣ Kapat ve yenile
     bootstrap.Modal.getInstance(document.getElementById("createModal")).hide();
     createForm.reset();
     loadUsers();
@@ -93,7 +148,8 @@ createForm?.addEventListener("submit", async (e) => {
 updateForm?.addEventListener("submit", async (e) => {
   e.preventDefault();
   const raw = Object.fromEntries(new FormData(updateForm));
-  if (raw.salary === "") raw.salary = null;
+  raw.salary = raw.salary && !isNaN(raw.salary) ? Number(raw.salary) : null;
+
 
   const data = {
     ...raw,
@@ -140,7 +196,18 @@ updateForm.paketPrimDegeri.value = user.paketTl ?? user.paketYuzde ?? "";
   togglePrimInput(updateForm.urunPrimTipi, 'urun');
   togglePrimInput(updateForm.hizmetPrimTipi, 'hizmet');
   togglePrimInput(updateForm.paketPrimTipi, 'paket');
+  workingHourArray = []; // sıfırla
 
+  if (user.workingHours?.length) {
+    user.workingHours.forEach(item => {
+      workingHourArray.push({
+        day: item.day,
+        startTime: item.startTime,
+        endTime: item.endTime
+      });
+    });
+    renderWorkingHours("update");
+  }
   bootstrap.Modal.getOrCreateInstance(document.getElementById("updateModal")).show();
 }
 
@@ -191,6 +258,9 @@ function populatePercentageOptions() {
 window.addEventListener("DOMContentLoaded", () => {
   loadUsers();
   populatePercentageOptions();
+  populateTimeDropdowns();
+  document.getElementById("workingHoursContainer").style.display = "none";
+  document.getElementById("komisyonContainer").style.display = "none";
 
   const phoneInput = document.querySelector("#phoneInput");
   if (phoneInput) {
@@ -204,6 +274,8 @@ window.addEventListener("DOMContentLoaded", () => {
     createForm?.addEventListener("submit", () => {
       phoneInput.value = iti.getNumber();
     });
+    
+
   }
 });
 
@@ -216,3 +288,134 @@ function togglePrimInput(selectElement, prefix) {
     input.disabled = false;
   }
 }
+function toggleWorkingHours(containerId = 'workingHoursContainer') {
+  const div = document.getElementById(containerId);
+  div.style.display = div.style.display === "none" ? "block" : "none";
+}
+
+let workingHourArray = [];
+
+function addWorkingHour(mode = "create") {
+  const prefix = mode === "create" ? "" : "update";
+
+const startSelect = document.getElementById(`${prefix}DayStartTime`) || document.getElementById("dayStartTime");
+const endSelect = document.getElementById(`${prefix}DayEndTime`) || document.getElementById("dayEndTime");
+const checkboxes = document.querySelectorAll(`.${prefix}day-checkbox:checked`) || document.querySelectorAll(".day-checkbox:checked");
+
+
+  if (!startSelect || !endSelect) {
+    console.error("Başlangıç veya bitiş saati alanı bulunamadı.");
+    return;
+  }
+
+  const start = startSelect.value;
+  const end = endSelect.value;
+
+  if (!checkboxes.length || !start || !end) {
+    alert("Lütfen gün ve saat bilgilerini eksiksiz girin.");
+    return;
+  }
+
+  checkboxes.forEach(cb => {
+    const day = cb.value;
+    if (workingHourArray.some(item => item.day === day)) return;
+
+    workingHourArray.push({
+      day,
+      startTime: start,
+      endTime: end
+    });
+  });
+
+  renderWorkingHours(mode);
+  clearWorkingHourInputs(mode);
+}
+
+function toggleWorkingHours(containerId = 'workingHoursContainer') {
+  const div = document.getElementById(containerId);
+  const other = document.getElementById("komisyonContainer");
+
+  // Diğerini kapat
+  if (other) other.style.display = "none";
+
+  // Tıklananı aç/kapat
+  div.style.display = div.style.display === "none" ? "block" : "none";
+}
+
+function toggleKomisyon(containerId = 'komisyonContainer') {
+  const div = document.getElementById(containerId);
+  const other = document.getElementById("workingHoursContainer");
+
+  // Diğerini kapat
+  if (other) other.style.display = "none";
+
+  // Tıklananı aç/kapat
+  div.style.display = div.style.display === "none" ? "block" : "none";
+}
+
+function resetWorkingAndKomisyonPanels(mode = "create") {
+  const workingDiv = document.getElementById(mode === "create" ? "workingHoursContainer" : "updateWorkingHoursContainer");
+  const komisyonDiv = document.getElementById(mode === "create" ? "komisyonContainer" : "updateKomisyonContainer");
+
+  if (workingDiv) workingDiv.style.display = "none";
+  if (komisyonDiv) komisyonDiv.style.display = "none";
+}
+
+
+
+function clearWorkingHourInputs(mode = "create") {
+  const prefix = mode === "create" ? "" : "update";
+
+  document.querySelectorAll(`.${prefix}day-checkbox`).forEach(cb => cb.checked = false);
+  const selectAll = document.getElementById(`${prefix}SelectAllDays`);
+  if (selectAll) selectAll.checked = false;
+
+  const startSelect = document.getElementById(`${prefix}DayStartTime`);
+  const endSelect = document.getElementById(`${prefix}DayEndTime`);
+  if (startSelect) startSelect.selectedIndex = 0;
+  if (endSelect) endSelect.selectedIndex = 0;
+}
+
+
+
+function renderWorkingHours(mode = "create") {
+  const tbody = document.getElementById(mode === "create" ? "workingHourList" : "updateWorkingHourList");
+  tbody.innerHTML = "";
+
+  workingHourArray.forEach((item, index) => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${item.day}</td>
+      <td>${item.startTime}</td>
+      <td>${item.endTime}</td>
+      <td>
+        <button class="btn btn-sm btn-outline-danger" onclick="removeWorkingHour(${index}, '${mode}')">Sil</button>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+
+
+
+function updateTime(index, field, value) {
+  workingHourArray[index][field] = value;
+}
+// Ekle: Tümünü seç kutusu işlevi
+function toggleSelectAllDays(checkbox) {
+  const allDayCheckboxes = document.querySelectorAll(".day-checkbox");
+  allDayCheckboxes.forEach(cb => {
+    cb.checked = checkbox.checked;
+  });
+}
+
+function removeWorkingHour(index, mode = "create") {
+  workingHourArray.splice(index, 1);
+  renderWorkingHours(mode);
+}
+
+function getWorkingHoursFromForm() {
+  return workingHourArray;
+}
+

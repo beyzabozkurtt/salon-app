@@ -6,6 +6,7 @@ const paymentRoutes = require('./routes/paymentRoutes');
 const saleSingleServiceRoutes = require('./routes/saleSingleServiceRoutes');
 const appointmentRoutes = require('./routes/appointmentRoutes'); // bunu da buraya aldık
 const reportRoutes = require('./routes/reportRoutes');
+const userWorkingHoursRoutes = require('./routes/userWorkingHoursRoutes');
 
 
 
@@ -36,6 +37,7 @@ app.use('/api/expense-categories', require('./routes/expenseCategoryRoutes'));
 app.use('/api/salaries', require('./routes/salaryRoutes'));
 app.use("/api/prims", require("./routes/primRoutes"));
 app.use('/api/reports', reportRoutes);
+app.use('/api/user-working-hours', userWorkingHoursRoutes);
 
 
 
