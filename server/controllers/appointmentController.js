@@ -4,35 +4,43 @@ const { Op } = require('sequelize');
 module.exports = {
 async getAll(req, res) {
   try {
-const data = await Appointment.findAll({
-  where: { CompanyId: req.company.companyId },
-  include: [
-    Customer,
-    User,
-    {
-      model: Service,
-      as: 'Service', // ✅ EKLENDİ
-      attributes: ['id', 'name', 'color']
-    },
-    {
-      model: SingleService,
-      as: 'SingleService',
-      attributes: ['id', 'name', 'color']
-    },
-    {
-      model: SaleSingleService,
-      attributes: ['price'],
-      include: [
-        {
-          model: require('../models').Payment,
-          attributes: ['status', 'dueDate', 'paymentDate']
-        }
-      ]
-    }
-  ],
-  order: [['date', 'ASC']]
-});
+    const filters = { CompanyId: req.company.companyId };
 
+    // 🔍 Frontend'den gelen query parametrelerini ekle
+    if (req.query.service) filters.ServiceId = req.query.service;
+    if (req.query.singleService) filters.SingleServiceId = req.query.singleService;
+    if (req.query.staff) filters.UserId = req.query.staff;
+    if (req.query.customer) filters.CustomerId = req.query.customer;
+    if (req.query.status) filters.status = req.query.status;
+
+    const data = await Appointment.findAll({
+      where: filters,
+      include: [
+        Customer,
+        User,
+        {
+          model: Service,
+          as: 'Service',
+          attributes: ['id', 'name', 'color']
+        },
+        {
+          model: SingleService,
+          as: 'SingleService',
+          attributes: ['id', 'name', 'color']
+        },
+        {
+          model: SaleSingleService,
+          attributes: ['price'],
+          include: [
+            {
+              model: require('../models').Payment,
+              attributes: ['status', 'dueDate', 'paymentDate']
+            }
+          ]
+        }
+      ],
+      order: [['date', 'ASC']]
+    });
 
     res.json(data);
   } catch (err) {
@@ -40,6 +48,7 @@ const data = await Appointment.findAll({
     res.status(500).json({ error: 'Listeleme hatası' });
   }
 },
+
 
 
 
